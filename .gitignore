@@ -1,0 +1,13 @@
+/bin/*
+*.class
+*.jar
+*.war
+
+.settings/*
+
+.project
+.DS_Store
+/bin/
+
+.classpath
+.org.eclipse.jdt.core.prefs

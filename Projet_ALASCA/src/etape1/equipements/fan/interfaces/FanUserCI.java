@@ -1,4 +1,4 @@
-package etape1.equipements.fan;
+package etape1.equipements.fan.interfaces;
 
 
 

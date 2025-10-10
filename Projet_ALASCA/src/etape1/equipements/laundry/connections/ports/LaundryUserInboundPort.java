@@ -1,6 +1,6 @@
 package etape1.equipements.laundry.connections.ports;
 
-import etape1.equipements.fan.FanImplementationI.FanState;
+import etape1.equipements.fan.interfaces.FanImplementationI.FanState;
 import etape1.equipements.laundry.interfaces.LaundryImplementationI;
 import etape1.equipements.laundry.interfaces.LaundryUserCI;
 import etape1.equipements.laundry.interfaces.LaundryUserI;

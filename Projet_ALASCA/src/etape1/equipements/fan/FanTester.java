@@ -52,8 +52,11 @@ import tests_utils.TestsStatistics;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import etape1.CVMIntegrationTest;
-import etape1.equipements.fan.FanImplementationI.FanMode;
-import etape1.equipements.fan.FanImplementationI.FanState;
+import etape1.equipements.fan.connections.connectors.FanConnector;
+import etape1.equipements.fan.connections.ports.FanOutboundPort;
+import etape1.equipements.fan.interfaces.FanUserCI;
+import etape1.equipements.fan.interfaces.FanImplementationI.FanMode;
+import etape1.equipements.fan.interfaces.FanImplementationI.FanState;
 
 // -----------------------------------------------------------------------------
 /**

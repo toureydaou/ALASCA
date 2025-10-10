@@ -1,4 +1,6 @@
-package etape1.equipements.fan;
+package etape1.equipements.fan.connections.connectors;
+
+import etape1.equipements.fan.interfaces.FanUserCI;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -32,13 +34,11 @@ package etape1.equipements.fan;
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
-import fr.sorbonne_u.components.ComponentI;
-import fr.sorbonne_u.components.ports.AbstractInboundPort;
-import fr.sorbonne_u.exceptions.PreconditionException;
+import fr.sorbonne_u.components.connectors.AbstractConnector;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>LaundryInboundPort</code> implements an inbound port for
+ * The class <code>LaundryUserConnector</code> implements a connector for
  * the <code>LaundryUserCI</code> component interface.
  *
  * <p><strong>Description</strong></p>
@@ -46,7 +46,7 @@ import fr.sorbonne_u.exceptions.PreconditionException;
  * <p><strong>Implementation Invariants</strong></p>
  * 
  * <pre>
- * invariant	{@code getOwner() instanceof LaundryImplementationI}
+ * invariant	{@code true}	// no more invariant
  * </pre>
  * 
  * <p><strong>Invariants</strong></p>
@@ -59,91 +59,26 @@ import fr.sorbonne_u.exceptions.PreconditionException;
  * 
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public class			FanInboundPort
-extends		AbstractInboundPort
+public class			FanConnector
+extends		AbstractConnector
 implements	FanUserCI
 {
-	// -------------------------------------------------------------------------
-	// Constants and variables
-	// -------------------------------------------------------------------------
-
-	private static final long serialVersionUID = 1L;
-
-	// -------------------------------------------------------------------------
-	// Constructors
-	// -------------------------------------------------------------------------
-
-	/**
-	 * create an inbound port instance.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code owner != null}
-	 * pre	{@code owner instanceof LaundryImplementationI}
-	 * post	{@code true}	// no more postcondition.
-	 * </pre>
-	 *
-	 * @param owner			component owning the port.
-	 * @throws Exception	<i>to do</i>.
-	 */
-	public				FanInboundPort(ComponentI owner) throws Exception
-	{
-		super(FanUserCI.class, owner);
-		assert	owner instanceof FanImplementationI :
-				new PreconditionException(
-						"owner instanceof LaundryImplementationI");
-	}
-
-	/**
-	 * create an inbound port instance.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code uri != null && !uri.isEmpty()}
-	 * pre	{@code owner != null}
-	 * pre	{@code owner instanceof LaundryImplementationI}
-	 * post	{@code true}	// no more postcondition.
-	 * </pre>
-	 *
-	 * @param uri			URI of the port.
-	 * @param owner			component owning the port.
-	 * @throws Exception	<i>to do</i>.
-	 */
-	public				FanInboundPort(
-		String uri,
-		ComponentI owner
-		) throws Exception
-	{
-		super(uri, FanUserCI.class, owner);
-		assert	owner instanceof FanImplementationI :
-				new PreconditionException(
-						"owner instanceof LaundryImplementationI");
-	}
-
-	// -------------------------------------------------------------------------
-	// Methods
-	// -------------------------------------------------------------------------
-
 	/**
 	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getState()
 	 */
 	@Override
 	public FanState	getState() throws Exception
 	{
-		return this.getOwner().handleRequest(
-							o -> ((FanImplementationI)o).getState());
+		return ((FanUserCI)this.offering).getState();
 	}
 
 	/**
 	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getMode()
 	 */
 	@Override
-	public FanMode	getMode() throws Exception
+	public	FanMode	getMode() throws Exception
 	{
-		return this.getOwner().handleRequest(
-							o -> ((FanImplementationI)o).getMode());
+		return ((FanUserCI)this.offering).getMode();
 	}
 
 	/**
@@ -152,10 +87,7 @@ implements	FanUserCI
 	@Override
 	public void			turnOn() throws Exception
 	{
-		this.getOwner().handleRequest(
-							o -> {	((FanImplementationI)o).turnOn();
-									return null;
-							});
+		((FanUserCI)this.offering).turnOn();
 	}
 
 	/**
@@ -164,10 +96,7 @@ implements	FanUserCI
 	@Override
 	public void			turnOff() throws Exception
 	{
-		this.getOwner().handleRequest(
-							o -> {	((FanImplementationI)o).turnOff();
-									return null;
-							});
+		((FanUserCI)this.offering).turnOff();
 	}
 
 	/**
@@ -176,10 +105,7 @@ implements	FanUserCI
 	@Override
 	public void			setHigh() throws Exception
 	{
-		this.getOwner().handleRequest(
-							o -> {	((FanImplementationI)o).setHigh();;
-									return null;
-							});
+		((FanUserCI)this.offering).setHigh();
 	}
 
 	/**
@@ -188,18 +114,12 @@ implements	FanUserCI
 	@Override
 	public void			setLow() throws Exception
 	{
-		this.getOwner().handleRequest(
-							o -> {	((FanImplementationI)o).setLow();
-									return null;
-							});
+		((FanUserCI)this.offering).setLow();
 	}
 
 	@Override
 	public void setMedium() throws Exception {
-		this.getOwner().handleRequest(
-				o -> {	((FanImplementationI)o).setMedium();
-						return null;
-				});
+		((FanUserCI)this.offering).setMedium();
 		
 	}
 }

@@ -1,5 +1,8 @@
 package etape1.equipements.fan;
 
+import etape1.equipements.fan.connections.ports.FanInboundPort;
+import etape1.equipements.fan.interfaces.FanImplementationI;
+import etape1.equipements.fan.interfaces.FanUserCI;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;

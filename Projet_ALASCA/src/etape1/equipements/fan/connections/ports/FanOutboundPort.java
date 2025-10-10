@@ -1,4 +1,6 @@
-package etape1.equipements.fan;
+package etape1.equipements.fan.connections.ports;
+
+import etape1.equipements.fan.interfaces.FanUserCI;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr

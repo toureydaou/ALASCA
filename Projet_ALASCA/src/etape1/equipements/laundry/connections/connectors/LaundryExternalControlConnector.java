@@ -1,4 +1,8 @@
-package etape1.equipements.fan;
+package etape1.equipements.laundry.connections.connectors;
+
+
+
+import etape1.equipements.laundry.interfaces.LaundryExternalControlCI;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -33,11 +37,13 @@ package etape1.equipements.fan;
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 import fr.sorbonne_u.components.connectors.AbstractConnector;
+import physical_data.Measure;
+
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>LaundryUserConnector</code> implements a connector for
- * the <code>LaundryUserCI</code> component interface.
+ * The class <code>LaundryExternalControlConnector</code> implements a
+ * connector for the {@code LaundryExternalControlCI} component interface.
  *
  * <p><strong>Description</strong></p>
  * 
@@ -57,67 +63,34 @@ import fr.sorbonne_u.components.connectors.AbstractConnector;
  * 
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public class			FanConnector
+public class			LaundryExternalControlConnector
 extends		AbstractConnector
-implements	FanUserCI
+implements	LaundryExternalControlCI
 {
+	
 	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getState()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.Laundry.LaundryExternalControlCI#setCurrentPowerLevel(fr.sorbonne_u.alasca.physical_data.Measure)
 	 */
-	@Override
-	public FanState	getState() throws Exception
-	{
-		return ((FanUserCI)this.offering).getState();
-	}
 
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getMode()
-	 */
 	@Override
-	public	FanMode	getMode() throws Exception
-	{
-		return ((FanUserCI)this.offering).getMode();
-	}
-
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#turnOn()
-	 */
-	@Override
-	public void			turnOn() throws Exception
-	{
-		((FanUserCI)this.offering).turnOn();
-	}
-
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#turnOff()
-	 */
-	@Override
-	public void			turnOff() throws Exception
-	{
-		((FanUserCI)this.offering).turnOff();
-	}
-
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#setHigh()
-	 */
-	@Override
-	public void			setHigh() throws Exception
-	{
-		((FanUserCI)this.offering).setHigh();
-	}
-
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#setLow()
-	 */
-	@Override
-	public void			setLow() throws Exception
-	{
-		((FanUserCI)this.offering).setLow();
+	public LaundryState getState() throws Exception {
+		return ((LaundryExternalControlCI)this.offering).getState();
 	}
 
 	@Override
-	public void setMedium() throws Exception {
-		((FanUserCI)this.offering).setMedium();
+	public LaundryMode getLaundryMode() throws Exception {
+		return ((LaundryExternalControlCI)this.offering).getLaundryMode();
+	}
+
+	@Override
+	public void turnOn() throws Exception {
+		((LaundryExternalControlCI)this.offering).turnOn();
+		
+	}
+
+	@Override
+	public void turnOff() throws Exception {
+		((LaundryExternalControlCI)this.offering).turnOff();
 		
 	}
 }

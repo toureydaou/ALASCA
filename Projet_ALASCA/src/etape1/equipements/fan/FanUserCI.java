@@ -7,7 +7,7 @@ import fr.sorbonne_u.components.interfaces.RequiredCI;
 
 public interface FanUserCI extends OfferedCI, RequiredCI, FanImplementationI {
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.Fan.FanImplementationI#getState()
+	 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#getState()
 	 */
 	@Override
 	public FanState	getState() throws Exception;
@@ -19,25 +19,32 @@ public interface FanUserCI extends OfferedCI, RequiredCI, FanImplementationI {
 	public FanMode	getMode() throws Exception;
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.Fan.FanImplementationI#turnOn()
+	 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#turnOn()
 	 */
 	@Override
 	public void			turnOn() throws Exception;
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.Fan.FanImplementationI#turnOff()
+	 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#turnOff()
 	 */
 	@Override
 	public void			turnOff() throws Exception;
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.Fan.FanImplementationI#setHigh()
+	 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#setHigh()
 	 */
 	@Override
 	public void			setHigh() throws Exception;
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.Fan.FanImplementationI#setLow()
+	 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#setHigh()
+	 */
+	@Override
+	public void			setMedium() throws Exception;
+
+	
+	/**
+	 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#setLow()
 	 */
 	@Override
 	public void			setLow() throws Exception;

@@ -15,7 +15,7 @@ import physical_data.MeasurementUnit;
 
 
 /**
- * The class <code>Fan</code> implements the hair dryer component.
+ * The class <code>Laundry</code> implements the hair dryer component.
  *
  * <p><strong>Description</strong></p>
  * 
@@ -280,9 +280,9 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 
 			assert	Fan.implementationInvariants(this) :
 					new ImplementationInvariantException(
-							"Fan.implementationInvariants(this)");
+							"Laundry.implementationInvariants(this)");
 			assert	Fan.invariants(this) :
-					new InvariantException("Fan.invariants(this)");
+					new InvariantException("Laundry.invariants(this)");
 		}
 
 		// -------------------------------------------------------------------------
@@ -308,7 +308,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		// -------------------------------------------------------------------------
 
 		/**
-		 * @see fr.sorbonne_u.components.hem2025e1.equipments.Fan.FanImplementationI#getState()
+		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#getState()
 		 */
 		@Override
 		public FanState	getState() throws Exception
@@ -322,7 +322,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * @see fr.sorbonne_u.components.hem2025e1.equipments.Fan.FanImplementationI#getMode()
+		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#getMode()
 		 */
 		@Override
 		public FanMode	getMode() throws Exception
@@ -336,7 +336,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * @see fr.sorbonne_u.components.hem2025e1.equipments.Fan.FanImplementationI#turnOn()
+		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#turnOn()
 		 */
 		@Override
 		public void			turnOn() throws Exception
@@ -353,7 +353,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * @see fr.sorbonne_u.components.hem2025e1.equipments.Fan.FanImplementationI#turnOff()
+		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#turnOff()
 		 */
 		@Override
 		public void			turnOff() throws Exception
@@ -369,7 +369,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * @see fr.sorbonne_u.components.hem2025e1.equipments.Fan.FanImplementationI#setHigh()
+		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#setHigh()
 		 */
 		@Override
 		public void			setHigh() throws Exception
@@ -386,7 +386,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * @see fr.sorbonne_u.components.hem2025e1.equipments.Fan.FanImplementationI#setLow()
+		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#setLow()
 		 */
 		@Override
 		public void			setLow() throws Exception

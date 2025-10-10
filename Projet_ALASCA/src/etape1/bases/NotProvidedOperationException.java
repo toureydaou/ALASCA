@@ -1,4 +1,4 @@
-package etape1.equipements.hem;
+package etape1.bases;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr

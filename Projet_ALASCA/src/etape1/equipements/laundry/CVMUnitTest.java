@@ -1,4 +1,4 @@
-package etape1.equipements.fan;
+package etape1.equipements.laundry;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -32,12 +32,14 @@ package etape1.equipements.fan;
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
-import fr.sorbonne_u.components.connectors.AbstractConnector;
+import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.components.cvm.AbstractCVM;
+import fr.sorbonne_u.components.exceptions.BCMException;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>LaundryUserConnector</code> implements a connector for
- * the <code>LaundryUserCI</code> component interface.
+ * The class <code>CVMUnitTest</code> performs unit tests on the hair dryer
+ * component.
  *
  * <p><strong>Description</strong></p>
  * 
@@ -57,68 +59,55 @@ import fr.sorbonne_u.components.connectors.AbstractConnector;
  * 
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public class			FanConnector
-extends		AbstractConnector
-implements	FanUserCI
+public class			CVMUnitTest
+extends		AbstractCVM
 {
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getState()
-	 */
-	@Override
-	public FanState	getState() throws Exception
+	// -------------------------------------------------------------------------
+	// Constructors
+	// -------------------------------------------------------------------------
+
+	public				CVMUnitTest() throws Exception
 	{
-		return ((FanUserCI)this.offering).getState();
+		LaundryUnitTester.VERBOSE = true;
+		LaundryUnitTester.X_RELATIVE_POSITION = 0;
+		LaundryUnitTester.Y_RELATIVE_POSITION = 0;
+		Laundry.VERBOSE = true;
+		Laundry.X_RELATIVE_POSITION = 1;
+		Laundry.Y_RELATIVE_POSITION = 0;
 	}
 
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getMode()
-	 */
-	@Override
-	public	FanMode	getMode() throws Exception
-	{
-		return ((FanUserCI)this.offering).getMode();
-	}
+	// -------------------------------------------------------------------------
+	// CVM life-cycle
+	// -------------------------------------------------------------------------
 
 	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#turnOn()
+	 * @see fr.sorbonne_u.components.cvm.AbstractCVM#deploy()
 	 */
 	@Override
-	public void			turnOn() throws Exception
+	public void			deploy() throws Exception
 	{
-		((FanUserCI)this.offering).turnOn();
+		AbstractComponent.createComponent(
+					Laundry.class.getCanonicalName(),
+					new Object[]{});
+
+		AbstractComponent.createComponent(
+				LaundryUnitTester.class.getCanonicalName(),
+					new Object[]{true});
+
+		super.deploy();
 	}
 
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#turnOff()
-	 */
-	@Override
-	public void			turnOff() throws Exception
+	public static void		main(String[] args)
 	{
-		((FanUserCI)this.offering).turnOff();
-	}
-
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#setHigh()
-	 */
-	@Override
-	public void			setHigh() throws Exception
-	{
-		((FanUserCI)this.offering).setHigh();
-	}
-
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#setLow()
-	 */
-	@Override
-	public void			setLow() throws Exception
-	{
-		((FanUserCI)this.offering).setLow();
-	}
-
-	@Override
-	public void setMedium() throws Exception {
-		((FanUserCI)this.offering).setMedium();
-		
+		BCMException.VERBOSE = true;
+		try {
+			CVMUnitTest cvm = new CVMUnitTest();
+			cvm.startStandardLifeCycle(10000L);
+			Thread.sleep(10000L);
+			System.exit(0);
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
 	}
 }
 // -----------------------------------------------------------------------------

@@ -1,4 +1,8 @@
-package etape1.equipements.fan;
+package etape1.equipements.laundry.connections.ports;
+
+import etape1.equipements.fan.FanImplementationI.FanMode;
+import etape1.equipements.fan.FanImplementationI.FanState;
+import etape1.equipements.laundry.interfaces.LaundryUserCI;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -34,6 +38,7 @@ package etape1.equipements.fan;
 
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractOutboundPort;
+import physical_data.Measure;
 
 // -----------------------------------------------------------------------------
 /**
@@ -59,9 +64,9 @@ import fr.sorbonne_u.components.ports.AbstractOutboundPort;
  * 
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public class			FanOutboundPort
+public class			LaundryUserOutboundPort
 extends		AbstractOutboundPort
-implements	FanUserCI
+implements	LaundryUserCI
 {
 	// -------------------------------------------------------------------------
 	// Constants and variables
@@ -86,10 +91,10 @@ implements	FanUserCI
 	 * @param owner			component that owns this port.
 	 * @throws Exception 	<i>to do</i>.
 	 */
-	public				FanOutboundPort(ComponentI owner)
+	public				LaundryUserOutboundPort(ComponentI owner)
 	throws Exception
 	{
-		super(FanUserCI.class, owner);
+		super(LaundryUserCI.class, owner);
 	}
 
 	/**
@@ -107,10 +112,10 @@ implements	FanUserCI
 	 * @param owner			component that owns this port.
 	 * @throws Exception 	<i>to do</i>.
 	 */
-	public				FanOutboundPort(String uri, ComponentI owner)
+	public				LaundryUserOutboundPort(String uri, ComponentI owner)
 	throws Exception
 	{
-		super(uri, FanUserCI.class, owner);
+		super(uri, LaundryUserCI.class, owner);
 	}
 
 	// -------------------------------------------------------------------------
@@ -121,18 +126,18 @@ implements	FanUserCI
 	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getState()
 	 */
 	@Override
-	public FanState	getState() throws Exception
+	public LaundryState	getState() throws Exception
 	{
-		return ((FanUserCI)this.getConnector()).getState();
+		return ((LaundryUserCI)this.getConnector()).getState();
 	}
 
 	/**
 	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getMode()
 	 */
 	@Override
-	public FanMode	getMode() throws Exception
+	public LaundryMode	getLaundryMode() throws Exception
 	{
-		return ((FanUserCI)this.getConnector()).getMode();
+		return ((LaundryUserCI)this.getConnector()).getLaundryMode();
 	}
 
 	/**
@@ -141,7 +146,7 @@ implements	FanUserCI
 	@Override
 	public void			turnOn() throws Exception
 	{
-		((FanUserCI)this.getConnector()).turnOn();
+		((LaundryUserCI)this.getConnector()).turnOn();
 	}
 
 	/**
@@ -150,31 +155,50 @@ implements	FanUserCI
 	@Override
 	public void			turnOff() throws Exception
 	{
-		((FanUserCI)this.getConnector()).turnOff();
-	}
-
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#setHigh()
-	 */
-	@Override
-	public void			setHigh() throws Exception
-	{
-		((FanUserCI)this.getConnector()).setHigh();
-	}
-
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#setLow()
-	 */
-	@Override
-	public void			setLow() throws Exception
-	{
-		((FanUserCI)this.getConnector()).setLow();
+		((LaundryUserCI)this.getConnector()).turnOff();
 	}
 
 	@Override
-	public void setMedium() throws Exception {
-		((FanUserCI)this.getConnector()).setMedium();
+	public LaundryWashModes getLaundryWashMode() throws Exception {
+		
+		return ((LaundryUserCI)this.getConnector()).getLaundryWashMode();
+	}
+
+	@Override
+	public Measure<Double> getCurrentTemperature() throws Exception {
+		return ((LaundryUserCI)this.getConnector()).getCurrentTemperature();
+	}
+
+	@Override
+	public void setDryMode() throws Exception {
+		 ((LaundryUserCI)this.getConnector()).setDryMode();
 		
 	}
+
+	@Override
+	public void setWashMode() throws Exception {
+		((LaundryUserCI)this.getConnector()).setWashMode();
+		
+	}
+
+	@Override
+	public void setLaundryWashModeWhite() throws Exception {
+		((LaundryUserCI)this.getConnector()).setLaundryWashModeWhite();
+		
+	}
+
+	@Override
+	public void setLaundryWashModeColor() throws Exception {
+		((LaundryUserCI)this.getConnector()).setLaundryWashModeColor();
+		
+	}
+
+	@Override
+	public void setTemperature(WashTemperatures temp) throws Exception {
+		((LaundryUserCI)this.getConnector()).setTemperature(temp);
+		
+	}
+
+	
 }
 // -----------------------------------------------------------------------------

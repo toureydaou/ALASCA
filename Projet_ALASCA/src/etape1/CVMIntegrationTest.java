@@ -180,8 +180,8 @@ extends		AbstractCVM
 		 * HairDryerTester.Y_RELATIVE_POSITION = 2; HairDryer.VERBOSE = true;
 		 * HairDryer.X_RELATIVE_POSITION = 1; HairDryer.Y_RELATIVE_POSITION = 2;
 		 * HeaterUnitTester.VERBOSE = true; HeaterUnitTester.X_RELATIVE_POSITION = 0;
-		 * HeaterUnitTester.Y_RELATIVE_POSITION = 3; Heater.VERBOSE = true;
-		 * Heater.X_RELATIVE_POSITION = 1; Heater.Y_RELATIVE_POSITION = 3;
+		 * HeaterUnitTester.Y_RELATIVE_POSITION = 3; Laundry.VERBOSE = true;
+		 * Laundry.X_RELATIVE_POSITION = 1; Laundry.Y_RELATIVE_POSITION = 3;
 		 */
 
 		assert	CVMIntegrationTest.implementationInvariants(this) :
@@ -232,7 +232,7 @@ extends		AbstractCVM
 		 * simulation of users' actions. AbstractComponent.createComponent(
 		 * HairDryerTester.class.getCanonicalName(), new Object[]{false});
 		 * 
-		 * AbstractComponent.createComponent( Heater.class.getCanonicalName(), new
+		 * AbstractComponent.createComponent( Laundry.class.getCanonicalName(), new
 		 * Object[]{});
 		 * 
 		 * // At this stage, the tester for the heater is added only // to switch on and

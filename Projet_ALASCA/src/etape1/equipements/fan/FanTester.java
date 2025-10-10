@@ -57,8 +57,8 @@ import etape1.equipements.fan.FanImplementationI.FanState;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>FanTester</code> implements a component performing
- * tests for the class <code>Fan</code> as a BCM4Java component.
+ * The class <code>LaundryTester</code> implements a component performing
+ * tests for the class <code>Laundry</code> as a BCM4Java component.
  *
  * <p><strong>Description</strong></p>
  * 
@@ -276,9 +276,9 @@ extends		AbstractComponent
 
 		assert	implementationInvariants(this) :
 				new ImplementationInvariantException(
-						"FanTester.implementationInvariants(this)");
+						"LaundryTester.implementationInvariants(this)");
 		assert	invariants(this) :
-				new InvariantException("FanTester.invariants(this)");
+				new InvariantException("LaundryTester.invariants(this)");
 	}
 
 	// -------------------------------------------------------------------------

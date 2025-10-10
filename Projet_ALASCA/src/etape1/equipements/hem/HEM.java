@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 import etape1.CVMIntegrationTest;
+import etape1.bases.AdjustableCI;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -307,7 +308,7 @@ public class HEM extends AbstractComponent {
 		 * the heater. this.heaterop = new AdjustableOutboundPort(this);
 		 * this.heaterop.publishPort();
 		 * this.doPortConnection(this.heaterop.getPortURI(),
-		 * Heater.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+		 * Laundry.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 		 * HeaterConnector.class.getCanonicalName()); } } catch (Throwable e) { throw
 		 * new ComponentStartException(e); }
 		 */
@@ -596,7 +597,7 @@ public class HEM extends AbstractComponent {
 	 * @throws Exception <i>to do</i>.
 	 */
 	protected void testHeater() throws Exception {
-		this.logMessage("Heater tests start.");
+		this.logMessage("Laundry tests start.");
 		TestsStatistics statistics = new TestsStatistics();
 		try {
 			this.logMessage("Feature: adjustable appliance mode management");
@@ -889,11 +890,11 @@ public class HEM extends AbstractComponent {
 		statistics.updateStatistics();
 		statistics.statisticsReport(this);
 
-		this.logMessage("Heater tests end.");
+		this.logMessage("Laundry tests end.");
 	}
 
 	/**
-	 * test the {@code Heater} component, in cooperation with the
+	 * test the {@code Laundry} component, in cooperation with the
 	 * {@code HeaterTester} component.
 	 * 
 	 * <p>

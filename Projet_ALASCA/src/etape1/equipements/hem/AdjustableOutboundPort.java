@@ -1,5 +1,7 @@
 package etape1.equipements.hem;
 
+import etape1.bases.AdjustableCI;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -133,7 +135,7 @@ implements	AdjustableCI
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.bases.AdjustableCI#maxMode()
+	 * @see etape1.bases.hem2025.bases.AdjustableCI#maxMode()
 	 */
 	@Override
 	public int			maxMode() throws Exception
@@ -144,7 +146,7 @@ implements	AdjustableCI
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.bases.AdjustableCI#upMode()
+	 * @see etape1.bases.hem2025.bases.AdjustableCI#upMode()
 	 */
 	@Override
 	public boolean		upMode() throws Exception
@@ -160,7 +162,7 @@ implements	AdjustableCI
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.bases.AdjustableCI#downMode()
+	 * @see etape1.bases.hem2025.bases.AdjustableCI#downMode()
 	 */
 	@Override
 	public boolean		downMode() throws Exception
@@ -175,7 +177,7 @@ implements	AdjustableCI
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.bases.AdjustableCI#setMode(int)
+	 * @see etape1.bases.hem2025.bases.AdjustableCI#setMode(int)
 	 */
 	@Override
 	public boolean		setMode(int modeIndex) throws Exception
@@ -191,7 +193,7 @@ implements	AdjustableCI
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.bases.AdjustableCI#currentMode()
+	 * @see etape1.bases.hem2025.bases.AdjustableCI#currentMode()
 	 */
 	@Override
 	public int			currentMode() throws Exception
@@ -204,7 +206,7 @@ implements	AdjustableCI
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.bases.AdjustableCI#getModeConsumption(int)
+	 * @see etape1.bases.hem2025.bases.AdjustableCI#getModeConsumption(int)
 	 */
 	@Override
 	public double		getModeConsumption(int modeIndex) throws Exception
@@ -219,7 +221,7 @@ implements	AdjustableCI
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.bases.AdjustableCI#suspended()
+	 * @see etape1.bases.hem2025.bases.AdjustableCI#suspended()
 	 */
 	@Override
 	public boolean		suspended() throws Exception
@@ -228,7 +230,7 @@ implements	AdjustableCI
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.bases.AdjustableCI#suspend()
+	 * @see etape1.bases.hem2025.bases.AdjustableCI#suspend()
 	 */
 	@Override
 	public boolean		suspend() throws Exception
@@ -241,7 +243,7 @@ implements	AdjustableCI
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.bases.AdjustableCI#resume()
+	 * @see etape1.bases.hem2025.bases.AdjustableCI#resume()
 	 */
 	@Override
 	public boolean		resume() throws Exception
@@ -254,7 +256,7 @@ implements	AdjustableCI
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.bases.AdjustableCI#emergency()
+	 * @see etape1.bases.hem2025.bases.AdjustableCI#emergency()
 	 */
 	@Override
 	public double		emergency() throws Exception

@@ -1,9 +1,9 @@
-/bin/*
+Projet_ALASCA/bin/*
 *.class
 *.jar
 *.war
 
-.settings/*
+Projet_ALASCA/.settings/*
 
 .project
 .DS_Store

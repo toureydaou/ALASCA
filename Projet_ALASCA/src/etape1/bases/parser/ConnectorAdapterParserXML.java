@@ -47,14 +47,14 @@ public class ConnectorAdapterParserXML {
 			Element e = (Element) n;
 			String local = e.getLocalName();
 
-			// ignore already parsed tags
+			// ignorer tags passés
 			if ("required".equals(local) || "instance-var".equals(local) || "consumption".equals(local))
 				continue;
 
 			ConnectorAdapterInfo.MethodInfo mi = new ConnectorAdapterInfo.MethodInfo();
 			mi.name = local;
 
-			// if <internal> has attributes
+			// si attributs internal
 			if ("internal".equals(local)) {
 				mi.modifiers = e.getAttribute("modifiers").trim();
 				mi.returnType = e.getAttribute("type").trim();

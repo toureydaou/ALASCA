@@ -1,10 +1,20 @@
 package etape1.equipements.hem;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import etape1.CVMIntegrationTest;
 import etape1.bases.AdjustableCI;
+import etape1.bases.RegistrationCI;
+import etape1.bases.generator.ConnectorGenerator;
+import etape1.bases.parser.ConnectorAdapterInfo;
+import etape1.bases.parser.ConnectorAdapterParserXML;
+import etape1.equipements.coffee_machine.CoffeeMachine;
+import etape1.equipements.coffee_machine.CoffeeMachineUnitTester;
+import etape1.equipements.hem.connections.CoffeeMachineConnector;
+import etape1.equipements.hem.ports.AdjustableOutboundPort;
+import etape1.equipements.registration.ports.RegistrationInboundPort;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -39,6 +49,7 @@ import etape1.bases.AdjustableCI;
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.BCMException;
 import fr.sorbonne_u.components.exceptions.BCMRuntimeException;
@@ -101,12 +112,9 @@ import tests_utils.TestsStatistics;
  * 
  * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-@RequiredInterfaces(required = { ClocksServerCI.class, AdjustableCI.class,
-		/*
-		 * ElectricMeterCI.class, BatteriesCI.class, SolarPanelCI.class,
-		 * GeneratorCI.class
-		 */ })
-public class HEM extends AbstractComponent {
+@RequiredInterfaces(required = { ClocksServerCI.class, AdjustableCI.class})
+@OfferedInterfaces(offered = { RegistrationCI.class })
+public class HEM extends AbstractComponent  {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
@@ -117,6 +125,13 @@ public class HEM extends AbstractComponent {
 	public static int X_RELATIVE_POSITION = 0;
 	/** when tracing, y coordinate of the window relative position. */
 	public static int Y_RELATIVE_POSITION = 0;
+
+	// HEM registration URI for equipements
+	public static final String REGISTRATION_COFFEE_INBOUND_PORT_URI = "HEM-REGISTRATION-COFFEE-INBOUND-PORT-URI";
+
+	// HashMap to register equipements URI
+
+	public HashMap<String, Boolean> equipementsRegitered;
 
 	/** port to connect to the electric meter. */
 	/*
@@ -136,8 +151,11 @@ public class HEM extends AbstractComponent {
 	 * itself as an adjustable appliance.
 	 */
 	protected boolean isPreFirstStep;
-	/** port to connect to the heater when managed in a customised way. */
-	protected AdjustableOutboundPort heaterop;
+	/** port to connect to the coffee machine when managed in a customised way. */
+	protected AdjustableOutboundPort coffeeop;
+
+	// Registration port for coffee machine
+	protected RegistrationInboundPort rcip;
 
 	/**
 	 * when true, this implementation of the HEM performs the tests that are planned
@@ -146,6 +164,8 @@ public class HEM extends AbstractComponent {
 	protected boolean performTest;
 	/** accelerated clock used for the tests. */
 	protected AcceleratedClock ac;
+
+	private static final String COFFEE_MACHINE_CONNECTOR_NAME = "CoffeeMachineGeneratedConnector";
 
 	// -------------------------------------------------------------------------
 	// Invariants
@@ -256,12 +276,25 @@ public class HEM extends AbstractComponent {
 		// 1 standard thread to execute the method execute and 1 schedulable
 		// thread that is used to perform the tests
 		super(1, 1);
+		
+		
+		// Publication du port d'enregistrement
+		try {
+			this.rcip = new RegistrationInboundPort(HEM.REGISTRATION_COFFEE_INBOUND_PORT_URI, this);
+			this.rcip.publishPort();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 
 		this.performTest = performTest;
 
 		// by default, consider this execution as one in the pre-first step
 		// and manage the heater in a customised way.
-		this.isPreFirstStep = true;
+		this.isPreFirstStep = false;
+
+		this.equipementsRegitered = new HashMap<String, Boolean>();
+		
 
 		if (VERBOSE) {
 			this.tracer.get().setTitle("Home Energy Manager component");
@@ -285,33 +318,28 @@ public class HEM extends AbstractComponent {
 	public synchronized void start() throws ComponentStartException {
 		super.start();
 
-		/*
-		 * try { this.meterop = new ElectricMeterOutboundPort(this);
-		 * this.meterop.publishPort(); this.doPortConnection(this.meterop.getPortURI(),
-		 * ElectricMeter.ELECTRIC_METER_INBOUND_PORT_URI,
-		 * ElectricMeterConnector.class.getCanonicalName()); this.batteriesop = new
-		 * BatteriesOutboundPort(this); this.batteriesop.publishPort();
-		 * this.doPortConnection(batteriesop.getPortURI(),
-		 * Batteries.STANDARD_INBOUND_PORT_URI,
-		 * BatteriesConnector.class.getCanonicalName()); this.solarPanelop = new
-		 * SolarPanelOutboundPort(this); this.solarPanelop.publishPort();
-		 * this.doPortConnection(this.solarPanelop.getPortURI(),
-		 * SolarPanel.STANDARD_INBOUND_PORT_URI,
-		 * SolarPanelConnector.class.getCanonicalName()); this.generatorop = new
-		 * GeneratorOutboundPort(this); this.generatorop.publishPort();
-		 * this.doPortConnection(this.generatorop.getPortURI(),
-		 * Generator.STANDARD_INBOUND_PORT_URI,
-		 * GeneratorConnector.class.getCanonicalName());
-		 * 
-		 * if (this.isPreFirstStep) { // in this case, connect using the statically
-		 * customised // heater connector and keep a specific outbound port to // call
-		 * the heater. this.heaterop = new AdjustableOutboundPort(this);
-		 * this.heaterop.publishPort();
-		 * this.doPortConnection(this.heaterop.getPortURI(),
-		 * Laundry.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-		 * HeaterConnector.class.getCanonicalName()); } } catch (Throwable e) { throw
-		 * new ComponentStartException(e); }
-		 */
+		try {
+			this.coffeeop = new AdjustableOutboundPort(this);
+			this.coffeeop.publishPort();
+		} catch (Throwable e) {
+			throw new ComponentStartException(e);
+		}
+
+		if (this.isPreFirstStep) {
+			try {
+				this.doPortConnection(this.coffeeop.getPortURI(), CoffeeMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+						CoffeeMachineConnector.class.getCanonicalName());
+			} catch (Throwable e) {
+				throw new ComponentStartException(e);
+			}
+		} else {
+			try {
+				
+			} catch (Throwable e) {
+				throw new ComponentStartException(e);
+			}
+		}
+
 	}
 
 	/**
@@ -334,18 +362,9 @@ public class HEM extends AbstractComponent {
 		this.traceMessage("HEM starts.\n");
 
 		if (this.performTest) {
-			/*
-			 * this.logMessage("Electric meter tests start."); this.testMeter();
-			 * this.logMessage("Electric meter tests end.");
-			 * this.logMessage("Batteries tests start."); this.testBatteries();
-			 * this.logMessage("Batteries tests end.");
-			 * this.logMessage("Solar Panel tests start."); this.testSolarPanel();
-			 * this.logMessage("Solar Panel tests end.");
-			 * this.logMessage("Generator tests start."); this.testGenerator();
-			 * this.logMessage("Generator tests end.");
-			 */
+
 			if (this.isPreFirstStep) {
-				this.scheduleTestHeater();
+				this.scheduleTestCoffee();
 			}
 		}
 	}
@@ -355,14 +374,10 @@ public class HEM extends AbstractComponent {
 	 */
 	@Override
 	public synchronized void finalise() throws Exception {
-		/*
-		 * this.doPortDisconnection(this.meterop.getPortURI());
-		 * this.doPortDisconnection(this.batteriesop.getPortURI());
-		 * this.doPortDisconnection(this.solarPanelop.getPortURI());
-		 * this.doPortDisconnection(this.generatorop.getPortURI()); if
-		 * (this.isPreFirstStep) { this.doPortDisconnection(this.heaterop.getPortURI());
-		 * }
-		 */
+
+		if (this.isPreFirstStep) {
+			this.doPortDisconnection(this.coffeeop.getPortURI());
+		}
 		super.finalise();
 	}
 
@@ -372,12 +387,10 @@ public class HEM extends AbstractComponent {
 	@Override
 	public synchronized void shutdown() throws ComponentShutdownException {
 		try {
-			/*
-			 * this.meterop.unpublishPort(); this.batteriesop.unpublishPort();
-			 * this.solarPanelop.unpublishPort(); this.generatorop.unpublishPort();
-			 */
+
 			if (this.isPreFirstStep) {
-				this.heaterop.unpublishPort();
+				this.coffeeop.unpublishPort();
+				this.rcip.unpublishPort();
 			}
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
@@ -388,6 +401,43 @@ public class HEM extends AbstractComponent {
 	// -------------------------------------------------------------------------
 	// Internal methods
 	// -------------------------------------------------------------------------
+
+	// Registration Methods
+
+	
+	public boolean registered(String uid) throws Exception {
+
+		return this.equipementsRegitered.containsKey(uid);
+	}
+
+	
+	public boolean register(String uid, String controlPortURI, String xmlControlAdapter) throws Exception {
+
+		this.logMessage("Registering equipement");
+		if (this.registered(uid))
+			return false;
+
+		ConnectorAdapterInfo infos = ConnectorAdapterParserXML.parse(xmlControlAdapter);
+		Class<?> coffeeConnectorGenerated = ConnectorGenerator.generate(infos, COFFEE_MACHINE_CONNECTOR_NAME);
+
+		this.doPortConnection(this.coffeeop.getPortURI(), CoffeeMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+				coffeeConnectorGenerated.getCanonicalName());
+
+		this.equipementsRegitered.put(uid, true);
+
+		// TODO : Register the equipement
+		// Create dynamicly the connector
+		// connect the client with the hem
+		// register the client in the hem hashtable
+
+		return false;
+	}
+
+	
+	public void unregister(String uid) throws Exception {
+		this.logMessage("Unegistering equipement");
+		this.equipementsRegitered.remove(uid);
+	}
 
 	/**
 	 * test the {@code ElectricMeter} component.
@@ -596,8 +646,8 @@ public class HEM extends AbstractComponent {
 	 *
 	 * @throws Exception <i>to do</i>.
 	 */
-	protected void testHeater() throws Exception {
-		this.logMessage("Laundry tests start.");
+	protected void testCoffeeMachine() throws Exception {
+		this.logMessage("Coffee tests start.");
 		TestsStatistics statistics = new TestsStatistics();
 		try {
 			this.logMessage("Feature: adjustable appliance mode management");
@@ -605,7 +655,7 @@ public class HEM extends AbstractComponent {
 			this.logMessage("    Given the heater has just been turned on");
 			this.logMessage("    When I call maxMode()");
 			this.logMessage("    Then the result is its max mode index");
-			final int maxMode = heaterop.maxMode();
+			final int maxMode = coffeeop.maxMode();
 
 			statistics.updateStatistics();
 
@@ -613,7 +663,7 @@ public class HEM extends AbstractComponent {
 			this.logMessage("    Given the heater has just been turned on");
 			this.logMessage("    When I call currentMode()");
 			this.logMessage("    Then the current mode is its max mode");
-			int result = heaterop.currentMode();
+			int result = coffeeop.currentMode();
 			if (result != maxMode) {
 				this.logMessage("      but was: " + result);
 				statistics.incorrectResult();
@@ -624,20 +674,20 @@ public class HEM extends AbstractComponent {
 			this.logMessage("  Scenario: going down one mode index");
 			this.logMessage("    Given the heater is turned on");
 			this.logMessage("    And the current mode index is the max mode index");
-			result = heaterop.currentMode();
+			result = coffeeop.currentMode();
 			if (result != maxMode) {
 				this.logMessage("      but was: " + result);
 				statistics.failedCondition();
 			}
 			this.logMessage("    When I call downMode()");
 			this.logMessage("    Then the method returns true");
-			boolean bResult = heaterop.downMode();
+			boolean bResult = coffeeop.downMode();
 			if (!bResult) {
 				this.logMessage("      but was: " + bResult);
 				statistics.incorrectResult();
 			}
 			this.logMessage("    And the current mode is its max mode minus one");
-			result = heaterop.currentMode();
+			result = coffeeop.currentMode();
 			if (result != maxMode - 1) {
 				this.logMessage("      but was: " + result);
 				statistics.incorrectResult();
@@ -648,20 +698,20 @@ public class HEM extends AbstractComponent {
 			this.logMessage("  Scenario: going up one mode index");
 			this.logMessage("    Given the heater is turned on");
 			this.logMessage("    And the current mode index is the max mode index minus one");
-			result = heaterop.currentMode();
+			result = coffeeop.currentMode();
 			if (result != maxMode - 1) {
 				this.logMessage("      but was: " + result);
 				statistics.failedCondition();
 			}
 			this.logMessage("    When I call upMode()");
 			this.logMessage("    Then the method returns true");
-			bResult = heaterop.upMode();
+			bResult = coffeeop.upMode();
 			if (!bResult) {
 				this.logMessage("      but was: " + bResult);
 				statistics.incorrectResult();
 			}
 			this.logMessage("    And the current mode is its max mode");
-			result = heaterop.currentMode();
+			result = coffeeop.currentMode();
 			if (result != maxMode) {
 				this.logMessage("      but was: " + result);
 				statistics.incorrectResult();
@@ -679,13 +729,13 @@ public class HEM extends AbstractComponent {
 			}
 			this.logMessage("    When I call setMode(1)");
 			this.logMessage("    Then the method returns true");
-			bResult = heaterop.setMode(1);
+			bResult = coffeeop.setMode(1);
 			if (!bResult) {
 				this.logMessage("      but was: " + bResult);
 				statistics.incorrectResult();
 			}
 			this.logMessage("    And the current mode is 1");
-			result = heaterop.currentMode();
+			result = coffeeop.currentMode();
 			if (result != 1) {
 				this.logMessage("      but was: " + result);
 				statistics.incorrectResult();
@@ -697,7 +747,7 @@ public class HEM extends AbstractComponent {
 			this.logMessage("  Scenario: getting the power consumption of the maximum mode");
 			this.logMessage("    Given the heater is turned on");
 			this.logMessage("    When I get the power consumption of the maximum mode");
-			double dResult = heaterop.getModeConsumption(maxMode);
+			double dResult = coffeeop.getModeConsumption(maxMode);
 			this.logMessage("    Then the result is the maximum power consumption of the heater");
 
 			statistics.updateStatistics();
@@ -707,7 +757,7 @@ public class HEM extends AbstractComponent {
 			this.logMessage("    Given the heater is turned on");
 			this.logMessage("    And it has not been suspended yet");
 			this.logMessage("    When I check if suspended");
-			bResult = heaterop.suspended();
+			bResult = coffeeop.suspended();
 			this.logMessage("    Then it is not");
 			if (bResult) {
 				this.logMessage("      but it was!");
@@ -719,21 +769,21 @@ public class HEM extends AbstractComponent {
 			this.logMessage("  Scenario: suspending");
 			this.logMessage("    Given the heater is turned on");
 			this.logMessage("    And it is not suspended");
-			bResult = heaterop.suspended();
+			bResult = coffeeop.suspended();
 			if (bResult) {
 				this.logMessage("      but it was!");
 				statistics.failedCondition();
 				;
 			}
 			this.logMessage("    When I call suspend()");
-			bResult = heaterop.suspend();
+			bResult = coffeeop.suspend();
 			this.logMessage("    Then the method returns true");
 			if (!bResult) {
 				this.logMessage("      but was: " + bResult);
 				statistics.incorrectResult();
 			}
 			this.logMessage("    And the heater is suspended");
-			bResult = heaterop.suspended();
+			bResult = coffeeop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
 				statistics.incorrectResult();
@@ -744,7 +794,7 @@ public class HEM extends AbstractComponent {
 			this.logMessage("  Scenario: going down one mode index when suspended");
 			this.logMessage("    Given the heater is turned on");
 			this.logMessage("    And the heater is suspended");
-			bResult = heaterop.suspended();
+			bResult = coffeeop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
 				statistics.failedCondition();
@@ -755,7 +805,7 @@ public class HEM extends AbstractComponent {
 			boolean old = BCMException.VERBOSE;
 			try {
 				BCMException.VERBOSE = false;
-				heaterop.downMode();
+				coffeeop.downMode();
 				this.logMessage("      but it was not!");
 				statistics.incorrectResult();
 			} catch (Throwable e) {
@@ -768,7 +818,7 @@ public class HEM extends AbstractComponent {
 			this.logMessage("  Scenario: going up one mode index when suspended");
 			this.logMessage("    Given the heater is turned on");
 			this.logMessage("    And the heater is suspended");
-			bResult = heaterop.suspended();
+			bResult = coffeeop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
 				statistics.failedCondition();
@@ -779,7 +829,7 @@ public class HEM extends AbstractComponent {
 			old = BCMException.VERBOSE;
 			try {
 				BCMException.VERBOSE = false;
-				heaterop.upMode();
+				coffeeop.upMode();
 				this.logMessage("      but it was not!");
 				statistics.incorrectResult();
 			} catch (Throwable e) {
@@ -792,7 +842,7 @@ public class HEM extends AbstractComponent {
 			this.logMessage("  Scenario: setting the mode when suspended");
 			this.logMessage("    Given the heater is turned on");
 			this.logMessage("    And the heater is suspended");
-			bResult = heaterop.suspended();
+			bResult = coffeeop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
 				statistics.failedCondition();
@@ -808,7 +858,7 @@ public class HEM extends AbstractComponent {
 			old = BCMException.VERBOSE;
 			try {
 				BCMException.VERBOSE = false;
-				heaterop.upMode();
+				coffeeop.upMode();
 				this.logMessage("      but it was not!");
 				statistics.incorrectResult();
 			} catch (Throwable e) {
@@ -821,7 +871,7 @@ public class HEM extends AbstractComponent {
 			this.logMessage("  Scenario: getting the current mode when suspended");
 			this.logMessage("    Given the heater is turned on");
 			this.logMessage("    And the heater is suspended");
-			bResult = heaterop.suspended();
+			bResult = coffeeop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
 				statistics.failedCondition();
@@ -832,7 +882,7 @@ public class HEM extends AbstractComponent {
 			old = BCMException.VERBOSE;
 			try {
 				BCMException.VERBOSE = false;
-				heaterop.currentMode();
+				coffeeop.currentMode();
 				this.logMessage("      but it was not!");
 				statistics.incorrectResult();
 			} catch (Throwable e) {
@@ -845,14 +895,14 @@ public class HEM extends AbstractComponent {
 			this.logMessage("  Scenario: checking the emergency");
 			this.logMessage("    Given the heater is turned on");
 			this.logMessage("    And it has just been suspended");
-			bResult = heaterop.suspended();
+			bResult = coffeeop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
 				statistics.failedCondition();
 				;
 			}
 			this.logMessage("    When I call emergency()");
-			dResult = heaterop.emergency();
+			dResult = coffeeop.emergency();
 			this.logMessage("    Then the emergency is between 0.0 and 1.0");
 			if (dResult < 0.0 || dResult > 1.0) {
 				this.logMessage("      but was: " + dResult);
@@ -864,21 +914,21 @@ public class HEM extends AbstractComponent {
 			this.logMessage("  Scenario: resuming");
 			this.logMessage("    Given the heater is turned on");
 			this.logMessage("    And it is suspended");
-			bResult = heaterop.suspended();
+			bResult = coffeeop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
 				statistics.failedCondition();
 				;
 			}
 			this.logMessage("    When I call resume()");
-			bResult = heaterop.resume();
+			bResult = coffeeop.resume();
 			this.logMessage("    Then the method returns true");
 			if (!bResult) {
 				this.logMessage("      but was: " + bResult);
 				statistics.incorrectResult();
 			}
 			this.logMessage("    And the heater is not suspended");
-			bResult = heaterop.suspended();
+			bResult = coffeeop.suspended();
 			if (bResult) {
 				this.logMessage("      but it was!");
 				statistics.incorrectResult();
@@ -890,7 +940,7 @@ public class HEM extends AbstractComponent {
 		statistics.updateStatistics();
 		statistics.statisticsReport(this);
 
-		this.logMessage("Laundry tests end.");
+		this.logMessage("Coffee  tests end.");
 	}
 
 	/**
@@ -911,20 +961,25 @@ public class HEM extends AbstractComponent {
 	 * </pre>
 	 *
 	 */
-	protected void scheduleTestHeater() {
-		/*
-		 * // Test for the heater Instant heaterTestStart = this.ac.getStartInstant()
-		 * .plusSeconds((HeaterUnitTester.SWITCH_ON_DELAY +
-		 * HeaterUnitTester.SWITCH_OFF_DELAY) / 2);
-		 * this.traceMessage("HEM schedules the heater test.\n"); long delay =
-		 * this.ac.nanoDelayUntilInstant(heaterTestStart);
-		 * 
-		 * // schedule the switch on heater in one second
-		 * this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
-		 * 
-		 * @Override public void run() { try { testHeater(); } catch (Throwable e) {
-		 * throw new BCMRuntimeException(e); } } }, delay, TimeUnit.NANOSECONDS);
-		 */
+	protected void scheduleTestCoffee() {
+
+		Instant coffeeTestStart = this.ac.getStartInstant()
+				.plusSeconds((CoffeeMachineUnitTester.SWITCH_ON_DELAY + CoffeeMachineUnitTester.SWITCH_OFF_DELAY) / 2);
+		this.traceMessage("HEM schedules the coffee machine test.\n");
+		long delay = this.ac.nanoDelayUntilInstant(coffeeTestStart);
+		this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
+
+			@Override
+			public void run() {
+				try {
+					testCoffeeMachine();
+				} catch (Throwable e) {
+					throw new BCMRuntimeException(e);
+				}
+			}
+		}, delay, TimeUnit.NANOSECONDS);
+
 	}
+
 }
 // -----------------------------------------------------------------------------

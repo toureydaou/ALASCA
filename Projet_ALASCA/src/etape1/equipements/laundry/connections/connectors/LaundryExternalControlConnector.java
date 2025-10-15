@@ -37,7 +37,7 @@ import etape1.equipements.laundry.interfaces.LaundryExternalControlCI;
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 import fr.sorbonne_u.components.connectors.AbstractConnector;
-import physical_data.Measure;
+
 
 
 // -----------------------------------------------------------------------------

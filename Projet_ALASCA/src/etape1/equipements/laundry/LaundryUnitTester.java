@@ -1,5 +1,18 @@
 package etape1.equipements.laundry;
 
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
+
+import etape1.CVMIntegrationTest;
+import etape1.equipements.laundry.connections.connectors.LaundryExternalControlConnector;
+import etape1.equipements.laundry.connections.connectors.LaundryUserConnector;
+import etape1.equipements.laundry.connections.ports.LaundryExternalControlOutboundPort;
+import etape1.equipements.laundry.connections.ports.LaundryUserOutboundPort;
+import etape1.equipements.laundry.interfaces.LaundryExternalControlCI;
+import etape1.equipements.laundry.interfaces.LaundryImplementationI.LaundryMode;
+import etape1.equipements.laundry.interfaces.LaundryImplementationI.LaundryState;
+import etape1.equipements.laundry.interfaces.LaundryUserCI;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -36,8 +49,8 @@ import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
-import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.AssertionChecking;
+import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PreconditionException;
 import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
@@ -45,21 +58,7 @@ import fr.sorbonne_u.utils.aclocks.ClocksServer;
 import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
 import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
-import physical_data.SignalData;
 import tests_utils.TestsStatistics;
-
-import java.time.Instant;
-import java.util.concurrent.TimeUnit;
-
-import etape1.CVMIntegrationTest;
-import etape1.equipements.laundry.connections.connectors.LaundryExternalControlConnector;
-import etape1.equipements.laundry.connections.connectors.LaundryUserConnector;
-import etape1.equipements.laundry.connections.ports.LaundryExternalControlOutboundPort;
-import etape1.equipements.laundry.connections.ports.LaundryUserOutboundPort;
-import etape1.equipements.laundry.interfaces.LaundryExternalControlCI;
-import etape1.equipements.laundry.interfaces.LaundryImplementationI.LaundryMode;
-import etape1.equipements.laundry.interfaces.LaundryImplementationI.LaundryState;
-import etape1.equipements.laundry.interfaces.LaundryUserCI;
 
 // -----------------------------------------------------------------------------
 /**
@@ -701,7 +700,6 @@ public class LaundryUnitTester extends AbstractComponent {
 	@Override
 	public synchronized void finalise() throws Exception {
 		this.doPortDisconnection(this.hop.getPortURI());
-		// this.doPortDisconnection(this.hicop.getPortURI());
 		this.doPortDisconnection(this.hecop.getPortURI());
 		super.finalise();
 	}

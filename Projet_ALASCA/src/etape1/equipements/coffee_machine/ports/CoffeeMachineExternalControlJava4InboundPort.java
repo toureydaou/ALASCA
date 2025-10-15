@@ -1,16 +1,16 @@
-package etape1.equipements.laundry.connections.ports;
+package etape1.equipements.coffee_machine.ports;
 
-import etape1.equipements.laundry.interfaces.LaundryExternalControlJava4CI;
+import etape1.equipements.coffee_machine.CoffeeMachine;
+import etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlJava4CI;
 import fr.sorbonne_u.components.ComponentI;
+import physical_data.Measure;
 
-public class LaundryExternalControlJava4InboundPort extends LaundryExternalControlInboundPort
-		implements LaundryExternalControlJava4CI {
+public class CoffeeMachineExternalControlJava4InboundPort extends CoffeeMachineExternalControlInboundPort
+		implements CoffeeMachineExternalControlJava4CI {
 
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
-
-	
 
 	private static final long serialVersionUID = 1L;
 
@@ -40,8 +40,8 @@ public class LaundryExternalControlJava4InboundPort extends LaundryExternalContr
 	 * @param owner component that owns this port.
 	 * @throws Exception <i>to do</i>.
 	 */
-	public LaundryExternalControlJava4InboundPort(ComponentI owner) throws Exception {
-		super(LaundryExternalControlJava4CI.class, owner);
+	public CoffeeMachineExternalControlJava4InboundPort(ComponentI owner) throws Exception {
+		super(owner);
 	}
 
 	/**
@@ -70,30 +70,34 @@ public class LaundryExternalControlJava4InboundPort extends LaundryExternalContr
 	 * @param owner component that owns this port.
 	 * @throws Exception <i>to do</i>.
 	 */
-	public LaundryExternalControlJava4InboundPort(String uri, ComponentI owner) throws Exception {
-		super(uri, LaundryExternalControlJava4CI.class, owner);
+	public CoffeeMachineExternalControlJava4InboundPort(String uri, ComponentI owner) throws Exception {
+		super(uri, CoffeeMachineExternalControlJava4CI.class, owner);
 	}
 
 	@Override
-	public void turnOnJava4() throws Exception {
-		this.turnOn();
-		
+	public double getTemperatureJava4() throws Exception {
+		return this.getTemperature().getData();
 	}
 
 	@Override
-	public void turnOffJava4() throws Exception {
-		this.turnOff();
-		
+	public double getPowerLevelJava4() throws Exception {
+		return this.getPowerLevel().getData();
 	}
 
 	@Override
-	public LaundryState getStateJava4() throws Exception {
-		return this.getState();
+	public double getMaxPowerLevelJava4() throws Exception {
+		return this.getMaxPowerLevel().getData();
 	}
 
 	@Override
-	public LaundryMode getLaundryModeJava4() throws Exception {
-		return this.getLaundryMode();
+	public void setCurrentPowerLevelJava4(double powerLevel) throws Exception {
+		this.setCurrentPowerLevel(new Measure<Double>(powerLevel, CoffeeMachine.POWER_UNIT));
+
+	}
+
+	@Override
+	public void setEcoModeJava4() throws Exception {
+		this.setEcoMode();
 	}
 
 }

@@ -2,6 +2,7 @@ package etape1.equipements.hem.connections;
 
 import etape1.bases.AdjustableCI;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlJava4CI;
+import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineMode;
 import fr.sorbonne_u.components.connectors.AbstractConnector;
 import fr.sorbonne_u.exceptions.PreconditionException;
 
@@ -39,6 +40,10 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 	 * priority after being suspended to save energy.
 	 */
 	public static final double MAX_ADMISSIBLE_TEMP_CAFE = 90.0;
+
+	public static final double CAFE_POWER_WATT = 1200.0;
+	public static final double THE_POWER_WATT = 1500.0;
+	public static final double ECO_POWER_WATT = 1000.0;
 	/**
 	 * the maximal admissible difference between the target and the current
 	 * temperature from which the heater should be resumed in priority after being
@@ -50,10 +55,51 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 	protected int currentMode;
 	/** true if the heater has been suspended, false otherwise. */
 	protected boolean isSuspended;
-	
+
 	public CoffeeMachineConnector() {
 		this.currentMode = MAX_MODE;
 		this.isSuspended = false;
+	}
+
+	public CoffeeMachineMode integerModeToCoffeeMachineMode(int mode) {
+		int index = mode - 1;
+		CoffeeMachineMode[] coffeeModes = CoffeeMachineMode.values();
+		switch (index) {
+		case 0:
+			return coffeeModes[0];
+		case 1:
+			return coffeeModes[1];
+		case 2:
+			return coffeeModes[2];
+		default:
+			return coffeeModes[0];
+		}
+	}
+
+	public double computePowerLevel(int mode) {
+
+		CoffeeMachineMode machineMode = integerModeToCoffeeMachineMode(mode);
+		switch (machineMode) {
+		case EXPRESSO:
+			return CAFE_POWER_WATT;
+		case THE:
+			return THE_POWER_WATT;
+		case ECO_MODE:
+			return ECO_POWER_WATT;
+		default:
+			return 0.0;
+		}
+	}
+
+	public void setPowerLevel(double newPowerLevel) throws Exception {
+		assert newPowerLevel >= 0.0 : new PreconditionException("newPowerLevel >= 0.0");
+
+		double maxPowerLevel = ((CoffeeMachineExternalControlJava4CI) this.offering).getMaxPowerLevelJava4();
+
+		if (newPowerLevel > maxPowerLevel) {
+			newPowerLevel = maxPowerLevel;
+		}
+		((CoffeeMachineExternalControlJava4CI) this.offering).setCurrentPowerLevelJava4(newPowerLevel);
 	}
 
 	@Override
@@ -81,14 +127,17 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 
 	@Override
 	public int currentMode() throws Exception {
-		
+
 		return this.currentMode;
 	}
 
 	@Override
 	public double getModeConsumption(int modeIndex) throws Exception {
 
-		return 0.0;
+		assert modeIndex > 0 && modeIndex <= this.maxMode()
+				: new PreconditionException("modeIndex > 0 && modeIndex <= maxMode()");
+
+		return computePowerLevel(modeIndex);
 	}
 
 	@Override
@@ -125,7 +174,7 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 
 	@Override
 	public double emergency() throws Exception {
-		// TODO Auto-generated method stub
+
 		return 0;
 	}
 

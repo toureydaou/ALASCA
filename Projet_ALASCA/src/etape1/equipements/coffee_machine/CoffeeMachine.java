@@ -402,7 +402,7 @@ public class CoffeeMachine extends AbstractComponent
 
 	@Override
 	public Measure<Double> getTemperature() throws Exception {
-		return MIN_TEMPARATURE;
+		return this.currentTemperature;
 	}
 
 	@Override
@@ -418,7 +418,7 @@ public class CoffeeMachine extends AbstractComponent
 
 	@Override
 	public void setCurrentPowerLevel(Measure<Double> powerLevel) throws Exception {
-		this.currentPowerLevel = HIGH_POWER_IN_WATTS;
+		this.currentPowerLevel = powerLevel;
 		
 	}
 

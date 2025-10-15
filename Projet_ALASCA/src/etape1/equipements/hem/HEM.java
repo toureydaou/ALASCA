@@ -12,6 +12,7 @@ import etape1.bases.parser.ConnectorAdapterInfo;
 import etape1.bases.parser.ConnectorAdapterParserXML;
 import etape1.equipements.coffee_machine.CoffeeMachine;
 import etape1.equipements.coffee_machine.CoffeeMachineUnitTester;
+import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
 import etape1.equipements.hem.connections.CoffeeMachineConnector;
 import etape1.equipements.hem.ports.AdjustableOutboundPort;
 import etape1.equipements.registration.ports.RegistrationI;
@@ -131,7 +132,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 
 	// HashMap to register equipements URI
 
-	public HashMap<String, Boolean> equipementsRegitered;
+	private HashMap<String, Boolean> equipementsRegitered;
 
 	/** port to connect to the electric meter. */
 	/*
@@ -653,14 +654,29 @@ public class HEM extends AbstractComponent implements RegistrationI {
 		this.logMessage("Coffee tests start.");
 		TestsStatistics statistics = new TestsStatistics();
 		try {
-			this.logMessage("Feature: test on coffee machine");
-			System.out.println("Affichage power level");
-			double mode = this.coffeeop.getModeConsumption(2);
-			System.out.println("Power level: " + mode);
-			this.logMessage("Coffee Machine mode: " + mode);
+			
+			// Change mode test
+			this.logMessage("Feature: test decreaseing the coffee machine mode");
+			this.logMessage("Show current mode");
+			int oldMode = this.coffeeop.currentMode();
+			this.logMessage("Coffee Machine current mode: " + oldMode);
+			
+			this.logMessage("Decreasing the machine mode");
+			boolean isDecreased = this.coffeeop.downMode();
+			int newMode = this.coffeeop.currentMode();
+			if (isDecreased)
+				this.logMessage("Coffee Machine new mode: " + newMode );
+			
+			// Change power level test
+			//this.logMessage("Feature: test show the power ");
+			//this.logMessage("Show current mode");
+			//int previousPowerLevel = this.coffeeop.getModeConsumption(newMode);
+			//this.logMessage("Coffee Machine current mode: " + oldMode);
+			
+			
 
 		} catch (Exception e) {
-			// TODO: handle exception
+			
 		}
 	}
 

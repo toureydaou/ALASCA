@@ -200,7 +200,6 @@ implements	AdjustableCI
 	{
 		assert	!suspended() : new PreconditionException("!suspended()");
 		int ret = ((AdjustableCI)this.getConnector()).currentMode();
-		System.out.println(ret);
 		assert	ret > 0 && ret <= this.maxMode() :
 				new PostconditionException("return > 0 && return <= maxMode()");
 		return ret;

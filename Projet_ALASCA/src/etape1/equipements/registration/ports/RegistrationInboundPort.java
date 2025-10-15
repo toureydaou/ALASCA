@@ -11,7 +11,7 @@ public class RegistrationInboundPort extends AbstractInboundPort implements Regi
 
 	public RegistrationInboundPort(ComponentI owner) throws Exception {
 		super(RegistrationInboundPort.class, owner);
-		assert owner instanceof RegistrationI : new PreconditionException("owner instanceof RegistrationI");
+		//assert owner instanceof RegistrationI : new PreconditionException("owner instanceof RegistrationI");
 	}
 
 	/**
@@ -41,24 +41,24 @@ public class RegistrationInboundPort extends AbstractInboundPort implements Regi
 	 * @throws Exception <i>to do</i>.
 	 */
 	public RegistrationInboundPort(String uri, ComponentI owner) throws Exception {
-		super(uri, RegistrationInboundPort.class, owner);
-		assert owner instanceof RegistrationI : new PreconditionException("owner instanceof RegistrationI");
+		super(uri, RegistrationCI.class, owner);
+		//assert owner instanceof RegistrationI : new PreconditionException("owner instanceof RegistrationI");
 	}
 
 	@Override
 	public boolean registered(String uid) throws Exception {
-		return this.getOwner().handleRequest(o -> ((RegistrationCI) o).registered(uid));
+		return this.getOwner().handleRequest(o -> ((RegistrationI) o).registered(uid));
 	}
 
 	@Override
 	public boolean register(String uid, String controlPortURI, String xmlControlAdapter) throws Exception {
-		return this.getOwner().handleRequest(o -> ((RegistrationCI) o).register(uid, controlPortURI, xmlControlAdapter));
+		return this.getOwner().handleRequest(o -> ((RegistrationI) o).register(uid, controlPortURI, xmlControlAdapter));
 	}
 
 	@Override
 	public void unregister(String uid) throws Exception {
 		this.getOwner().handleRequest(o -> {
-			((RegistrationCI) o).unregister(uid);
+			((RegistrationI) o).unregister(uid);
 			return null;
 		});
 

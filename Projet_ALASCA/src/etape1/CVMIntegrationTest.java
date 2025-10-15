@@ -3,6 +3,7 @@ package etape1;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
+import etape1.equipements.coffee_machine.CoffeeMachine;
 import etape1.equipements.hem.HEM;
 import fr.sorbonne_u.components.AbstractComponent;
 
@@ -169,20 +170,7 @@ extends		AbstractCVM
 		HEM.VERBOSE = true;
 		HEM.X_RELATIVE_POSITION = 0;
 		HEM.Y_RELATIVE_POSITION = 1;
-		/*
-		 * ElectricMeter.VERBOSE = true; ElectricMeter.X_RELATIVE_POSITION = 1;
-		 * ElectricMeter.Y_RELATIVE_POSITION = 0; Batteries.VERBOSE = true;
-		 * Batteries.X_RELATIVE_POSITION = 1; Batteries.Y_RELATIVE_POSITION = 1;
-		 * SolarPanel.VERBOSE = true; SolarPanel.X_RELATIVE_POSITION = 2;
-		 * SolarPanel.Y_RELATIVE_POSITION = 1; Generator.VERBOSE = true;
-		 * Generator.X_RELATIVE_POSITION = 3; Generator.Y_RELATIVE_POSITION = 1;
-		 * HairDryerTester.VERBOSE = true; HairDryerTester.X_RELATIVE_POSITION = 0;
-		 * HairDryerTester.Y_RELATIVE_POSITION = 2; HairDryer.VERBOSE = true;
-		 * HairDryer.X_RELATIVE_POSITION = 1; HairDryer.Y_RELATIVE_POSITION = 2;
-		 * HeaterUnitTester.VERBOSE = true; HeaterUnitTester.X_RELATIVE_POSITION = 0;
-		 * HeaterUnitTester.Y_RELATIVE_POSITION = 3; Laundry.VERBOSE = true;
-		 * Laundry.X_RELATIVE_POSITION = 1; Laundry.Y_RELATIVE_POSITION = 3;
-		 */
+		
 
 		assert	CVMIntegrationTest.implementationInvariants(this) :
 				new InvariantException(
@@ -213,37 +201,14 @@ extends		AbstractCVM
 						START_INSTANT,
 						ACCELERATION_FACTOR});
 
-		/*
-		 * AbstractComponent.createComponent( ElectricMeter.class.getCanonicalName(),
-		 * new Object[]{});
-		 * 
-		 * AbstractComponent.createComponent( Batteries.class.getCanonicalName(), new
-		 * Object[]{});
-		 * 
-		 * AbstractComponent.createComponent( SolarPanel.class.getCanonicalName(), new
-		 * Object[]{NB_OF_SQUARE_METERS});
-		 * 
-		 * AbstractComponent.createComponent( Generator.class.getCanonicalName(), new
-		 * Object[]{});
-		 * 
-		 * AbstractComponent.createComponent( HairDryer.class.getCanonicalName(), new
-		 * Object[]{}); // At this stage, the tester for the hair dryer is added only //
-		 * to show the hair dryer functioning; later on, it will be replaced // by a
-		 * simulation of users' actions. AbstractComponent.createComponent(
-		 * HairDryerTester.class.getCanonicalName(), new Object[]{false});
-		 * 
-		 * AbstractComponent.createComponent( Laundry.class.getCanonicalName(), new
-		 * Object[]{});
-		 * 
-		 * // At this stage, the tester for the heater is added only // to switch on and
-		 * off the heater; later on, it will be replaced // by a simulation of users'
-		 * actions. AbstractComponent.createComponent(
-		 * HeaterUnitTester.class.getCanonicalName(), new Object[]{false});
-		 */
+		
+		
+		AbstractComponent.createComponent(
+				  CoffeeMachine.class.getCanonicalName(), new Object[]{});
 
 		AbstractComponent.createComponent(
 				HEM.class.getCanonicalName(),
-				new Object[]{});
+				new Object[]{true});
 
 		super.deploy();
 	}

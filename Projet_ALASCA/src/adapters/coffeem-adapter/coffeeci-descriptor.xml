@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<control-adapter
+    xmlns="http://www.sorbonne-universite.fr/alasca/control-adapter"
+    uid="CM10000"
+    offered="etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlJava4CI">
+
+  
+  <consumption nominal="1500" min="0" max="1500"/>
+
+  
+  <required>java.lang.Math</required>
+  <required>fr.sorbonne_u.exceptions.PreconditionException</required>
+
+  
+  <instance-var modifiers="protected static" type="int" name="MAX_MODE" static-init="3"/>
+  <instance-var modifiers="protected static" type="double" name="MIN_ADMISSIBLE_TEMP_THE" static-init="0.0"/>
+  <instance-var modifiers="protected static" type="double" name="MIN_ADMISSIBLE_TEMP_CAFE" static-init="0.0"/>
+  <instance-var modifiers="protected static" type="double" name="MAX_ADMISSIBLE_TEMP_THE" static-init="100.0"/>
+  <instance-var modifiers="protected static" type="double" name="MAX_ADMISSIBLE_TEMP_CAFE" static-init="90.0"/>
+  <instance-var modifiers="protected static" type="double" name="MAX_ADMISSIBLE_DELTA" static-init="10.0"/>
+  <instance-var modifiers="protected" type="int" name="currentMode" static-init="MAX_MODE"/>
+  <instance-var modifiers="protected" type="boolean" name="isSuspended" static-init="false"/>
+
+  <!-- Aucune méthode interne spécifique  n’est présente ici -->
+
+  
+  <maxMode>
+    <body>return MAX_MODE;</body>
+  </maxMode>
+
+  <upMode>
+    <body>
+      this.currentMode++;
+      return true;
+    </body>
+  </upMode>
+
+  <downMode>
+    <body>
+      this.currentMode--;
+      return true;
+    </body>
+  </downMode>
+
+  <setMode>
+    <parameter name="modeIndex"/>
+    <body>
+      this.currentMode = modeIndex;
+      return true;
+    </body>
+  </setMode>
+
+  <currentMode>
+    <body>
+      return this.currentMode;
+    </body>
+  </currentMode>
+
+  <getModeConsumption>
+    <parameter name="modeIndex"/>
+    <body>
+      return 0.0;
+    </body>
+  </getModeConsumption>
+
+  <suspended>
+    <body>
+      return this.isSuspended;
+    </body>
+  </suspended>
+
+  <suspend>
+    <body equipmentRef="coffeeMachine">
+      try {
+        coffeeMachine.setCurrentPowerLevelJava4(0.0);
+        isSuspended = true;
+      } catch(Exception e) {
+        return false;
+      }
+      return isSuspended;
+    </body>
+  </suspend>
+
+  <resume>
+    <body>
+      try {
+        isSuspended = false;
+      } catch(Exception e) {
+        return false;
+      }
+      return true;
+    </body>
+  </resume>
+
+  <emergency>
+    <body>
+      return 0.0;
+    </body>
+  </emergency>
+
+</control-adapter>

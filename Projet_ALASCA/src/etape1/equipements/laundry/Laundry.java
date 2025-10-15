@@ -43,13 +43,7 @@ import etape1.equipements.laundry.interfaces.LaundryUserI;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
-import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
-
-import fr.sorbonne_u.exceptions.ImplementationInvariantException;
-import fr.sorbonne_u.exceptions.AssertionChecking;
-import fr.sorbonne_u.exceptions.InvariantException;
-import fr.sorbonne_u.exceptions.PostconditionException;
 import fr.sorbonne_u.exceptions.PreconditionException;
 import physical_data.Measure;
 import physical_data.SignalData;
@@ -625,12 +619,7 @@ public class Laundry extends AbstractComponent
 
 		if (this.getLaundryWashMode() == LaundryWashModes.WHITE) {
 			switch (temp) {
-			case T_30:
-				this.washTemperature = new Measure<Double>(30.0, TEMPERATURE_UNIT);
-				break;
-			case T_40:
-				this.washTemperature = new Measure<Double>(40.0, TEMPERATURE_UNIT);
-				break;
+			
 			case T_50:
 				this.washTemperature = new Measure<Double>(50.0, TEMPERATURE_UNIT);
 				break;
@@ -638,13 +627,13 @@ public class Laundry extends AbstractComponent
 				this.washTemperature = new Measure<Double>(60.0, TEMPERATURE_UNIT);
 				break;
 			case T_70:
-				this.washTemperature = new Measure<Double>(60.0, TEMPERATURE_UNIT);
+				this.washTemperature = new Measure<Double>(70.0, TEMPERATURE_UNIT);
 				break;
 			case T_80:
-				this.washTemperature = new Measure<Double>(60.0, TEMPERATURE_UNIT);
+				this.washTemperature = new Measure<Double>(80.0, TEMPERATURE_UNIT);
 				break;
 			case T_90:
-				this.washTemperature = new Measure<Double>(60.0, TEMPERATURE_UNIT);
+				this.washTemperature = new Measure<Double>(90.0, TEMPERATURE_UNIT);
 				break;
 
 			default:

@@ -1,7 +1,5 @@
 package etape1.equipements.laundry.connections.ports;
 
-import etape1.equipements.fan.interfaces.FanImplementationI.FanState;
-import etape1.equipements.laundry.interfaces.LaundryImplementationI;
 import etape1.equipements.laundry.interfaces.LaundryUserCI;
 import etape1.equipements.laundry.interfaces.LaundryUserI;
 
@@ -38,7 +36,6 @@ import etape1.equipements.laundry.interfaces.LaundryUserI;
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 import fr.sorbonne_u.components.ComponentI;
-
 import fr.sorbonne_u.components.ports.AbstractInboundPort;
 import fr.sorbonne_u.exceptions.PreconditionException;
 import physical_data.Measure;

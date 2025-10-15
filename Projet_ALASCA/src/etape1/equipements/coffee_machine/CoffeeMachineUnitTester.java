@@ -20,11 +20,12 @@ import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
+import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
 import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 import tests_utils.TestsStatistics;
 
-@RequiredInterfaces(required = { CoffeeMachineInternalControlCI.class, CoffeeMachineUserCI.class })
+@RequiredInterfaces(required = { CoffeeMachineInternalControlCI.class, CoffeeMachineUserCI.class, ClocksServerCI.class })
 @OfferedInterfaces(offered = { CoffeeMachineExternalControlJava4CI.class })
 public class CoffeeMachineUnitTester extends AbstractComponent {
 
@@ -453,9 +454,10 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 		super.start();
 
 		try {
+			System.out.println("Connexion utilisateur (CMTest)");
 			this.doPortConnection(this.cmuop.getPortURI(), this.coffeeMachineUserInboundPortURI,
 					CoffeeMachineUserConnector.class.getCanonicalName());
-
+			System.out.println("Connexion interne (CMTest)");
 			this.doPortConnection(this.cmiip.getPortURI(), this.coffeeMachineInternalControlInboundPortURI,
 					CoffeeMachineInternalConnector.class.getCanonicalName());
 
@@ -468,8 +470,10 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 		if (this.isUnitTest) {
 			this.runAllUnitTests();
 		} else {
+			System.out.println("Lancement script test intégration (CMTest)");
 			ClocksServerOutboundPort clocksServerOutboundPort = new ClocksServerOutboundPort(this);
 			clocksServerOutboundPort.publishPort();
+			
 			this.doPortConnection(clocksServerOutboundPort.getPortURI(), ClocksServer.STANDARD_INBOUNDPORT_URI,
 					ClocksServerConnector.class.getCanonicalName());
 			this.traceMessage("Coffee Machine tester gets the clock.\n");
@@ -497,6 +501,7 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 				public void run() {
 					try {
 						o.traceMessage("Coffee Machine switches on.\n");
+						System.out.println("Allumage machine cafe (CMTest)");
 						cmuop.turnOn();
 					} catch (Throwable e) {
 						e.printStackTrace();

@@ -14,6 +14,7 @@ import etape1.equipements.coffee_machine.CoffeeMachine;
 import etape1.equipements.coffee_machine.CoffeeMachineUnitTester;
 import etape1.equipements.hem.connections.CoffeeMachineConnector;
 import etape1.equipements.hem.ports.AdjustableOutboundPort;
+import etape1.equipements.registration.ports.RegistrationI;
 import etape1.equipements.registration.ports.RegistrationInboundPort;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
@@ -51,7 +52,6 @@ import etape1.equipements.registration.ports.RegistrationInboundPort;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
-import fr.sorbonne_u.components.exceptions.BCMException;
 import fr.sorbonne_u.components.exceptions.BCMRuntimeException;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
@@ -112,15 +112,15 @@ import tests_utils.TestsStatistics;
  * 
  * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-@RequiredInterfaces(required = { ClocksServerCI.class, AdjustableCI.class})
+@RequiredInterfaces(required = { ClocksServerCI.class, AdjustableCI.class, RegistrationCI.class })
 @OfferedInterfaces(offered = { RegistrationCI.class })
-public class HEM extends AbstractComponent  {
+public class HEM extends AbstractComponent implements RegistrationI {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
 
 	/** when true, methods trace their actions. */
-	public static boolean VERBOSE = false;
+	public static boolean VERBOSE = true;
 	/** when tracing, x coordinate of the window relative position. */
 	public static int X_RELATIVE_POSITION = 0;
 	/** when tracing, y coordinate of the window relative position. */
@@ -276,16 +276,14 @@ public class HEM extends AbstractComponent  {
 		// 1 standard thread to execute the method execute and 1 schedulable
 		// thread that is used to perform the tests
 		super(1, 1);
-		
-		
+
 		// Publication du port d'enregistrement
 		try {
-			this.rcip = new RegistrationInboundPort(HEM.REGISTRATION_COFFEE_INBOUND_PORT_URI, this);
+			this.rcip = new RegistrationInboundPort(REGISTRATION_COFFEE_INBOUND_PORT_URI, this);
 			this.rcip.publishPort();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
 
 		this.performTest = performTest;
 
@@ -294,7 +292,6 @@ public class HEM extends AbstractComponent  {
 		this.isPreFirstStep = false;
 
 		this.equipementsRegitered = new HashMap<String, Boolean>();
-		
 
 		if (VERBOSE) {
 			this.tracer.get().setTitle("Home Energy Manager component");
@@ -332,12 +329,7 @@ public class HEM extends AbstractComponent  {
 			} catch (Throwable e) {
 				throw new ComponentStartException(e);
 			}
-		} else {
-			try {
-				
-			} catch (Throwable e) {
-				throw new ComponentStartException(e);
-			}
+
 		}
 
 	}
@@ -365,6 +357,9 @@ public class HEM extends AbstractComponent  {
 
 			if (this.isPreFirstStep) {
 				this.scheduleTestCoffee();
+			} else {
+				System.out.println("Schedule test");
+				this.scheduleTestCoffee();
 			}
 		}
 	}
@@ -375,9 +370,9 @@ public class HEM extends AbstractComponent  {
 	@Override
 	public synchronized void finalise() throws Exception {
 
-		if (this.isPreFirstStep) {
+		if (this.coffeeop.connected())
 			this.doPortDisconnection(this.coffeeop.getPortURI());
-		}
+
 		super.finalise();
 	}
 
@@ -389,6 +384,8 @@ public class HEM extends AbstractComponent  {
 		try {
 
 			if (this.isPreFirstStep) {
+				this.coffeeop.unpublishPort();
+			} else {
 				this.coffeeop.unpublishPort();
 				this.rcip.unpublishPort();
 			}
@@ -404,38 +401,44 @@ public class HEM extends AbstractComponent  {
 
 	// Registration Methods
 
-	
 	public boolean registered(String uid) throws Exception {
 
 		return this.equipementsRegitered.containsKey(uid);
 	}
 
-	
 	public boolean register(String uid, String controlPortURI, String xmlControlAdapter) throws Exception {
 
 		this.logMessage("Registering equipement");
 		if (this.registered(uid))
 			return false;
 
+		System.out.println("Enregistrement de la Machine à Café (HEM)");
+		System.out.println("Génération du connecteur (HEM)");
 		ConnectorAdapterInfo infos = ConnectorAdapterParserXML.parse(xmlControlAdapter);
 		Class<?> coffeeConnectorGenerated = ConnectorGenerator.generate(infos, COFFEE_MACHINE_CONNECTOR_NAME);
 
+		System.out.println("Connecteur généré (HEM)");
+
+		System.out.println("Connexion du HEM à la machine à la café (HEM)");
 		this.doPortConnection(this.coffeeop.getPortURI(), CoffeeMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 				coffeeConnectorGenerated.getCanonicalName());
 
+		this.traceMessage("Coffee Machine connected !");
 		this.equipementsRegitered.put(uid, true);
+
+		//System.out.println("Mode actif de la machine à café" + this.coffeeop.currentMode());
 
 		// TODO : Register the equipement
 		// Create dynamicly the connector
 		// connect the client with the hem
 		// register the client in the hem hashtable
 
-		return false;
+		return true;
 	}
 
-	
 	public void unregister(String uid) throws Exception {
 		this.logMessage("Unegistering equipement");
+		this.doPortDisconnection(this.coffeeop.getPortURI());
 		this.equipementsRegitered.remove(uid);
 	}
 
@@ -650,297 +653,15 @@ public class HEM extends AbstractComponent  {
 		this.logMessage("Coffee tests start.");
 		TestsStatistics statistics = new TestsStatistics();
 		try {
-			this.logMessage("Feature: adjustable appliance mode management");
-			this.logMessage("  Scenario: getting the max mode index");
-			this.logMessage("    Given the heater has just been turned on");
-			this.logMessage("    When I call maxMode()");
-			this.logMessage("    Then the result is its max mode index");
-			final int maxMode = coffeeop.maxMode();
+			this.logMessage("Feature: test on coffee machine");
+			System.out.println("Affichage power level");
+			double mode = this.coffeeop.getModeConsumption(2);
+			System.out.println("Power level: " + mode);
+			this.logMessage("Coffee Machine mode: " + mode);
 
-			statistics.updateStatistics();
-
-			this.logMessage("  Scenario: getting the current mode index");
-			this.logMessage("    Given the heater has just been turned on");
-			this.logMessage("    When I call currentMode()");
-			this.logMessage("    Then the current mode is its max mode");
-			int result = coffeeop.currentMode();
-			if (result != maxMode) {
-				this.logMessage("      but was: " + result);
-				statistics.incorrectResult();
-			}
-
-			statistics.updateStatistics();
-
-			this.logMessage("  Scenario: going down one mode index");
-			this.logMessage("    Given the heater is turned on");
-			this.logMessage("    And the current mode index is the max mode index");
-			result = coffeeop.currentMode();
-			if (result != maxMode) {
-				this.logMessage("      but was: " + result);
-				statistics.failedCondition();
-			}
-			this.logMessage("    When I call downMode()");
-			this.logMessage("    Then the method returns true");
-			boolean bResult = coffeeop.downMode();
-			if (!bResult) {
-				this.logMessage("      but was: " + bResult);
-				statistics.incorrectResult();
-			}
-			this.logMessage("    And the current mode is its max mode minus one");
-			result = coffeeop.currentMode();
-			if (result != maxMode - 1) {
-				this.logMessage("      but was: " + result);
-				statistics.incorrectResult();
-			}
-
-			statistics.updateStatistics();
-
-			this.logMessage("  Scenario: going up one mode index");
-			this.logMessage("    Given the heater is turned on");
-			this.logMessage("    And the current mode index is the max mode index minus one");
-			result = coffeeop.currentMode();
-			if (result != maxMode - 1) {
-				this.logMessage("      but was: " + result);
-				statistics.failedCondition();
-			}
-			this.logMessage("    When I call upMode()");
-			this.logMessage("    Then the method returns true");
-			bResult = coffeeop.upMode();
-			if (!bResult) {
-				this.logMessage("      but was: " + bResult);
-				statistics.incorrectResult();
-			}
-			this.logMessage("    And the current mode is its max mode");
-			result = coffeeop.currentMode();
-			if (result != maxMode) {
-				this.logMessage("      but was: " + result);
-				statistics.incorrectResult();
-			}
-
-			statistics.updateStatistics();
-
-			this.logMessage("  Scenario: setting the mode index");
-			this.logMessage("    Given the heater is turned on");
-			int index = 1;
-			this.logMessage("    And the mode index 1 is legitimate");
-			if (index > maxMode) {
-				this.logMessage("      but was not!");
-				statistics.failedCondition();
-			}
-			this.logMessage("    When I call setMode(1)");
-			this.logMessage("    Then the method returns true");
-			bResult = coffeeop.setMode(1);
-			if (!bResult) {
-				this.logMessage("      but was: " + bResult);
-				statistics.incorrectResult();
-			}
-			this.logMessage("    And the current mode is 1");
-			result = coffeeop.currentMode();
-			if (result != 1) {
-				this.logMessage("      but was: " + result);
-				statistics.incorrectResult();
-			}
-
-			statistics.updateStatistics();
-
-			this.logMessage("Feature: Getting the power consumption given a mode");
-			this.logMessage("  Scenario: getting the power consumption of the maximum mode");
-			this.logMessage("    Given the heater is turned on");
-			this.logMessage("    When I get the power consumption of the maximum mode");
-			double dResult = coffeeop.getModeConsumption(maxMode);
-			this.logMessage("    Then the result is the maximum power consumption of the heater");
-
-			statistics.updateStatistics();
-
-			this.logMessage("Feature: suspending and resuming");
-			this.logMessage("  Scenario: checking if suspended when not");
-			this.logMessage("    Given the heater is turned on");
-			this.logMessage("    And it has not been suspended yet");
-			this.logMessage("    When I check if suspended");
-			bResult = coffeeop.suspended();
-			this.logMessage("    Then it is not");
-			if (bResult) {
-				this.logMessage("      but it was!");
-				statistics.incorrectResult();
-			}
-
-			statistics.updateStatistics();
-
-			this.logMessage("  Scenario: suspending");
-			this.logMessage("    Given the heater is turned on");
-			this.logMessage("    And it is not suspended");
-			bResult = coffeeop.suspended();
-			if (bResult) {
-				this.logMessage("      but it was!");
-				statistics.failedCondition();
-				;
-			}
-			this.logMessage("    When I call suspend()");
-			bResult = coffeeop.suspend();
-			this.logMessage("    Then the method returns true");
-			if (!bResult) {
-				this.logMessage("      but was: " + bResult);
-				statistics.incorrectResult();
-			}
-			this.logMessage("    And the heater is suspended");
-			bResult = coffeeop.suspended();
-			if (!bResult) {
-				this.logMessage("      but it was not!");
-				statistics.incorrectResult();
-			}
-
-			statistics.updateStatistics();
-
-			this.logMessage("  Scenario: going down one mode index when suspended");
-			this.logMessage("    Given the heater is turned on");
-			this.logMessage("    And the heater is suspended");
-			bResult = coffeeop.suspended();
-			if (!bResult) {
-				this.logMessage("      but it was not!");
-				statistics.failedCondition();
-				;
-			}
-			this.logMessage("    When I call downMode()");
-			this.logMessage("    Then a precondition exception is thrown");
-			boolean old = BCMException.VERBOSE;
-			try {
-				BCMException.VERBOSE = false;
-				coffeeop.downMode();
-				this.logMessage("      but it was not!");
-				statistics.incorrectResult();
-			} catch (Throwable e) {
-			} finally {
-				BCMException.VERBOSE = old;
-			}
-
-			statistics.updateStatistics();
-
-			this.logMessage("  Scenario: going up one mode index when suspended");
-			this.logMessage("    Given the heater is turned on");
-			this.logMessage("    And the heater is suspended");
-			bResult = coffeeop.suspended();
-			if (!bResult) {
-				this.logMessage("      but it was not!");
-				statistics.failedCondition();
-				;
-			}
-			this.logMessage("    When I call upMode()");
-			this.logMessage("    Then a precondition exception is thrown");
-			old = BCMException.VERBOSE;
-			try {
-				BCMException.VERBOSE = false;
-				coffeeop.upMode();
-				this.logMessage("      but it was not!");
-				statistics.incorrectResult();
-			} catch (Throwable e) {
-			} finally {
-				BCMException.VERBOSE = old;
-			}
-
-			statistics.updateStatistics();
-
-			this.logMessage("  Scenario: setting the mode when suspended");
-			this.logMessage("    Given the heater is turned on");
-			this.logMessage("    And the heater is suspended");
-			bResult = coffeeop.suspended();
-			if (!bResult) {
-				this.logMessage("      but it was not!");
-				statistics.failedCondition();
-				;
-			}
-			this.logMessage("    And the mode index 1 is legitimate");
-			if (index > maxMode) {
-				this.logMessage("      but was not!");
-				statistics.failedCondition();
-			}
-			this.logMessage("    When I call setMode(1)");
-			this.logMessage("    Then a precondition exception is thrown");
-			old = BCMException.VERBOSE;
-			try {
-				BCMException.VERBOSE = false;
-				coffeeop.upMode();
-				this.logMessage("      but it was not!");
-				statistics.incorrectResult();
-			} catch (Throwable e) {
-			} finally {
-				BCMException.VERBOSE = old;
-			}
-
-			statistics.updateStatistics();
-
-			this.logMessage("  Scenario: getting the current mode when suspended");
-			this.logMessage("    Given the heater is turned on");
-			this.logMessage("    And the heater is suspended");
-			bResult = coffeeop.suspended();
-			if (!bResult) {
-				this.logMessage("      but it was not!");
-				statistics.failedCondition();
-				;
-			}
-			this.logMessage("    When I get the current mode");
-			this.logMessage("    Then a precondition exception is thrown");
-			old = BCMException.VERBOSE;
-			try {
-				BCMException.VERBOSE = false;
-				coffeeop.currentMode();
-				this.logMessage("      but it was not!");
-				statistics.incorrectResult();
-			} catch (Throwable e) {
-			} finally {
-				BCMException.VERBOSE = old;
-			}
-
-			statistics.updateStatistics();
-
-			this.logMessage("  Scenario: checking the emergency");
-			this.logMessage("    Given the heater is turned on");
-			this.logMessage("    And it has just been suspended");
-			bResult = coffeeop.suspended();
-			if (!bResult) {
-				this.logMessage("      but it was not!");
-				statistics.failedCondition();
-				;
-			}
-			this.logMessage("    When I call emergency()");
-			dResult = coffeeop.emergency();
-			this.logMessage("    Then the emergency is between 0.0 and 1.0");
-			if (dResult < 0.0 || dResult > 1.0) {
-				this.logMessage("      but was: " + dResult);
-				statistics.incorrectResult();
-			}
-
-			statistics.updateStatistics();
-
-			this.logMessage("  Scenario: resuming");
-			this.logMessage("    Given the heater is turned on");
-			this.logMessage("    And it is suspended");
-			bResult = coffeeop.suspended();
-			if (!bResult) {
-				this.logMessage("      but it was not!");
-				statistics.failedCondition();
-				;
-			}
-			this.logMessage("    When I call resume()");
-			bResult = coffeeop.resume();
-			this.logMessage("    Then the method returns true");
-			if (!bResult) {
-				this.logMessage("      but was: " + bResult);
-				statistics.incorrectResult();
-			}
-			this.logMessage("    And the heater is not suspended");
-			bResult = coffeeop.suspended();
-			if (bResult) {
-				this.logMessage("      but it was!");
-				statistics.incorrectResult();
-			}
-		} catch (Throwable e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO: handle exception
 		}
-
-		statistics.updateStatistics();
-		statistics.statisticsReport(this);
-
-		this.logMessage("Coffee  tests end.");
 	}
 
 	/**

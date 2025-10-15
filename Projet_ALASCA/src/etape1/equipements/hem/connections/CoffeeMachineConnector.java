@@ -81,7 +81,7 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 
 	@Override
 	public int currentMode() throws Exception {
-
+		
 		return this.currentMode;
 	}
 

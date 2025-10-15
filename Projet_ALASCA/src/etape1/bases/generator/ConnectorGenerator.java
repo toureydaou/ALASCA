@@ -7,7 +7,7 @@ import javassist.*;
 public class ConnectorGenerator {
 
 	private static final String ABSTRACT_CONNECTOR_PACKAGE = "fr.sorbonne_u.components.connectors.AbstractConnector";
-	private static final String ADJUSTABLE_CI_PACKAGE = "fr.sorbonne_u.components.hem2025.bases.AdjustableCI";
+	private static final String ADJUSTABLE_CI_PACKAGE = "etape1.bases.AdjustableCI";
 	
 	
     

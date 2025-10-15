@@ -58,8 +58,8 @@
 
   <getModeConsumption>
     <parameter name="modeIndex"/>
-    <body>
-      return 0.0;
+    <body equipmentRef="coffeeMachine">
+      return coffeeMachine.getPowerLevelJava4();
     </body>
   </getModeConsumption>
 

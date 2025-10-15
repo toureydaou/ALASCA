@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 import etape1.equipements.coffee_machine.CoffeeMachine;
+import etape1.equipements.coffee_machine.CoffeeMachineUnitTester;
 import etape1.equipements.hem.HEM;
 import fr.sorbonne_u.components.AbstractComponent;
 
@@ -48,48 +49,68 @@ import fr.sorbonne_u.utils.aclocks.ClocksServer;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>CVMIntegrationTest</code> defines the integration test
- * for the household energy management example.
+ * The class <code>CVMIntegrationTest</code> defines the integration test for
+ * the household energy management example.
  *
- * <p><strong>Description</strong></p>
+ * <p>
+ * <strong>Description</strong>
+ * </p>
  * 
- * <p><strong>Implementation Invariants</strong></p>
- * 
- * <pre>
- * invariant	{@code true}	// no more invariant
- * </pre>
- * 
- * <p><strong>Invariants</strong></p>
+ * <p>
+ * <strong>Implementation Invariants</strong>
+ * </p>
  * 
  * <pre>
- * invariant	{@code CLOCK_URI != null && !CLOCK_URI.isEmpty()}
- * invariant	{@code DELAY_TO_START_IN_MILLIS >= 0}
- * invariant	{@code ACCELERATION_FACTOR > 0.0}
- * invariant	{@code START_INSTANT != null}
+ * invariant	{@code
+ * true
+ * }	// no more invariant
  * </pre>
  * 
- * <p>Created on : 2021-09-10</p>
+ * <p>
+ * <strong>Invariants</strong>
+ * </p>
  * 
- * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ * <pre>
+ * invariant	{@code
+ * CLOCK_URI != null && !CLOCK_URI.isEmpty()
+ * }
+ * invariant	{@code
+ * DELAY_TO_START_IN_MILLIS >= 0
+ * }
+ * invariant	{@code
+ * ACCELERATION_FACTOR > 0.0
+ * }
+ * invariant	{@code
+ * START_INSTANT != null
+ * }
+ * </pre>
+ * 
+ * <p>
+ * Created on : 2021-09-10
+ * </p>
+ * 
+ * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public class			CVMIntegrationTest
-extends		AbstractCVM
-{
-	/** for integration tests, a {@code Clock} is used to get a
-	 *  time-triggered synchronisation of the actions of the components
-	 *  in the test scenarios.												*/
-	public static final String	CLOCK_URI = "test-clock";
-	/** delay before starting the test scenarios, leaving time to build
-	 *  and initialise the components and their simulators.					*/
-	public static final long	DELAY_TO_START_IN_MILLIS = 3000;
-	/** for real time simulations, the acceleration factor applied to the
-	 *  the simulated time to get the execution time of the simulations. 	*/
-	public static final double	ACCELERATION_FACTOR = 1.0;
-	/** start instant in test scenarios, as a string to be parsed.			*/
-	public static final Instant	START_INSTANT =
-									Instant.parse("2024-09-18T14:00:00.00Z");
-	/** number of square meters in the test solar panel.					*/
-	public static final int	NB_OF_SQUARE_METERS = 10;
+public class CVMIntegrationTest extends AbstractCVM {
+	/**
+	 * for integration tests, a {@code Clock} is used to get a time-triggered
+	 * synchronisation of the actions of the components in the test scenarios.
+	 */
+	public static final String CLOCK_URI = "test-clock";
+	/**
+	 * delay before starting the test scenarios, leaving time to build and
+	 * initialise the components and their simulators.
+	 */
+	public static final long DELAY_TO_START_IN_MILLIS = 3000;
+	/**
+	 * for real time simulations, the acceleration factor applied to the the
+	 * simulated time to get the execution time of the simulations.
+	 */
+	public static final double ACCELERATION_FACTOR = 1.0;
+	/** start instant in test scenarios, as a string to be parsed. */
+	public static final Instant START_INSTANT = Instant.parse("2024-09-18T14:00:00.00Z");
+	/** number of square meters in the test solar panel. */
+	public static final int NB_OF_SQUARE_METERS = 10;
 
 	// -------------------------------------------------------------------------
 	// Invariants
@@ -98,19 +119,24 @@ extends		AbstractCVM
 	/**
 	 * return true if the implementation invariants are observed, false otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code cvm != null}
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * cvm != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param cvm	instance to be tested.
-	 * @return		true if the implementation invariants are observed, false otherwise.
+	 * @param cvm instance to be tested.
+	 * @return true if the implementation invariants are observed, false otherwise.
 	 */
-	protected static boolean	implementationInvariants(CVMIntegrationTest cvm)
-	{
-		assert	cvm != null : new PreconditionException("cvm != null");
+	protected static boolean implementationInvariants(CVMIntegrationTest cvm) {
+		assert cvm != null : new PreconditionException("cvm != null");
 
 		boolean ret = true;
 		return ret;
@@ -119,40 +145,33 @@ extends		AbstractCVM
 	/**
 	 * return true if the invariants are observed, false otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code cvm != null}
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * cvm != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param cvm	instance to be tested.
-	 * @return	true if the invariants are observed, false otherwise.
+	 * @param cvm instance to be tested.
+	 * @return true if the invariants are observed, false otherwise.
 	 */
-	protected static boolean	invariants(CVMIntegrationTest cvm)
-	{
-		assert	cvm != null : new PreconditionException("cvm != null");
+	protected static boolean invariants(CVMIntegrationTest cvm) {
+		assert cvm != null : new PreconditionException("cvm != null");
 
 		boolean ret = true;
-		ret &= AssertionChecking.checkImplementationInvariant(
-				CLOCK_URI != null && !CLOCK_URI.isEmpty(),
-				CVMIntegrationTest.class,
-				cvm,
-				"CLOCK_URI != null && !CLOCK_URI.isEmpty()");
-		ret &= AssertionChecking.checkImplementationInvariant(
-				DELAY_TO_START_IN_MILLIS >= 0,
-				CVMIntegrationTest.class,
-				cvm,
-				"DELAY_TO_START_IN_MILLIS >= 0");
-		ret &= AssertionChecking.checkImplementationInvariant(
-				ACCELERATION_FACTOR > 0.0,
-				CVMIntegrationTest.class,
-				cvm,
+		ret &= AssertionChecking.checkImplementationInvariant(CLOCK_URI != null && !CLOCK_URI.isEmpty(),
+				CVMIntegrationTest.class, cvm, "CLOCK_URI != null && !CLOCK_URI.isEmpty()");
+		ret &= AssertionChecking.checkImplementationInvariant(DELAY_TO_START_IN_MILLIS >= 0, CVMIntegrationTest.class,
+				cvm, "DELAY_TO_START_IN_MILLIS >= 0");
+		ret &= AssertionChecking.checkImplementationInvariant(ACCELERATION_FACTOR > 0.0, CVMIntegrationTest.class, cvm,
 				"ACCELERATION_FACTOR > 0.0");
-		ret &= AssertionChecking.checkImplementationInvariant(
-				START_INSTANT != null,
-				CVMIntegrationTest.class,
-				cvm,
+		ret &= AssertionChecking.checkImplementationInvariant(START_INSTANT != null, CVMIntegrationTest.class, cvm,
 				"START_INSTANT != null");
 		return ret;
 	}
@@ -161,8 +180,7 @@ extends		AbstractCVM
 	// Constructors
 	// -------------------------------------------------------------------------
 
-	public				CVMIntegrationTest() throws Exception
-	{
+	public CVMIntegrationTest() throws Exception {
 		// Trace and trace window positions
 		ClocksServer.VERBOSE = true;
 		ClocksServer.X_RELATIVE_POSITION = 0;
@@ -170,51 +188,43 @@ extends		AbstractCVM
 		HEM.VERBOSE = true;
 		HEM.X_RELATIVE_POSITION = 0;
 		HEM.Y_RELATIVE_POSITION = 1;
-		
+		CoffeeMachine.VERBOSE = true;
+		CoffeeMachine.X_RELATIVE_POSITION = 0;
+		CoffeeMachine.Y_RELATIVE_POSITION = 2;
+		CoffeeMachineUnitTester.VERBOSE = true;
+		CoffeeMachineUnitTester.X_RELATIVE_POSITION = 0;
+		CoffeeMachineUnitTester.Y_RELATIVE_POSITION = 3;
 
-		assert	CVMIntegrationTest.implementationInvariants(this) :
-				new InvariantException(
-						"CVMIntegrationTest.glassBoxInvariants(this)");
-		assert	CVMIntegrationTest.invariants(this) :
-				new InvariantException(
-						"CVMIntegrationTest.blackBoxInvariants(this)");
+		assert CVMIntegrationTest.implementationInvariants(this)
+				: new InvariantException("CVMIntegrationTest.glassBoxInvariants(this)");
+		assert CVMIntegrationTest.invariants(this)
+				: new InvariantException("CVMIntegrationTest.blackBoxInvariants(this)");
 	}
 
 	/**
 	 * @see fr.sorbonne_u.components.cvm.AbstractCVM#deploy()
 	 */
 	@Override
-	public void			deploy() throws Exception
-	{
+	public void deploy() throws Exception {
 		// start time in Unix epoch time in nanoseconds.
-		long unixEpochStartTimeInMillis = 
-				System.currentTimeMillis() + DELAY_TO_START_IN_MILLIS;
+		long unixEpochStartTimeInMillis = System.currentTimeMillis() + DELAY_TO_START_IN_MILLIS;
 
-		AbstractComponent.createComponent(
-				ClocksServer.class.getCanonicalName(),
-				new Object[]{
-						// URI of the clock to retrieve it
-						CLOCK_URI,
-						// start time in Unix epoch time
-						TimeUnit.MILLISECONDS.toNanos(
-										 		unixEpochStartTimeInMillis),
-						START_INSTANT,
-						ACCELERATION_FACTOR});
+		AbstractComponent.createComponent(ClocksServer.class.getCanonicalName(), new Object[] {
+				// URI of the clock to retrieve it
+				CLOCK_URI,
+				// start time in Unix epoch time
+				TimeUnit.MILLISECONDS.toNanos(unixEpochStartTimeInMillis), START_INSTANT, ACCELERATION_FACTOR });
 
-		
-		
-		AbstractComponent.createComponent(
-				  CoffeeMachine.class.getCanonicalName(), new Object[]{});
+		AbstractComponent.createComponent(CoffeeMachine.class.getCanonicalName(), new Object[] {});
 
-		AbstractComponent.createComponent(
-				HEM.class.getCanonicalName(),
-				new Object[]{true});
+		AbstractComponent.createComponent(CoffeeMachineUnitTester.class.getCanonicalName(), new Object[] { false });
+
+		AbstractComponent.createComponent(HEM.class.getCanonicalName(), new Object[] { true });
 
 		super.deploy();
 	}
 
-	public static void	main(String[] args)
-	{
+	public static void main(String[] args) {
 		BCMException.VERBOSE = true;
 		try {
 			CVMIntegrationTest cvm = new CVMIntegrationTest();

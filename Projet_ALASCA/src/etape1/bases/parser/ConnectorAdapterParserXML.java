@@ -86,11 +86,11 @@ public class ConnectorAdapterParserXML {
 			if (bodies.getLength() > 0) {
 				Element be = (Element) bodies.item(0);
 				mi.equipmentRef = be.getAttribute("equipmentRef");
-				mi.body = be.getTextContent();
-
+				mi.body = be.getTextContent().trim();
 				if (mi.equipmentRef != null && !mi.equipmentRef.isEmpty()) {
-					String replacement = "((" + connectorInfos.offered + ") this.offering)";
-					mi.body = mi.body.replaceAll("\\b" + mi.equipmentRef + "\\b", replacement);
+					String pattern = "\\b" + mi.equipmentRef + "\\b";
+					String replacement = "(((" + connectorInfos.offered + ") this.offering))";
+					mi.body = mi.body.replaceAll(pattern, replacement);
 				}
 			} else {
 				mi.body = "";
@@ -116,7 +116,7 @@ public class ConnectorAdapterParserXML {
 		if (b.contains("return MAX_MODE") || b.contains("return this.currentMode"))
 			return "int";
 		if (mi.name.equals("suspend") || mi.name.equals("upMode") || mi.name.equals("downMode")
-				|| mi.name.equals("setMode"))
+				|| (mi.name.equals("suspended") || mi.name.equals("setMode")))
 			return "boolean";
 		if (mi.name.equals("maxMode") || mi.name.equals("currentMode"))
 			return "int";

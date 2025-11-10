@@ -95,9 +95,6 @@ public class CoffeeMachineExternalControlJava4InboundPort extends CoffeeMachineE
 
 	}
 
-	@Override
-	public void setEcoModeJava4() throws Exception {
-		this.setEcoMode();
-	}
+
 
 }

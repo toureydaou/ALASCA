@@ -1,8 +1,8 @@
 package etape1.equipements.hem.connections;
 
 import etape1.bases.AdjustableCI;
+import etape1.equipements.coffee_machine.Constants;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlJava4CI;
-import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineMode;
 import fr.sorbonne_u.components.connectors.AbstractConnector;
 import fr.sorbonne_u.exceptions.PreconditionException;
 
@@ -13,43 +13,17 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 	// -------------------------------------------------------------------------
 
 	/**
-	 * modes will be defined by five power levels, including a power level of 0.0
-	 * watts; note that modes go from 1 (0.0 watts) to 6 (2000.0 watts).
+	 * modes will be defined by four power levels, including a power level of 0.0
+	 * watts; note that modes go from 1 (3.0 watts) to 4 (1500.0 watts).
 	 */
-	public static final int MAX_MODE = 3;
-	/**
-	 * the minimum admissible temperature from which the heater should be resumed in
-	 * priority after being suspended to save energy.
-	 */
-	public static final double MIN_ADMISSIBLE_TEMP_THE = 0.0;
-
-	/**
-	 * the minimum admissible temperature from which the heater should be resumed in
-	 * priority after being suspended to save energy.
-	 */
-	public static final double MIN_ADMISSIBLE_TEMP_CAFE = 0.0;
-
-	/**
-	 * the minimum admissible temperature from which the heater should be resumed in
-	 * priority after being suspended to save energy.
-	 */
-	public static final double MAX_ADMISSIBLE_TEMP_THE = 100.0;
-
-	/**
-	 * the minimum admissible temperature from which the heater should be resumed in
-	 * priority after being suspended to save energy.
-	 */
-	public static final double MAX_ADMISSIBLE_TEMP_CAFE = 90.0;
-
-	public static final double CAFE_POWER_WATT = 1200.0;
-	public static final double THE_POWER_WATT = 1500.0;
-	public static final double ECO_POWER_WATT = 1000.0;
-	/**
-	 * the maximal admissible difference between the target and the current
-	 * temperature from which the heater should be resumed in priority after being
-	 * suspended to save energy.
-	 */
+	public static final int MIN_MODE = 1;
+	public static final int MAX_MODE = 4;
+	
+	
+	
 	public static final double MAX_ADMISSIBLE_DELTA = 10.0;
+	
+	public static final double TARGET_TEMPERATURE = 100.0;
 
 	/** the current mode of the heater. */
 	protected int currentMode;
@@ -61,34 +35,26 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 		this.isSuspended = false;
 	}
 
-	public CoffeeMachineMode integerModeToCoffeeMachineMode(int mode) {
-		int index = mode - 1;
-		CoffeeMachineMode[] coffeeModes = CoffeeMachineMode.values();
-		switch (index) {
-		case 0:
-			return coffeeModes[0];
-		case 1:
-			return coffeeModes[1];
-		case 2:
-			return coffeeModes[2];
-		default:
-			return coffeeModes[0];
-		}
-	}
 
-	public double computePowerLevel(int mode) {
+	public double computePowerLevel(int mode) throws Exception {
 
-		CoffeeMachineMode machineMode = integerModeToCoffeeMachineMode(mode);
-		switch (machineMode) {
-		case EXPRESSO:
-			return CAFE_POWER_WATT;
-		case THE:
-			return THE_POWER_WATT;
-		case ECO_MODE:
-			return ECO_POWER_WATT;
-		default:
-			return 0.0;
+		assert mode >= MIN_MODE && mode <= this.maxMode()  : new PreconditionException("mode >= MIN_MODE && mode <= MAX_MODE");
+		
+		switch (mode) {
+			case 1:
+				return Constants.SUSPENDED_MODE_POWER;
+			case 2:
+				return Constants.ECO_MODE_POWER;
+			case 3:
+				return Constants.NORMAL_MODE_POWER;
+			case 4:
+				return Constants.MAX_MODE_POWER;
+	
+			default:
+				return Constants.SUSPENDED_MODE_POWER;
 		}
+		
+		
 	}
 
 	public void setPowerLevel(double newPowerLevel) throws Exception {
@@ -101,6 +67,12 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 		}
 		((CoffeeMachineExternalControlJava4CI) this.offering).setCurrentPowerLevelJava4(newPowerLevel);
 	}
+	
+	protected void		computeAndSetNewPowerLevel(int newMode) throws Exception
+	{
+		double newPowerLevel = this.computePowerLevel(newMode);
+		this.setPowerLevel(newPowerLevel);
+	}
 
 	@Override
 	public int maxMode() throws Exception {
@@ -109,25 +81,50 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 
 	@Override
 	public boolean upMode() throws Exception {
-		this.currentMode++;
+		
+		assert this.currentMode() < this.maxMode()
+				: new PreconditionException("this.currentMode() < this.maxMode()");
+
+		try {
+			this.currentMode++;
+			this.computeAndSetNewPowerLevel(this.currentMode);
+		} catch (Exception e) {
+			return false;
+		}
+		
 		return true;
 	}
 
 	@Override
 	public boolean downMode() throws Exception {
-		this.currentMode--;
+		
+		assert this.currentMode() > 1
+		: new PreconditionException("this.currentMode() > 1");
+		
+		try {
+			this.currentMode--;
+			this.computeAndSetNewPowerLevel(this.currentMode);
+		} catch (Exception e) {
+			return false;
+		}
 		return true;
 	}
 
 	@Override
 	public boolean setMode(int modeIndex) throws Exception {
-		this.currentMode = modeIndex;
+		
+		
+		try {
+			this.currentMode = modeIndex;
+			this.computeAndSetNewPowerLevel(this.currentMode);
+		} catch (Exception e) {
+			return false;
+		}
 		return true;
 	}
 
 	@Override
 	public int currentMode() throws Exception {
-
 		return this.currentMode;
 	}
 
@@ -163,7 +160,7 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 	public boolean resume() throws Exception {
 		assert this.suspended() : new PreconditionException("suspended()");
 		try {
-			// this.computeAndSetNewPowerLevel(this.currentMode);
+			this.computeAndSetNewPowerLevel(this.currentMode);
 			this.isSuspended = false;
 		} catch (Exception e) {
 			return false;
@@ -174,8 +171,13 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 
 	@Override
 	public double emergency() throws Exception {
-
-		return 0;
+		
+		double temperature = ((CoffeeMachineExternalControlJava4CI) this.offering).getTemperatureJava4();
+		
+		if (temperature - TARGET_TEMPERATURE >= MAX_ADMISSIBLE_DELTA ) {
+			return 1.0;
+		}
+		return 0.0;
 	}
 
 }

@@ -30,8 +30,8 @@ import physical_data.MeasurementUnit;
 @OfferedInterfaces(offered = { CoffeeMachineUserCI.class, CoffeeMachineInternalControlCI.class,
 		CoffeeMachineExternalControlJava4CI.class })
 @RequiredInterfaces(required = { RegistrationCI.class, ClocksServerCI.class })
-public class CoffeeMachine extends AbstractComponent
-		implements CoffeeMachineInternalControlI, CoffeeMachineUserI, CoffeeMachineImplementationI, CoffeeMachineExternalControlI {
+public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInternalControlI, CoffeeMachineUserI,
+		CoffeeMachineImplementationI, CoffeeMachineExternalControlI {
 
 	// -------------------------------------------------------------------------
 	// Constants and variables
@@ -68,19 +68,28 @@ public class CoffeeMachine extends AbstractComponent
 	/** measurement unit for tension used in this appliance. */
 	public static final MeasurementUnit TENSION_UNIT = MeasurementUnit.VOLTS;
 
+	public static final MeasurementUnit WATT_HOURS = MeasurementUnit.WATT_HOURS;
+
+	public static final MeasurementUnit LITERS = MeasurementUnit.LITERS;
+
 	/** measurement unit for tension used in this appliance. */
 	public static final MeasurementUnit TEMPERATURE_UNIT = MeasurementUnit.CELSIUS;
 
-	public static final Measure<Double> MAX_TEMPARATURE = new Measure<Double>(100.0, TEMPERATURE_UNIT);
+	public static final Measure<Double> MAX_TEMPARATURE = new Measure<Double>(Constants.MAX_TEMPARATURE,
+			TEMPERATURE_UNIT);
 
-	public static final Measure<Double> MIN_TEMPARATURE = new Measure<Double>(0.0, TEMPERATURE_UNIT);
+	public static final Measure<Double> MIN_TEMPARATURE = new Measure<Double>(20.0, TEMPERATURE_UNIT);
 
-	public static final Measure<Double> HIGH_POWER_IN_WATTS = new Measure<Double>(1500.0, POWER_UNIT);
-	public static final Measure<Double> LOW_POWER_IN_WATTS = new Measure<Double>(0.0, MeasurementUnit.WATTS);
-	public static final Measure<Double> VOLTAGE = new Measure<Double>(220.0, MeasurementUnit.VOLTS);
+	public static final Measure<Double> HIGH_POWER_IN_WATTS = new Measure<Double>(Constants.MAX_MODE_POWER, POWER_UNIT);
+	public static final Measure<Double> LOW_POWER_IN_WATTS = new Measure<Double>(0.0, POWER_UNIT);
+	public static final Measure<Double> VOLTAGE = new Measure<Double>(Constants.MACHINE_VOLTAGE, TENSION_UNIT);
+
+	public static final Measure<Double> WATER_CAPACITY = new Measure<Double>(Constants.WATER_CAPACITY, LITERS);
 
 	public static final CoffeeMachineState INITIAL_STATE = CoffeeMachineState.OFF;
-	public static final CoffeeMachineMode INITIAL_MODE = CoffeeMachineMode.EXPRESSO;
+
+	public static final Measure<Double> INITIAL_WATER_LEVEL = new Measure<Double>(Constants.INITIAL_WATER_LEVEL,
+			POWER_UNIT);
 
 	public static final String XML_COFFEE_MACHINE_ADAPTER_DESCRIPTOR = "adapters/coffeem-adapter/coffeeci-descriptor.xml";
 
@@ -88,6 +97,8 @@ public class CoffeeMachine extends AbstractComponent
 	protected CoffeeMachineState currentState;
 	protected Measure<Double> currentPowerLevel;
 	protected Measure<Double> currentTemperature;
+	protected Measure<Double> machineTotalConsumption;
+	protected Measure<Double> currentWaterLevel;
 
 	protected CoffeeMachineUserInboundPort cmuip;
 	protected CoffeeMachineInternalInboundPort cmiip;
@@ -206,15 +217,16 @@ public class CoffeeMachine extends AbstractComponent
 		this.rop = new RegistrationOutboundPort(this);
 		this.rop.publishPort();
 		System.out.println("Machine à café port Registration publié (CM)");
-		
-		this.currentMode = CoffeeMachineMode.EXPRESSO;
-		this.currentState = CoffeeMachineState.OFF;
-		this.currentPowerLevel = CoffeeMachine.HIGH_POWER_IN_WATTS;
+
+		this.machineTotalConsumption = new Measure<Double>(0.0, POWER_UNIT);
+		this.currentState = INITIAL_STATE;
+		this.currentPowerLevel = LOW_POWER_IN_WATTS;
 		this.currentTemperature = CoffeeMachine.MIN_TEMPARATURE;
+		this.currentWaterLevel = INITIAL_WATER_LEVEL;
 		this.uid = UUID.randomUUID().toString();
 
 		if (VERBOSE) {
-			this.tracer.get().setTitle("Coffee Machine tester component");
+			this.tracer.get().setTitle("Coffee Machine component");
 			this.tracer.get().setRelativePosition(X_RELATIVE_POSITION, Y_RELATIVE_POSITION);
 			this.toggleTracing();
 		}
@@ -242,8 +254,6 @@ public class CoffeeMachine extends AbstractComponent
 			throw new ComponentStartException(e);
 		}
 	}
-
-
 
 	/**
 	 * @see fr.sorbonne_u.components.AbstractComponent#shutdown()
@@ -282,9 +292,12 @@ public class CoffeeMachine extends AbstractComponent
 		this.rop.register(uid, cmecjip.getPortURI(), XML_COFFEE_MACHINE_ADAPTER_DESCRIPTOR);
 		System.out.println("Machine à café enregistrée sur le HEM (CM)");
 		this.traceMessage("Coffee Machine registered to HEM !");
-		this.currentState = CoffeeMachineState.ON;
 
+		this.currentState = CoffeeMachineState.ON;
+		this.currentMode = CoffeeMachineMode.SUSPEND;
 		assert this.on() : new PostconditionException("on()");
+		assert this.getMode() == CoffeeMachineMode.SUSPEND
+				: new PreconditionException("getMode() == CoffeeMachineMode.SUSPEND");
 
 	}
 
@@ -299,8 +312,13 @@ public class CoffeeMachine extends AbstractComponent
 		this.rop.unregister(uid);
 		this.doPortDisconnection(this.rop.getPortURI());
 
-		//this.stopHeating();
 		this.currentState = CoffeeMachineState.OFF;
+		this.currentMode = CoffeeMachineMode.SUSPEND;
+		/*
+		 * As the coffee machine is switched off so the water is no longer warmed, then
+		 * the water temperature cool down until it's reach it's minimal temperature
+		 */
+		this.currentTemperature = MIN_TEMPARATURE;
 
 		assert !this.on() : new PostconditionException("on()");
 	}
@@ -312,7 +330,7 @@ public class CoffeeMachine extends AbstractComponent
 					"Heater returns its heating status " + (this.currentState == CoffeeMachineState.HEATING) + ".\n");
 		}
 
-		assert !this.on() : new PreconditionException("!on()");
+		assert this.on() : new PreconditionException("on()");
 
 		return this.currentState == CoffeeMachineState.HEATING;
 
@@ -320,106 +338,329 @@ public class CoffeeMachine extends AbstractComponent
 
 	@Override
 	public void startHeating() throws Exception {
+
 		if (CoffeeMachine.VERBOSE) {
 			this.traceMessage("Heater starts heating.\n");
 		}
+
 		assert this.on() : new PreconditionException("on()");
 		assert !this.heating() : new PreconditionException("!heating()");
+		assert (this.getMode() == CoffeeMachineMode.ECO || this.getMode() == CoffeeMachineMode.MAX)
+				: new PostconditionException(
+						"!(this.getMode() == CoffeeMachineMode.ECO || this.getMode() == CoffeeMachineMode.EXPRESSO)");
 
+		assert this.getCurrentWaterLevel().getData() > 0.0
+				: new PostconditionException("getCurrentWaterLevel().getData() > 0.0");
+
+		// turn the coffee machine to the heating state
 		this.currentState = CoffeeMachineState.HEATING;
 
-		assert this.heating() : new PostconditionException("heating()");
+		double startTemp = this.currentTemperature.getData();
+		double targetTemp = MAX_TEMPARATURE.getData();
+		double waterThermalCapacity = Constants.WATER_THERMAL_CAPACITY; // water thermal capacity in J/kg°C
+		double waterWeight = this.currentWaterLevel.getData();
+		;
 
-	}
+		// start heating the water using the power of the coffee machine current mode
+		double currentPowerLevel = this.getPowerLevel().getData();
 
-	@Override
-	public void stopHeating() throws Exception {
-		if (CoffeeMachine.VERBOSE) {
-			this.traceMessage("Heater stops heating.\n");
+		// calculation of the the theorical heating duration
+		double deltaT = targetTemp - startTemp;
+		double heatingTimeSeconds = (waterWeight * waterThermalCapacity * deltaT) / currentPowerLevel;
+
+		// record the time at with the machine start warming the water
+		double startHeatingTime = System.currentTimeMillis();
+		double finalTemperature = 0.0;
+
+		// the simulation factor is use to accelerate the heating process
+		double simulationFactor = Constants.HEATING_ACCELERATION_FACTOR;
+		double simulatedTime = heatingTimeSeconds / simulationFactor;
+
+		// increasing randomly the water temperature
+		while (finalTemperature < MAX_TEMPARATURE.getData()) {
+
+			// calculation proportional to the time duration elapsed
+			double elapsed = (System.currentTimeMillis() - startHeatingTime) / 1000.0;
+			double progress = Math.min(1.0, elapsed / simulatedTime);
+
+			finalTemperature = startTemp + progress * deltaT;
+
+			if (CoffeeMachine.VERBOSE) {
+				this.traceMessage("Coffee Machine: Water current temparature -> " + finalTemperature + "°C\n");
+			}
+
 		}
-		assert this.on() : new PreconditionException("on()");
-		assert this.heating() : new PreconditionException("heating()");
 
-		this.currentState = CoffeeMachineState.ON;
+		this.currentTemperature = new Measure<Double>(finalTemperature, TEMPERATURE_UNIT);
+
+		// calculation of the power consummated by the machine
+		double powerConsummated = (currentPowerLevel / Constants.HOURS_IN_SECONDS) * heatingTimeSeconds;
+
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage(
+					"Real heating duration time: " + heatingTimeSeconds + "s, simulated   : " + simulatedTime + "s.\n");
+
+			this.traceMessage("Power consummated by Coffee Machine " + powerConsummated + "Kwh\n");
+		}
+
+		double newConsumption = this.machineTotalConsumption.getData() + powerConsummated;
+
+		// update the machine consumption since it's start
+		this.machineTotalConsumption = new Measure<Double>(newConsumption, WATT_HOURS);
+
+		// stop water heating
+		this.stopHeating();
 
 		assert !this.heating() : new PostconditionException("!heating()");
 
 	}
 
 	@Override
+	public void stopHeating() throws Exception {
+
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage("Coffee Machine stops heating.\n");
+		}
+
+		assert this.on() : new PreconditionException("on()");
+		assert this.heating() : new PreconditionException("heating()");
+
+		switch (this.getMode()) {
+		case ECO:
+			/*
+			 * After heating if the coffee machine is in mode ECO, the coffee machine keep
+			 * it's mode to ECO and the water temperature is hold to 60°C
+			 */
+			this.currentTemperature = new Measure<Double>(Constants.ECO_MODE_WATER_TEMPERATURE, TEMPERATURE_UNIT);
+			break;
+		case MAX:
+			this.setNormalMode();
+			/*
+			 * After heating if the coffee machine is in mode MAX, the coffee machine change
+			 * it's mode to normal and the water temperature is hold to 80°C
+			 */
+			this.currentTemperature = new Measure<Double>(Constants.NORMAL_MODE_WATER_TEMPERATURE, TEMPERATURE_UNIT);
+			break;
+		default:
+			this.currentTemperature = new Measure<Double>(Constants.NORMAL_MODE_WATER_TEMPERATURE, TEMPERATURE_UNIT);
+			this.setNormalMode();
+			break;
+		}
+
+		this.currentState = CoffeeMachineState.ON;
+
+		assert !this.heating() : new PostconditionException("!heating()");
+		assert this.getState() == CoffeeMachineState.ON
+				: new PostconditionException("getState() == CoffeeMachineState.ON");
+		assert this.getMode() == CoffeeMachineMode.NORMAL || this.getMode() == CoffeeMachineMode.ECO
+				: new PostconditionException(
+						"getMode() == CoffeeMachineMode.NORMAL || getMode() == CoffeeMachineMode.ECO");
+
+	}
+
+	@Override
 	public CoffeeMachineState getState() throws Exception {
+
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage("Coffee Machine return it's current state " + this.currentState + ".\n");
+		}
+
 		return this.currentState;
 	}
 
 	@Override
 	public CoffeeMachineMode getMode() throws Exception {
-		return this.getMode();
+
+		if (CoffeeMachine.VERBOSE) {
+
+			this.traceMessage("Coffee Machine return it's current mode " + this.currentMode + ".\n");
+		}
+
+		return this.currentMode;
 	}
 
 	@Override
-	public void setExpresso() throws Exception {
+	public void makeExpresso() throws Exception {
+
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage("Coffee Machine is making an Expresso.\n");
+		}
+
 		assert this.on() : new PreconditionException("on()");
 		assert !this.heating() : new PreconditionException("!heating()");
-		assert this.getMode() != CoffeeMachineMode.EXPRESSO
-				: new PreconditionException("getMode() != CoffeeMachineMode.EXPRESSO");
+		assert (this.getMode() == CoffeeMachineMode.MAX || this.getMode() == CoffeeMachineMode.ECO)
+				: new PreconditionException("getMode() == CoffeeMachineMode.MAX || getMode() == CoffeeMachineMode.ECO");
 
-		this.currentMode = CoffeeMachineMode.EXPRESSO;
+		// start heating the water
 		this.startHeating();
 
-		assert this.getMode() == CoffeeMachineMode.EXPRESSO
-				: new PreconditionException("this.getMode() == CoffeeMachineMode.EXPRESSO");
+		double machineNewCurrentWaterLevel = this.currentWaterLevel.getData() - 0.25;
+
+		if (machineNewCurrentWaterLevel < 0.0) {
+			machineNewCurrentWaterLevel = 0.0;
+		}
+
+		this.currentWaterLevel = new Measure<Double>(machineNewCurrentWaterLevel, TEMPERATURE_UNIT);
+
+		assert !this.heating() : new PreconditionException("!heating()");
+		assert this.getMode() == CoffeeMachineMode.NORMAL || this.getMode() == CoffeeMachineMode.ECO
+				: new PreconditionException(
+						"getMode() == CoffeeMachineMode.NORMAL || getMode() == CoffeeMachineMode.ECO");
 
 	}
 
 	@Override
-	public void setThe() throws Exception {
+	public void setSuspendMode() throws Exception {
+
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage("Coffee Machine turns to suspend mode.\n");
+		}
+
 		assert this.on() : new PreconditionException("on()");
-		assert !this.heating() : new PreconditionException("!heating()");
-		assert this.getMode() != CoffeeMachineMode.THE
-				: new PreconditionException("getMode() != CoffeeMachineMode.THE");
+		assert this.getMode() == CoffeeMachineMode.MAX || this.getMode() == CoffeeMachineMode.ECO
+				|| this.getMode() == CoffeeMachineMode.NORMAL
+				: new PreconditionException(
+						"getMode() == CoffeeMachineMode.MAX || getMode() == CoffeeMachineMode.SUSPEND || this.getMode() == CoffeeMachineMode.ECO");
 
-		this.currentMode = CoffeeMachineMode.THE;
-		this.startHeating();
+		this.currentMode = CoffeeMachineMode.SUSPEND;
+		this.setCurrentPowerLevel(new Measure<Double>(Constants.SUSPENDED_MODE_POWER, POWER_UNIT));
 
-		assert this.getMode() == CoffeeMachineMode.THE
-				: new PreconditionException("this.getMode() == CoffeeMachineMode.THE");
+		assert this.getMode() == CoffeeMachineMode.SUSPEND
+				: new PreconditionException("getMode() == CoffeeMachineMode.ECO");
 
 	}
 
 	@Override
 	public void setEcoMode() throws Exception {
+		System.out.println("Setting eco mode");
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage("Coffee Machine turns to eco mode.\n");
+		}
+
 		assert this.on() : new PreconditionException("on()");
-		assert this.getMode() != CoffeeMachineMode.ECO_MODE
-				: new PreconditionException("getMode() != CoffeeMachineMode.THE");
+		assert this.getMode() == CoffeeMachineMode.MAX || this.getMode() == CoffeeMachineMode.SUSPEND
+				|| this.getMode() == CoffeeMachineMode.NORMAL
+				: new PreconditionException(
+						"getMode() == CoffeeMachineMode.MAX || getMode() == CoffeeMachineMode.SUSPEND || this.getMode() == CoffeeMachineMode.SUSPEND");
 
-		this.currentMode = CoffeeMachineMode.ECO_MODE;
-		this.startHeating();
+		this.currentMode = CoffeeMachineMode.ECO;
+		this.setCurrentPowerLevel(new Measure<Double>(Constants.ECO_MODE_POWER, POWER_UNIT));
 
-		assert this.getMode() == CoffeeMachineMode.ECO_MODE
-				: new PreconditionException("this.getMode() == CoffeeMachineMode.THE");
+		assert this.getMode() == CoffeeMachineMode.ECO
+				: new PreconditionException("getMode() == CoffeeMachineMode.ECO");
 
 	}
 
 	@Override
+	public void setNormalMode() throws Exception {
+
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage("Coffee Machine turns to normal mode.\n");
+		}
+
+		assert this.on() : new PreconditionException("on()");
+		assert this.getMode() == CoffeeMachineMode.MAX || this.getMode() == CoffeeMachineMode.ECO
+				|| this.getMode() == CoffeeMachineMode.SUSPEND
+				: new PreconditionException(
+						"getMode() == CoffeeMachineMode.MAX || getMode() == CoffeeMachineMode.SUSPEND || this.getMode() == CoffeeMachineMode.ECO");
+
+		this.currentMode = CoffeeMachineMode.NORMAL;
+		this.setCurrentPowerLevel(new Measure<Double>(Constants.NORMAL_MODE_POWER, POWER_UNIT));
+
+		assert this.getMode() == CoffeeMachineMode.NORMAL
+				: new PreconditionException("getMode() == CoffeeMachineMode.NORMAL");
+
+	}
+
+	@Override
+	public void setMaxMode() throws Exception {
+
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage("Coffee Machine turns to max mode.\n");
+		}
+
+		assert this.on() : new PreconditionException("on()");
+		assert (this.getMode() == CoffeeMachineMode.SUSPEND || this.getMode() == CoffeeMachineMode.ECO
+				|| this.getMode() == CoffeeMachineMode.NORMAL)
+				: new PreconditionException(
+						"getMode() == CoffeeMachineMode.NORMAL || getMode() == CoffeeMachineMode.SUSPEND || this.getMode() == CoffeeMachineMode.ECO");
+
+		this.currentMode = CoffeeMachineMode.MAX;
+		this.setCurrentPowerLevel(new Measure<Double>(Constants.MAX_MODE_POWER, POWER_UNIT));
+
+		assert this.getMode() == CoffeeMachineMode.MAX
+				: new PreconditionException("getMode() == CoffeeMachineMode.MAX");
+
+	}
+
+	@Override
+	public void fillWater() throws Exception {
+
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage("Filling Coffee Machine water tank.\n");
+		}
+
+		assert (this.getCurrentWaterLevel().getData() <= WATER_CAPACITY.getData()
+				&& this.getCurrentWaterLevel().getData() >= 0.0)
+				: new PreconditionException(
+						"getCurrentWaterLevel().getData() <= WATER_CAPACITY.getData() && getCurrentWaterLevel().getData() >= 0.0");
+
+		this.currentWaterLevel = new Measure<Double>(Constants.WATER_CAPACITY, LITERS);
+
+		assert this.getCurrentWaterLevel().getData() == Constants.WATER_CAPACITY
+				: new PreconditionException("getCurrentWaterLevel().getData() == Constants.WATER_CAPACITY");
+
+	}
+
+	protected Measure<Double> getCurrentWaterLevel() {
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage(
+					"Coffee Machine return it's current water level " + this.currentWaterLevel.getData() + "L.\n");
+		}
+		return this.currentWaterLevel;
+	}
+
+	@Override
 	public Measure<Double> getTemperature() throws Exception {
+
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage(
+					"Coffee Machine return it's current temperature " + this.currentTemperature.getData() + "°C.\n");
+		}
+
 		return this.currentTemperature;
 	}
 
 	@Override
 	public Measure<Double> getPowerLevel() throws Exception {
-		
+
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage(
+					"Coffee Machine return it's current power level " + this.currentPowerLevel.getData() + "W.\n");
+		}
+
 		return this.currentPowerLevel;
 	}
 
 	@Override
 	public Measure<Double> getMaxPowerLevel() throws Exception {
+
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage(
+					"Coffee Machine return it's current power level " + HIGH_POWER_IN_WATTS.getData() + "W.\n");
+		}
+
 		return HIGH_POWER_IN_WATTS;
 	}
 
 	@Override
 	public void setCurrentPowerLevel(Measure<Double> powerLevel) throws Exception {
+		if (CoffeeMachine.VERBOSE) {
+			this.traceMessage(
+					"Coffee Machine return it's current power level " + HIGH_POWER_IN_WATTS.getData() + "W.\n");
+		}
 		this.currentPowerLevel = powerLevel;
-		
+
 	}
 
 }

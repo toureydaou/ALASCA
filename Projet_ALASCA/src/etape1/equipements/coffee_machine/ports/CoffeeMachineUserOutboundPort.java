@@ -93,18 +93,6 @@ public class CoffeeMachineUserOutboundPort extends AbstractOutboundPort implemen
 		return ((CoffeeMachineUserCI) this.getConnector()).getMode();
 	}
 
-	@Override
-	public void setExpresso() throws Exception {
-		((CoffeeMachineUserCI) this.getConnector()).setExpresso();
-
-	}
-
-	@Override
-	public void setThe() throws Exception {
-		((CoffeeMachineUserCI) this.getConnector()).setThe();
-
-	}
-
 
 	@Override
 	public boolean on() throws Exception {
@@ -114,6 +102,36 @@ public class CoffeeMachineUserOutboundPort extends AbstractOutboundPort implemen
 	@Override
 	public void setEcoMode() throws Exception {
 		((CoffeeMachineUserCI) this.getConnector()).setEcoMode();
+		
+	}
+
+	@Override
+	public void fillWater() throws Exception {
+		((CoffeeMachineUserCI) this.getConnector()).fillWater();
+		
+	}
+
+	@Override
+	public void setSuspendMode() throws Exception {
+		((CoffeeMachineUserCI) this.getConnector()).setSuspendMode();
+		
+	}
+
+	@Override
+	public void makeExpresso() throws Exception {
+		((CoffeeMachineUserCI) this.getConnector()).makeExpresso();
+		
+	}
+
+	@Override
+	public void setNormalMode() throws Exception {
+		((CoffeeMachineUserCI) this.getConnector()).setNormalMode();
+		
+	}
+
+	@Override
+	public void setMaxMode() throws Exception {
+		((CoffeeMachineUserCI) this.getConnector()).setMaxMode();
 		
 	}
 

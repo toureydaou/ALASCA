@@ -6,9 +6,8 @@ import java.util.concurrent.TimeUnit;
 import etape1.CVMIntegrationTest;
 import etape1.equipements.coffee_machine.connectors.CoffeeMachineInternalConnector;
 import etape1.equipements.coffee_machine.connectors.CoffeeMachineUserConnector;
-import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineMode;
-import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlJava4CI;
+import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineMode;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineInternalControlCI;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineUserCI;
 import etape1.equipements.coffee_machine.ports.CoffeeMachineInternalOutboundPort;
@@ -25,15 +24,16 @@ import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 import tests_utils.TestsStatistics;
 
-@RequiredInterfaces(required = { CoffeeMachineInternalControlCI.class, CoffeeMachineUserCI.class, ClocksServerCI.class })
+@RequiredInterfaces(required = { CoffeeMachineInternalControlCI.class, CoffeeMachineUserCI.class,
+		ClocksServerCI.class })
 @OfferedInterfaces(offered = { CoffeeMachineExternalControlJava4CI.class })
 public class CoffeeMachineUnitTester extends AbstractComponent {
 
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
-	
-	/** URI of the heater port for internal control. */
+
+	/** URI of the coffee machine port for internal control. */
 	public static final String EXTERNAL_CONTROL_INBOUND_PORT_URI = "COFFEE-TEST-EXTERNAL-CONTROL-INBOUND-PORT-URI";
 
 	/**
@@ -289,8 +289,7 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 		this.logMessage("    And the Coffee Machine has not been used yet");
 		try {
 			this.logMessage("    When I test the state of the Coffee Machine");
-			this.cmuop.turnOn();
-			if (this.cmuop.getState() == CoffeeMachineState.ON) {
+			if (!this.cmuop.on()) {
 				this.logMessage("    Then the state of the Coffee Machine is off");
 			} else {
 				this.logMessage("     but was: on");
@@ -305,7 +304,7 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 	}
 
 	/**
-	 * test switching on and off the heater.
+	 * test getting the state of the Coffee Machine.
 	 * 
 	 * <p>
 	 * <strong>Description</strong>
@@ -318,17 +317,12 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 	 * </p>
 	 * 
 	 * <pre>
-	 * Feature: switching on and off the heater
-	 *   Scenario: switching on the heater when off
-	 *     Given the heater is initialised
-	 *     And the heater has not been used yet
-	 *     When I switch on the heater
-	 *     Then the state of the heater is on
-	 *   Scenario: switching off the heater when on
-	 *     Given the heater is initialised
-	 *     And the heater is on
-	 *     When I switch off the heater
-	 *     Then the state of the heater is off
+	 * Feature: getting the state of the Coffee Machine
+	 *   Scenario: getting the state of the Coffee Machine when on
+	 *     Given the Coffee Machine is initialised
+	 *     And the Coffee Machine has been used 
+	 *     When I test the state of the Coffee Machine
+	 *     Then the state of the Coffee Machine is on
 	 * </pre>
 	 * 
 	 * <p>
@@ -345,44 +339,103 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 	 * </pre>
 	 *
 	 */
-	protected void testSwitchOnSwitchOff() {
-		this.logMessage("Feature: switching on and off the heater");
+	protected void testOn() {
+		this.logMessage("Feature: getting the state of the Coffee Machine");
+		this.logMessage("  Scenario: getting the state of the Coffee Machine when on");
+		this.logMessage("    Given the Coffee Machine is initialised");
+		this.logMessage("    And the Coffee Machine has been used ");
+		try {
+			this.logMessage("    When I turn on the Coffee Machine");
+			this.cmuop.turnOn();
+			this.logMessage("    When I test the state of the Coffee Machine");
+			if (this.cmuop.on()) {
+				this.logMessage("    Then the state of the Coffee Machine is on");
+			} else {
+				this.logMessage("     but was: off ");
+				this.statistics.incorrectResult();
+			}
+			this.cmuop.turnOff();
+		} catch (Throwable e) {
+			this.statistics.incorrectResult();
+			this.logMessage("     but the exception " + e + " has been raised");
+		}
 
-		this.logMessage("  Scenario: switching on the heater when off");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater has not been used yet");
+		this.statistics.updateStatistics();
+	}
+
+	/**
+	 * test switching on and off the coffee machine.
+	 * 
+	 * <p>
+	 * <strong>Description</strong>
+	 * </p>
+	 * 
+	 * <pre>
+	 * Feature: turning on and off the coffee machine
+	 *   Scenario: turning on the coffee machine when off
+	 *     Given the coffee machine is initialised
+	 *     And the coffee machine has not been used yet
+	 *     When I turn on the coffee machine
+	 *     Then the state of the coffee machine is on
+	 *   Scenario: turning off the coffee machine when on
+	 *     Given the coffee machine is initialised
+	 *     And the coffee machine is on
+	 *     When I turn off the coffee machine
+	 *     Then the state of the coffee machine is off
+	 * </pre>
+	 * 
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 * 
+	 * <pre>
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 */
+	protected void testTurnOnTurnOff() {
+		this.logMessage("Feature: turning on and off the coffee machine");
+
+		this.logMessage("  Scenario: turning on the coffee machine when off");
+		this.logMessage("    Given the coffee machine is initialised");
+		this.logMessage("    And the coffee machine has not been used yet");
 		boolean result;
 		try {
-			this.logMessage("    When I switch on the heater");
+			this.logMessage("    When I turn on the coffee machine");
 			this.cmuop.turnOn();
 			result = this.cmuop.on();
 			if (result) {
-				this.logMessage("    Then the state of the heater is on");
+				this.logMessage("    Then the state of the coffee machine is on");
 			} else {
 				this.logMessage("     but was: off");
 				this.statistics.incorrectResult();
 			}
-		} catch (Throwable e) {
+		} catch (Exception e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
 		}
 
 		this.statistics.updateStatistics();
 
-		this.logMessage("  Scenario: switching off the heater when on");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater is on");
+		this.logMessage("  Scenario: turning off the coffee machine when on");
+		this.logMessage("    Given the coffee machine is initialised");
+		this.logMessage("    And the coffee machine is on");
 		try {
-			this.logMessage("    When I switch off the heater");
+			this.logMessage("    When I turn off the coffee machine");
 			this.cmuop.turnOff();
 			result = !this.cmuop.on();
 			if (result) {
-				this.logMessage("    Then the state of the heater is off");
+				this.logMessage("    Then the state of the coffee machine is off");
 			} else {
 				this.logMessage("     but was: on");
 				this.statistics.incorrectResult();
 			}
-		} catch (Throwable e) {
+		} catch (Exception e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
 		}
@@ -390,56 +443,147 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 		this.statistics.updateStatistics();
 	}
 
-	protected void testExpresso() {
-		this.logMessage("Feature: getting the state of the Coffee Machine");
-		this.logMessage("  Scenario: getting the state of the Coffee Machine when off");
-		this.logMessage("    Given the Coffee Machine is initialised");
-		this.logMessage("    And the Coffee Machine has not been used yet");
+	/**
+	 * test making an Expresso in max mode.
+	 * 
+	 * <p>
+	 * <strong>Description</strong>
+	 * </p>
+	 * 
+	 * <p>
+	 * Gherkin specification
+	 * </p>
+	 * <p>
+	 * </p>
+	 * 
+	 * <pre>
+	 * Feature: make an Expresso in MAX mode
+	 *   Scenario: getting the state of the Coffee Machine when on
+	 *     Given the Coffee Machine is initialised
+	 *     And the MAX mode is set
+	 *     And the Coffee Machine has been filled with water
+	 *     When I make an Expresso
+	 *     Then the mode of the Coffee Machine is NORMAL
+	 * </pre>
+	 * 
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 * 
+	 * <pre>
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 */
+
+	protected void testMakeExpressoInMaxMode() {
+		this.logMessage("Feature: make an Expresso in MAX mode");
+		this.logMessage("	Given the Coffee Machine is initialised");
+		this.logMessage("	And the MAX mode is set");
+		this.logMessage("	And the Coffee Machine has been filled with water");
+		this.logMessage("	When I make an Expresso");
+		this.logMessage("	Then the mode of the Coffee Machine is NORMAL");
+		boolean result;
 		try {
-			this.logMessage("    When I test the state of the Coffee Machine");
+
+			this.logMessage("    When I turn on the coffee machine");
 			this.cmuop.turnOn();
-			this.cmuop.setExpresso();
-			if (this.cmuop.getMode() == CoffeeMachineMode.EXPRESSO) {
-				this.logMessage("    Then the state of the Coffee Machine is off");
+			result = this.cmuop.on();
+			if (result) {
+				this.logMessage("    Then the state of the coffee machine is on");
 			} else {
-				this.logMessage("     but was: on");
-				this.statistics.incorrectResult();
+				this.logMessage("     but was: off");
+
 			}
-		} catch (Throwable e) {
+
+			this.logMessage("    When I put the coffee machine on MAX mode");
+			this.cmuop.setMaxMode();
+			if (this.cmuop.getMode() == CoffeeMachineMode.MAX) {
+				this.logMessage("    Then the mode of the coffee machine is MAX");
+			} else {
+				this.logMessage(" but was " + this.cmuop.getMode());
+			}
+
+			this.logMessage("    When I fill water in the coffee machine");
+			this.cmuop.fillWater();
+
+			this.logMessage("    When I make an expresso on MAX mode");
+			this.cmuop.makeExpresso();
+			if (this.cmuop.getMode() == CoffeeMachineMode.NORMAL) {
+				this.logMessage("    Then the mode of the coffee machine is NORMAL");
+			} else {
+				this.logMessage(" but was " + this.cmuop.getMode());
+			}
+
+			this.cmuop.turnOff();
+		} catch (Exception e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
 		}
 
-		this.statistics.updateStatistics();
 	}
 
-	protected void testThe() {
-		this.logMessage("Feature: getting the state of the Coffee Machine");
-		this.logMessage("  Scenario: getting the state of the Coffee Machine when off");
-		this.logMessage("    Given the Coffee Machine is initialised");
-		this.logMessage("    And the Coffee Machine has not been used yet");
+	protected void testMakeExpressoInEcoMode() {
+		this.logMessage("Feature: make an Expresso in MAX mode");
+		this.logMessage("	Given the Coffee Machine is initialised");
+		this.logMessage("	And the ECO mode is set");
+		this.logMessage("	And the Coffee Machine has been filled with water");
+		this.logMessage("	When I make an Expresso");
+		this.logMessage("	Then the mode of the Coffee Machine is ECo");
+		boolean result;
 		try {
-			this.logMessage("    When I test the state of the Coffee Machine");
-			this.cmuop.setThe();
-			if (this.cmuop.getMode() == CoffeeMachineMode.THE) {
-				this.logMessage("    Then the state of the Coffee Machine is off");
+
+			this.logMessage("    When I turn on the coffee machine");
+			this.cmuop.turnOn();
+			result = this.cmuop.on();
+			if (result) {
+				this.logMessage("    Then the state of the coffee machine is on");
 			} else {
-				this.logMessage("     but was: on");
-				this.statistics.incorrectResult();
+				this.logMessage("     but was: off");
+
 			}
-		} catch (Throwable e) {
+
+			this.logMessage("    When I put the coffee machine on ECO mode");
+			this.cmuop.setEcoMode();
+			if (this.cmuop.getMode() == CoffeeMachineMode.ECO) {
+				this.logMessage("    Then the mode of the coffee machine is ECO");
+			} else {
+				this.logMessage(" but was " + this.cmuop.getMode());
+			}
+
+			this.logMessage("    When I fill water in the coffee machine");
+			this.cmuop.fillWater();
+
+			this.logMessage("    When I make an expresso on ECO mode");
+			this.cmuop.makeExpresso();
+			if (this.cmuop.getMode() == CoffeeMachineMode.ECO) {
+				this.logMessage("    Then the mode of the coffee machine is ECO");
+			} else {
+				this.logMessage(" but was " + this.cmuop.getMode());
+			}
+
+			this.cmuop.turnOff();
+		} catch (Exception e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
 		}
 
-		this.statistics.updateStatistics();
 	}
 
 	protected void runAllUnitTests() {
 		this.testOff();
-		this.testSwitchOnSwitchOff();
-		this.testExpresso();
-		this.testThe();
+		this.testOn();
+		this.testTurnOnTurnOff();
+		this.testMakeExpressoInMaxMode();
+		this.testMakeExpressoInEcoMode();
+		
+		this.statistics.statisticsReport(this);
+
 	}
 
 	// -------------------------------------------------------------------------
@@ -473,7 +617,7 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 			System.out.println("Lancement script test intégration (CMTest)");
 			ClocksServerOutboundPort clocksServerOutboundPort = new ClocksServerOutboundPort(this);
 			clocksServerOutboundPort.publishPort();
-			
+
 			this.doPortConnection(clocksServerOutboundPort.getPortURI(), ClocksServer.STANDARD_INBOUNDPORT_URI,
 					ClocksServerConnector.class.getCanonicalName());
 			this.traceMessage("Coffee Machine tester gets the clock.\n");

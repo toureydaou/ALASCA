@@ -5,6 +5,7 @@ import etape1.equipements.coffee_machine.interfaces.CoffeeMachineInternalControl
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractInboundPort;
 import fr.sorbonne_u.exceptions.PreconditionException;
+import physical_data.Measure;
 
 public class CoffeeMachineInternalInboundPort extends AbstractInboundPort implements CoffeeMachineInternalControlCI {
 
@@ -94,11 +95,20 @@ public class CoffeeMachineInternalInboundPort extends AbstractInboundPort implem
 
 	@Override
 	public void stopHeating() throws Exception {
+		
 		this.getOwner().handleRequest(o -> {
 			((CoffeeMachineInternalControlI) o).stopHeating();
 			return null;
 		});
 
+	}
+
+	@Override
+	public Measure<Double> getTemperature() throws Exception {
+		return this.getOwner().handleRequest(o -> {
+			return ((CoffeeMachineInternalControlI) o).getTemperature();
+			
+		});
 	}
 
 }

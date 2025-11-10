@@ -106,25 +106,6 @@ public class CoffeeMachineUserInboundPort extends AbstractInboundPort implements
 		return this.getOwner().handleRequest(o -> ((CoffeeMachineUserI) o).getMode());
 	}
 
-	@Override
-	public void setExpresso() throws Exception {
-		this.getOwner().handleRequest(o -> {
-			((CoffeeMachineUserI) o).setExpresso();
-			return null;
-		});
-
-	}
-
-	@Override
-	public void setThe() throws Exception {
-		this.getOwner().handleRequest(o -> {
-			((CoffeeMachineUserI) o).setThe();
-			return null;
-		});
-
-	}
-
-
 
 	@Override
 	public boolean on() throws Exception {
@@ -135,6 +116,50 @@ public class CoffeeMachineUserInboundPort extends AbstractInboundPort implements
 	public void setEcoMode() throws Exception {
 		this.getOwner().handleRequest(o -> {
 			((CoffeeMachineUserI) o).setEcoMode();
+			return null;
+		});
+		
+	}
+
+	@Override
+	public void fillWater() throws Exception {
+		this.getOwner().handleRequest(o -> {
+			((CoffeeMachineUserI) o).fillWater();
+			return null;
+		});
+	}
+
+	@Override
+	public void setSuspendMode() throws Exception {
+		this.getOwner().handleRequest(o -> {
+			((CoffeeMachineUserI) o).setSuspendMode();
+			return null;
+		});
+		
+	}
+
+	@Override
+	public void makeExpresso() throws Exception {
+		this.getOwner().handleRequest(o -> {
+			((CoffeeMachineUserI) o).makeExpresso();
+			return null;
+		});
+		
+	}
+
+	@Override
+	public void setNormalMode() throws Exception {
+		this.getOwner().handleRequest(o -> {
+			((CoffeeMachineUserI) o).setNormalMode();
+			return null;
+		});
+		
+	}
+
+	@Override
+	public void setMaxMode() throws Exception {
+		this.getOwner().handleRequest(o -> {
+			((CoffeeMachineUserI) o).setMaxMode();
 			return null;
 		});
 		

@@ -122,13 +122,7 @@ public class CoffeeMachineExternalControlInboundPort extends AbstractInboundPort
 		});
 	}
 
-	@Override
-	public void setEcoMode() throws Exception {
-		this.getOwner().handleRequest(o -> {
-			((CoffeeMachineExternalControlI) o).setEcoMode();
-			return null;
-		});
 
-	}
+
 
 }

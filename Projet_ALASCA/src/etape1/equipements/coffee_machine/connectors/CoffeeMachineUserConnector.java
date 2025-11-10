@@ -19,25 +19,13 @@ public class CoffeeMachineUserConnector extends AbstractConnector implements Cof
 
 	@Override
 	public CoffeeMachineState getState() throws Exception {
-		
+
 		return ((CoffeeMachineUserCI) this.offering).getState();
 	}
 
 	@Override
 	public CoffeeMachineMode getMode() throws Exception {
 		return ((CoffeeMachineUserCI) this.offering).getMode();
-	}
-
-	@Override
-	public void setExpresso() throws Exception {
-		((CoffeeMachineUserCI) this.offering).setExpresso();
-		
-	}
-
-	@Override
-	public void setThe() throws Exception {
-		((CoffeeMachineUserCI) this.offering).setThe();
-		
 	}
 
 	@Override
@@ -48,7 +36,37 @@ public class CoffeeMachineUserConnector extends AbstractConnector implements Cof
 	@Override
 	public void setEcoMode() throws Exception {
 		((CoffeeMachineUserCI) this.offering).setEcoMode();
-		
+
+	}
+
+	@Override
+	public void fillWater() throws Exception {
+		((CoffeeMachineUserCI) this.offering).fillWater();
+
+	}
+
+	@Override
+	public void setSuspendMode() throws Exception {
+		((CoffeeMachineUserCI) this.offering).setSuspendMode();
+
+	}
+
+	@Override
+	public void makeExpresso() throws Exception {
+		((CoffeeMachineUserCI) this.offering).makeExpresso();
+
+	}
+
+	@Override
+	public void setNormalMode() throws Exception {
+		((CoffeeMachineUserCI) this.offering).setNormalMode();
+
+	}
+
+	@Override
+	public void setMaxMode() throws Exception {
+		((CoffeeMachineUserCI) this.offering).setMaxMode();
+
 	}
 
 }

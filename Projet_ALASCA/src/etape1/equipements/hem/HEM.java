@@ -427,7 +427,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 		this.traceMessage("Coffee Machine connected !");
 		this.equipementsRegitered.put(uid, true);
 
-		//System.out.println("Mode actif de la machine à café" + this.coffeeop.currentMode());
+		System.out.println("Mode actif de la machine à café" + this.coffeeop.currentMode());
 
 		// TODO : Register the equipement
 		// Create dynamicly the connector
@@ -662,9 +662,9 @@ public class HEM extends AbstractComponent implements RegistrationI {
 			this.logMessage("Coffee Machine current mode: " + oldMode);
 			
 			this.logMessage("Decreasing the machine mode");
-			boolean isDecreased = this.coffeeop.downMode();
+			boolean isIncreased = this.coffeeop.upMode();
 			int newMode = this.coffeeop.currentMode();
-			if (isDecreased)
+			if (isIncreased)
 				this.logMessage("Coffee Machine new mode: " + newMode );
 			
 			// Change power level test

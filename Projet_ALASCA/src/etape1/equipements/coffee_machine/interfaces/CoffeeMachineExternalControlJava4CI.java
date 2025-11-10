@@ -9,5 +9,5 @@ public interface CoffeeMachineExternalControlJava4CI extends CoffeeMachineExtern
 
 	public void setCurrentPowerLevelJava4(double powerLevel) throws Exception;
 
-	public void setEcoModeJava4() throws Exception;
+	
 }

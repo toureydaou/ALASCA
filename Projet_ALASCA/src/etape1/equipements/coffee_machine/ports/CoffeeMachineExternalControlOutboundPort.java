@@ -89,10 +89,6 @@ public class CoffeeMachineExternalControlOutboundPort extends AbstractOutboundPo
 
 	}
 
-	@Override
-	public void setEcoMode() throws Exception {
-		((CoffeeMachineExternalControlCI)this.getConnector()).setEcoMode();
 
-	}
 
 }

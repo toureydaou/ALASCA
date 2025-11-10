@@ -13,5 +13,5 @@ public interface CoffeeMachineExternalControlCI extends CoffeeMachineExternalCon
 
 	public void setCurrentPowerLevel(Measure<Double> powerLevel) throws Exception;
 
-	public void setEcoMode() throws Exception;
+	
 }

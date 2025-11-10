@@ -3,6 +3,7 @@ package etape1.equipements.coffee_machine.ports;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineInternalControlCI;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractOutboundPort;
+import physical_data.Measure;
 
 public class CoffeeMachineInternalOutboundPort extends AbstractOutboundPort implements CoffeeMachineInternalControlCI {
 
@@ -86,6 +87,11 @@ public class CoffeeMachineInternalOutboundPort extends AbstractOutboundPort impl
 	public void stopHeating() throws Exception {
 		((CoffeeMachineInternalControlCI)this.getConnector()).stopHeating();
 
+	}
+
+	@Override
+	public Measure<Double> getTemperature() throws Exception {
+		return ((CoffeeMachineInternalControlCI)this.getConnector()).getTemperature();
 	}
 
 }

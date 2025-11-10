@@ -2,10 +2,9 @@ package etape1.equipements.coffee_machine.connectors;
 
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineInternalControlCI;
 import fr.sorbonne_u.components.connectors.AbstractConnector;
+import physical_data.Measure;
 
 public class CoffeeMachineInternalConnector extends AbstractConnector implements CoffeeMachineInternalControlCI {
-	
-	
 	
 
 	@Override
@@ -23,6 +22,11 @@ public class CoffeeMachineInternalConnector extends AbstractConnector implements
 	public void stopHeating() throws Exception {
 		((CoffeeMachineInternalControlCI) this.offering).stopHeating();
 
+	}
+
+	@Override
+	public Measure<Double> getTemperature() throws Exception {
+		return ((CoffeeMachineInternalControlCI) this.offering).getTemperature();
 	}
 
 }

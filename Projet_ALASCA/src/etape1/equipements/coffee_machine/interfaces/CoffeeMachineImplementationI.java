@@ -7,7 +7,7 @@ public interface CoffeeMachineImplementationI {
 	}
 
 	public static enum CoffeeMachineMode {
-		EXPRESSO, THE, ECO_MODE
+		SUSPEND, ECO, NORMAL, MAX 
 	}
 
 	public boolean on() throws Exception;
@@ -15,12 +15,6 @@ public interface CoffeeMachineImplementationI {
 	public CoffeeMachineState getState() throws Exception;
 
 	public CoffeeMachineMode getMode() throws Exception;
-
-	public void setExpresso() throws Exception;
-	
-	public void setEcoMode() throws Exception;
-
-	public void setThe() throws Exception;
 
 	
 }

@@ -10,92 +10,131 @@
   
   <required>java.lang.Math</required>
   <required>fr.sorbonne_u.exceptions.PreconditionException</required>
+  <required>fr.sorbonne_u.components.connectors.AbstractConnector</required>
+  <required>etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlJava4CI</required>
+  <required>etape1.equipements.coffee_machine.Constants</required>
+  <required>etape1.bases.AdjustableCI</required>
 
   
-  <instance-var modifiers="protected static" type="int" name="MAX_MODE" static-init="3"/>
-  <instance-var modifiers="protected static" type="double" name="MIN_ADMISSIBLE_TEMP_THE" static-init="0.0"/>
-  <instance-var modifiers="protected static" type="double" name="MIN_ADMISSIBLE_TEMP_CAFE" static-init="0.0"/>
-  <instance-var modifiers="protected static" type="double" name="MAX_ADMISSIBLE_TEMP_THE" static-init="100.0"/>
-  <instance-var modifiers="protected static" type="double" name="MAX_ADMISSIBLE_TEMP_CAFE" static-init="90.0"/>
-  <instance-var modifiers="protected static" type="double" name="MAX_ADMISSIBLE_DELTA" static-init="10.0"/>
-  <instance-var modifiers="protected" type="int" name="currentMode" static-init="MAX_MODE"/>
-  <instance-var modifiers="protected" type="boolean" name="isSuspended" static-init="false"/>
+  <instance-var  modifiers= "protected static" type="int" name="MIN_MODE" static-init="1"/>
+   <instance-var  modifiers= "protected static" type="int" name="MAX_MODE" static-init="4"/>
+   <instance-var  modifiers= "protected static" type="double" name="MAX_ADMISSIBLE_DELTA" static-init="10.0"/>
+   <instance-var  modifiers= "protected static" type="double" name="TARGET_TEMPERATURE" static-init="100.0"/>
+   <instance-var  modifiers= "protected" type="int" name="currentMode" static-init="1"/>
+   <instance-var  modifiers= "protected" type="boolean" name="isSuspended" static-init="false"/>
 
-  <!-- Aucune méthode interne spécifique  n’est présente ici -->
+ 
+	<internal  modifiers= "protected" name="computePowerLevel" type="double">
+        <parameter type="int" name="mode"/>
+        <thrown>java.lang.Exception</thrown>
+        <body>
+            if (mode == 1) {
+				return 3.0;
+			} else if (mode == 2) {
+				return 300.0;
+			} else if (mode == 3) {
+				return 800.0;
+			} else if (mode == 4) {
+				return 1200.0;
+			} else  {
+				return 3.0;
+			} 
+        </body>
+    </internal>
 
-  
-  <maxMode>
-    <body>return MAX_MODE;</body>
-  </maxMode>
+    <internal  modifiers= "protected" name="setPowerLevel" type="void">
+        <parameter type="double" name="newPowerLevel"/>
+        <thrown>java.lang.Exception</thrown>
+        <body equipmentRef="coffee">
+            double maxPowerLevel = coffee.getMaxPowerLevelJava4();
+            if (newPowerLevel &gt; maxPowerLevel) newPowerLevel = maxPowerLevel;
+            coffee.setCurrentPowerLevelJava4(newPowerLevel);
+        </body>
+    </internal>
 
-  <upMode>
-    <body>
-      this.currentMode++;
-      return true;
-    </body>
-  </upMode>
+    <internal  modifiers= "protected" name="computeAndSetNewPowerLevel" type="void">
+        <parameter type="int" name="newMode"/>
+        <thrown>java.lang.Exception</thrown>
+        <body>
+            double newPowerLevel = computePowerLevel(newMode);
+            setPowerLevel(newPowerLevel);
+        </body>
+    </internal>
 
-  <downMode>
-    <body>
-      this.currentMode--;
-      return true;
-    </body>
-  </downMode>
+    <!-- ========================================================= -->
+    <!-- Operations (AdjustableCI interface)                       -->
+    <!-- ========================================================= -->
+    
 
-  <setMode>
-    <parameter name="modeIndex"/>
-    <body>
-      this.currentMode = modeIndex;
-      return true;
-    </body>
-  </setMode>
+        <maxMode>
+            <body>return MAX_MODE;</body>
+        </maxMode>
 
-  <currentMode>
-    <body>
-      return this.currentMode;
-    </body>
-  </currentMode>
+        <upMode>
+            <body>
+                currentMode++;
+                computeAndSetNewPowerLevel(currentMode);
+                return true;
+            </body>
+        </upMode>
 
-  <getModeConsumption>
-    <parameter name="modeIndex"/>
-    <body equipmentRef="coffeeMachine">
-      return coffeeMachine.getPowerLevelJava4();
-    </body>
-  </getModeConsumption>
+        <downMode>
+            <body>
+                currentMode--;
+                computeAndSetNewPowerLevel(currentMode);
+                return true;
+            </body>
+        </downMode>
 
-  <suspended>
-    <body>
-      return this.isSuspended;
-    </body>
-  </suspended>
+        <setMode>
+            <parameter  name="modeIndex"/>
+            <body>
+                currentMode = modeIndex;
+                computeAndSetNewPowerLevel(currentMode);
+                return true;
+            </body>
+        </setMode>
 
-  <suspend>
-    <body equipmentRef="coffeeMachine">
-      try {
-        coffeeMachine.setCurrentPowerLevelJava4(0.0);
-        isSuspended = true;
-      } catch(Exception e) {
-        return false;
-      }
-      return isSuspended;
-    </body>
-  </suspend>
+        <currentMode>
+            <body>return currentMode;</body>
+        </currentMode>
 
-  <resume>
-    <body>
-      try {
-        isSuspended = false;
-      } catch(Exception e) {
-        return false;
-      }
-      return true;
-    </body>
-  </resume>
+        <getModeConsumption>
+            <parameter name="modeIndex"/>
+            <body>
+                return computePowerLevel(modeIndex);
+            </body>
+        </getModeConsumption>
 
-  <emergency>
-    <body>
-      return 0.0;
-    </body>
-  </emergency>
+        <suspended>
+            <body>return isSuspended;</body>
+        </suspended>
+
+        <suspend>
+            <body equipmentRef="coffee">
+                coffee.setCurrentPowerLevelJava4(0.0);
+                isSuspended = true;
+                return isSuspended;
+            </body>
+        </suspend>
+
+        <resume>
+            <body>
+                computeAndSetNewPowerLevel(currentMode);
+                isSuspended = false;
+                return true;
+            </body>
+        </resume>
+
+        <emergency>
+            <body equipmentRef="coffee">
+                double temperature = coffee.getTemperatureJava4();
+                if (temperature - TARGET_TEMPERATURE &gt;= MAX_ADMISSIBLE_DELTA)
+                    return 1.0;
+                return 0.0;
+            </body>
+        </emergency>
+
+   
 
 </control-adapter>

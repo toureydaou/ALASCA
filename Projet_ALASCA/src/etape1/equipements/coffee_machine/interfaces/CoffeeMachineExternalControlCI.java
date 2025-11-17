@@ -12,6 +12,8 @@ public interface CoffeeMachineExternalControlCI extends CoffeeMachineExternalCon
 	public Measure<Double> getMaxPowerLevel() throws Exception;
 
 	public void setCurrentPowerLevel(Measure<Double> powerLevel) throws Exception;
+	
+	public void setMode(int mode) throws Exception;
 
 	
 }

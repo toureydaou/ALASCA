@@ -8,6 +8,8 @@ public interface CoffeeMachineExternalControlJava4CI extends CoffeeMachineExtern
 	public double getMaxPowerLevelJava4() throws Exception;
 
 	public void setCurrentPowerLevelJava4(double powerLevel) throws Exception;
+	
+	public void setModeJava4(int mode) throws Exception;
 
 	
 }

@@ -95,6 +95,12 @@ public class CoffeeMachineExternalControlJava4InboundPort extends CoffeeMachineE
 
 	}
 
+	@Override
+	public void setModeJava4(int mode) throws Exception {
+		this.setMode(mode);
+		
+	}
+
 
 
 }

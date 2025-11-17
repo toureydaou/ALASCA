@@ -11,8 +11,6 @@ import etape1.bases.generator.ConnectorGenerator;
 import etape1.bases.parser.ConnectorAdapterInfo;
 import etape1.bases.parser.ConnectorAdapterParserXML;
 import etape1.equipements.coffee_machine.CoffeeMachine;
-import etape1.equipements.coffee_machine.CoffeeMachineUnitTester;
-import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
 import etape1.equipements.hem.connections.CoffeeMachineConnector;
 import etape1.equipements.hem.ports.AdjustableOutboundPort;
 import etape1.equipements.registration.ports.RegistrationI;
@@ -167,7 +165,13 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	protected AcceleratedClock ac;
 
 	private static final String COFFEE_MACHINE_CONNECTOR_NAME = "CoffeeMachineGeneratedConnector";
+	
+	public static final int HEM_DELAY = 5;
 
+	
+	/** collector of test statistics.										*/
+	protected TestsStatistics				statistics;
+	
 	// -------------------------------------------------------------------------
 	// Invariants
 	// -------------------------------------------------------------------------
@@ -413,21 +417,19 @@ public class HEM extends AbstractComponent implements RegistrationI {
 		if (this.registered(uid))
 			return false;
 
-		System.out.println("Enregistrement de la Machine à Café (HEM)");
-		System.out.println("Génération du connecteur (HEM)");
+		
 		ConnectorAdapterInfo infos = ConnectorAdapterParserXML.parse(xmlControlAdapter);
 		Class<?> coffeeConnectorGenerated = ConnectorGenerator.generate(infos, COFFEE_MACHINE_CONNECTOR_NAME);
 
 		System.out.println("Connecteur généré (HEM)");
 
-		System.out.println("Connexion du HEM à la machine à la café (HEM)");
 		this.doPortConnection(this.coffeeop.getPortURI(), CoffeeMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 				coffeeConnectorGenerated.getCanonicalName());
 
 		this.traceMessage("Coffee Machine connected !");
 		this.equipementsRegitered.put(uid, true);
 
-		System.out.println("Mode actif de la machine à café" + this.coffeeop.currentMode());
+
 
 		// TODO : Register the equipement
 		// Create dynamicly the connector
@@ -550,133 +552,247 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	 * TestsStatistics()); }
 	 */
 
+	
 	/**
-	 * test the heater.
-	 * 
+	 * Test the coffee machine.
+	 *
 	 * <p>
 	 * <strong>Gherkin specification</strong>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * Feature: adjustable appliance mode management
-	 *   Scenario: getting the max mode index
-	 *     Given the heater has just been turned on
+	 *   Scenario: getting the maximum mode index
+	 *     Given the coffee machine has just been turned on
 	 *     When I call maxMode()
-	 *     Then the result is its max mode index
+	 *     Then the result is its maximum mode index
+	 *
 	 *   Scenario: getting the current mode index
-	 *     Given the heater has just been turned on
+	 *     Given the coffee machine has just been turned on
 	 *     When I call currentMode()
-	 *     Then the current mode is its max mode
-	 *   Scenario: going down one mode index
-	 *     Given the heater is turned on
-	 *     And the current mode index is the max mode index
-	 *     When I call downMode()
-	 *     Then the method returns true
-	 *     And the current mode is its max mode minus one
-	 *   Scenario: going up one mode index
-	 *     Given the heater is turned on
-	 *     And the current mode index is the max mode index minus one
+	 *     Then the current mode is within the valid range
+	 *
+	 *   Scenario: increasing the mode index
+	 *     Given the coffee machine is turned on
+	 *     And the current mode index is strictly less than the maximum mode index
 	 *     When I call upMode()
 	 *     Then the method returns true
-	 *     And the current mode is its max mode
-	 *   Scenario: setting the mode index
-	 *     Given the heater is turned on
-	 *     And the mode index 1 is legitimate
-	 *     When I call setMode(1)
+	 *     And the current mode becomes the previous mode plus one
+	 *
+	 *   Scenario: decreasing the mode index
+	 *     Given the coffee machine is turned on
+	 *     And the current mode index is strictly greater than 0
+	 *     When I call downMode()
 	 *     Then the method returns true
-	 *     And the current mode is 1
-	 * Feature: Getting the power consumption given a mode
+	 *     And the current mode becomes the previous mode minus one
+	 *
+	 * Feature: getting the power consumption given a mode
 	 *   Scenario: getting the power consumption of the maximum mode
-	 *     Given the heater is turned on
+	 *     Given the coffee machine is turned on
 	 *     When I get the power consumption of the maximum mode
-	 *     Then the result is the maximum power consumption of the heater
+	 *     Then the result is strictly greater than 0
+	 *
 	 * Feature: suspending and resuming
-	 *   Scenario: checking if suspended when not
-	 *     Given the heater is turned on
-	 *     And it has not been suspended yet
-	 *     When I check if suspended
-	 *     Then it is not
 	 *   Scenario: suspending
-	 *     Given the heater is turned on
-	 *     And it is not suspended
+	 *     Given the coffee machine is turned on
+	 *     And it is not suspended yet
 	 *     When I call suspend()
 	 *     Then the method returns true
-	 *     And the heater is suspended
-	 *   Scenario: going down one mode index when suspended
-	 *     Given the heater is turned on
-	 *     And the heater is suspended
-	 *     When I call downMode()
-	 *     Then a precondition exception is thrown
-	 *   Scenario: going up one mode index when suspended
-	 *     Given the heater is turned on
-	 *     And the heater is suspended
+	 *     And the coffee machine becomes suspended
+	 *
+	 *   Scenario: calling upMode while suspended
+	 *     Given the coffee machine is turned on
+	 *     And it is suspended
 	 *     When I call upMode()
 	 *     Then a precondition exception is thrown
-	 *   Scenario: going up one mode index when suspended
-	 *     Given the heater is turned on
-	 *     And the heater is suspended
-	 *     When I call upMode()
+	 *
+	 *   Scenario: calling currentMode while suspended
+	 *     Given the coffee machine is turned on
+	 *     And it is suspended
+	 *     When I call currentMode()
 	 *     Then a precondition exception is thrown
-	 *   Scenario: getting the current mode when suspended
-	 *     Given the heater is turned on
-	 *     And the heater is suspended
-	 *     When I get the current mode
-	 *     Then a precondition exception is thrown
-	 *   Scenario: checking the emergency
-	 *     Given the heater is turned on
-	 *     And it has just been suspended
-	 *     When I call emergency()
-	 *     Then the emergency is between 0.0 and 1.0
+	 *
 	 *   Scenario: resuming
-	 *     Given the heater is turned on
+	 *     Given the coffee machine is turned on
 	 *     And it is suspended
 	 *     When I call resume()
 	 *     Then the method returns true
-	 *     And the heater is not suspended
+	 *     And the coffee machine is no longer suspended
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * <strong>Contract</strong>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
-	 * pre	{@code
-	 * true
-	 * }	// no precondition.
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
+	 * pre  {@code true}  // no precondition.
+	 * post {@code true}  // no postcondition.
 	 * </pre>
 	 *
 	 * @throws Exception <i>to do</i>.
 	 */
 	protected void testCoffeeMachine() throws Exception {
 		this.logMessage("Coffee tests start.");
-		TestsStatistics statistics = new TestsStatistics();
+		this.statistics = new TestsStatistics();
 		try {
 			
-			// Change mode test
-			this.logMessage("Feature: test decreaseing the coffee machine mode");
-			this.logMessage("Show current mode");
-			int oldMode = this.coffeeop.currentMode();
-			this.logMessage("Coffee Machine current mode: " + oldMode);
 			
-			this.logMessage("Decreasing the machine mode");
-			boolean isIncreased = this.coffeeop.upMode();
-			int newMode = this.coffeeop.currentMode();
-			if (isIncreased)
-				this.logMessage("Coffee Machine new mode: " + newMode );
-			
-			// Change power level test
-			//this.logMessage("Feature: test show the power ");
-			//this.logMessage("Show current mode");
-			//int previousPowerLevel = this.coffeeop.getModeConsumption(newMode);
-			//this.logMessage("Coffee Machine current mode: " + oldMode);
-			
-			
+			this.logMessage("\n*** Testing coffee machine adjustable modes ***\n");
 
-		} catch (Exception e) {
+		    // ---------------------------------------------------------------------
+		    // Scenario: Getting the maximum mode index
+		    // ---------------------------------------------------------------------
+		    this.logMessage("Testing maxMode():");
+		    int maxMode = this.coffeeop.maxMode();
+		    this.logMessage("  - maxMode() returned: " + maxMode);
+
+		    if (maxMode <= 0) {
+		        this.logMessage("  -> Incorrect: maximum mode should be > 0.");
+		        this.statistics.incorrectResult();
+		    }
+		    this.statistics.updateStatistics();
 			
+			
+		    // ---------------------------------------------------------------------
+		    // Scenario: Getting the current mode index
+		    // ---------------------------------------------------------------------
+		    this.logMessage("\nTesting currentMode():");
+		    int currentMode = this.coffeeop.currentMode();
+		    this.logMessage("  - currentMode() returned: " + currentMode);
+
+		    if (currentMode < 0 || currentMode > maxMode) {
+		        this.logMessage("  -> Incorrect: current mode is out of valid range.");
+		        this.statistics.incorrectResult();
+		    }
+		    this.statistics.updateStatistics();
+		    
+			
+		    // ---------------------------------------------------------------------
+		    // Scenario: Increasing the mode index
+		    // ---------------------------------------------------------------------
+		    this.logMessage("\nTesting upMode():");
+		    if (currentMode == maxMode) {
+		        this.logMessage("  - Already at maximum mode, cannot increase.");
+		        this.statistics.updateStatistics();
+		    } else {
+		        boolean upSuccess = this.coffeeop.upMode();
+		        int newMode = this.coffeeop.currentMode();
+		        this.logMessage("  - upMode() returned: " + upSuccess);
+		        this.logMessage("  - New mode is: " + newMode);
+
+		        if (!upSuccess) {
+		            this.logMessage("  -> Incorrect: upMode() should return true when current < max.");
+		            this.statistics.incorrectResult();
+		        }
+		        if (newMode != currentMode + 1) {
+		            this.logMessage("  -> Incorrect: new mode should be previous mode + 1.");
+		            this.statistics.incorrectResult();
+		        }
+		        this.statistics.updateStatistics();
+
+		        currentMode = newMode; // update for next tests
+		    }
+			
+		    // ---------------------------------------------------------------------
+		    // Scenario: Decreasing the mode index
+		    // ---------------------------------------------------------------------
+		    this.logMessage("\nTesting downMode():");
+		    if (currentMode == 0) {
+		        this.logMessage("  - Already at minimum mode, cannot decrease.");
+		        this.statistics.updateStatistics();
+		    } else {
+		        boolean downSuccess = this.coffeeop.downMode();
+		        int newMode = this.coffeeop.currentMode();
+		        this.logMessage("  - downMode() returned: " + downSuccess);
+		        this.logMessage("  - New mode is: " + newMode);
+
+		        if (!downSuccess) {
+		            this.logMessage("  -> Incorrect: downMode() should return true when current > 0.");
+		            this.statistics.incorrectResult();
+		        }
+		        if (newMode != currentMode - 1) {
+		            this.logMessage("  -> Incorrect: new mode should be previous mode - 1.");
+		            this.statistics.incorrectResult();
+		        }
+		        this.statistics.updateStatistics();
+
+		        currentMode = newMode;
+		    }
+		    
+		    // ---------------------------------------------------------------------
+		    // Scenario: Getting consumption of the maximum mode
+		    // ---------------------------------------------------------------------
+		    this.logMessage("\nTesting getModeConsumption():");
+		    double maxConsumption = this.coffeeop.getModeConsumption(maxMode);
+		    this.logMessage("  - getModeConsumption(" + maxMode + ") returned: " + maxConsumption);
+
+		    if (maxConsumption <= 0) {
+		        this.logMessage("  -> Incorrect: consumption for max mode must be > 0.");
+		        this.statistics.incorrectResult();
+		    }
+		    this.statistics.updateStatistics();
+			
+		    
+		    // ---------------------------------------------------------------------
+		    // Scenario: Suspending
+		    // ---------------------------------------------------------------------
+		    this.logMessage("\nTesting suspend():");
+		    boolean suspendSuccess = this.coffeeop.suspend();
+		    this.logMessage("  - suspend() returned: " + suspendSuccess);
+
+		    if (!suspendSuccess) {
+		        this.logMessage("  -> Incorrect: suspend() should return true.");
+		        this.statistics.incorrectResult();
+		    }
+		    this.statistics.updateStatistics();
+			
+		    
+		    // ---------------------------------------------------------------------
+		    // Scenario: Calling upMode() while suspended
+		    // ---------------------------------------------------------------------
+		    this.logMessage("\nTesting upMode() while suspended (should fail):");
+		    try {
+		        this.coffeeop.upMode();
+		        this.logMessage("  -> Incorrect: upMode() should throw an exception while suspended.");
+		        this.statistics.incorrectResult();
+		    } catch (AssertionError | Exception e) {
+		        this.logMessage("  - Correct: upMode() threw an exception as expected.");
+		    }
+		    this.statistics.updateStatistics();
+		    
+		    
+		    // ---------------------------------------------------------------------
+		    // Scenario: Calling currentMode() while suspended
+		    // ---------------------------------------------------------------------
+		    this.logMessage("\nTesting currentMode() while suspended (should fail):");
+		    try {
+		        this.coffeeop.currentMode();
+		        this.logMessage("  -> Incorrect: currentMode() should throw an exception while suspended.");
+		        this.statistics.incorrectResult();
+		    } catch (AssertionError | Exception e) {
+		        this.logMessage("  - Correct: currentMode() threw an exception as expected.");
+		    }
+		    this.statistics.updateStatistics();
+		    
+		    
+		    // ---------------------------------------------------------------------
+		    // Scenario: Resuming
+		    // ---------------------------------------------------------------------
+		    this.logMessage("\nTesting resume():");
+		    boolean resumeSuccess = this.coffeeop.resume();
+		    this.logMessage("  - resume() returned: " + resumeSuccess);
+
+		    if (!resumeSuccess) {
+		        this.logMessage("  -> Incorrect: resume() should return true.");
+		        this.statistics.incorrectResult();
+		    }
+		    this.statistics.updateStatistics();
+
+
+		    this.logMessage("\n*** Coffee machine tests completed ***\n");
+			
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -701,7 +817,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	protected void scheduleTestCoffee() {
 
 		Instant coffeeTestStart = this.ac.getStartInstant()
-				.plusSeconds((CoffeeMachineUnitTester.SWITCH_ON_DELAY + CoffeeMachineUnitTester.SWITCH_OFF_DELAY) / 2);
+				.plusSeconds(HEM_DELAY);
 		this.traceMessage("HEM schedules the coffee machine test.\n");
 		long delay = this.ac.nanoDelayUntilInstant(coffeeTestStart);
 		this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {

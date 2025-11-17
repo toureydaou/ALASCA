@@ -122,6 +122,15 @@ public class CoffeeMachineExternalControlInboundPort extends AbstractInboundPort
 		});
 	}
 
+	@Override
+	public void setMode(int mode) throws Exception {
+		this.getOwner().handleRequest(o -> {
+			((CoffeeMachineExternalControlI) o).setMode(mode);
+			return null;
+		});
+		
+	}
+
 
 
 

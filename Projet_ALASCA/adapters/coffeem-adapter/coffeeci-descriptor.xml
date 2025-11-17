@@ -5,7 +5,7 @@
     offered="etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlJava4CI">
 
   
-  <consumption nominal="1500" min="0" max="1500"/>
+  <consumption nominal="15200" min="0" max="1200"/>
 
   
   <required>java.lang.Math</required>
@@ -35,7 +35,7 @@
 			} else if (mode == 3) {
 				return 800.0;
 			} else if (mode == 4) {
-				return 1200.0;
+				return 1500.0;
 			} else  {
 				return 3.0;
 			} 
@@ -55,7 +55,7 @@
     <internal  modifiers= "protected" name="computeAndSetNewPowerLevel" type="void">
         <parameter type="int" name="newMode"/>
         <thrown>java.lang.Exception</thrown>
-        <body>
+        <body equipmentRef="coffee">
             double newPowerLevel = computePowerLevel(newMode);
             setPowerLevel(newPowerLevel);
         </body>
@@ -71,16 +71,18 @@
         </maxMode>
 
         <upMode>
-            <body>
+            <body equipmentRef="coffee">
                 currentMode++;
+                coffee.setMode(currentMode);
                 computeAndSetNewPowerLevel(currentMode);
                 return true;
             </body>
         </upMode>
 
         <downMode>
-            <body>
+            <body equipmentRef="coffee">
                 currentMode--;
+                coffee.setMode(currentMode);
                 computeAndSetNewPowerLevel(currentMode);
                 return true;
             </body>
@@ -119,7 +121,7 @@
         </suspend>
 
         <resume>
-            <body>
+            <body equipmentRef="coffee">
                 computeAndSetNewPowerLevel(currentMode);
                 isSuspended = false;
                 return true;

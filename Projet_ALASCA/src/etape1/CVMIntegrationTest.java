@@ -215,7 +215,7 @@ public class CVMIntegrationTest extends AbstractCVM {
 				// start time in Unix epoch time
 				TimeUnit.MILLISECONDS.toNanos(unixEpochStartTimeInMillis), START_INSTANT, ACCELERATION_FACTOR });
 
-		AbstractComponent.createComponent(CoffeeMachine.class.getCanonicalName(), new Object[] {});
+		AbstractComponent.createComponent(CoffeeMachine.class.getCanonicalName(), new Object[] {true});
 
 		AbstractComponent.createComponent(CoffeeMachineUnitTester.class.getCanonicalName(), new Object[] { false });
 
@@ -228,8 +228,8 @@ public class CVMIntegrationTest extends AbstractCVM {
 		BCMException.VERBOSE = true;
 		try {
 			CVMIntegrationTest cvm = new CVMIntegrationTest();
-			cvm.startStandardLifeCycle(12000L);
-			Thread.sleep(100000L);
+			cvm.startStandardLifeCycle(60000L);
+			Thread.sleep(10000L);
 			System.exit(0);
 		} catch (Throwable e) {
 			e.printStackTrace();

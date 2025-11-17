@@ -40,12 +40,16 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 	 * in clock-driven scenario, the delay from the start instant at which the
 	 * Coffee Machine is switched on.
 	 */
-	public static final int SWITCH_ON_DELAY = 2;
+	public static final int SWITCH_ON_DELAY = 4;
 	/**
 	 * in clock-driven scenario, the delay from the start instant at which the
 	 * Coffee Machine is switched off.
 	 */
-	public static final int SWITCH_OFF_DELAY = 9;
+	public static final int SWITCH_OFF_DELAY = 55;
+	
+	public static final int MAKE_EXPRESSO_ON_ECO_MODE_DELAY = 25;
+	
+	public static final int MAKE_EXPRESSO_ON_MAX_MODE_DELAY = 35;
 
 	/** when true, methods trace their actions. */
 	public static boolean VERBOSE = false;
@@ -110,13 +114,13 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 	 * 
 	 * <pre>
 	 * pre	{@code
-	 * LaundryUserInboundPortURI != null && !LaundryUserInboundPortURI.isEmpty()
+	 * CoffeeMachineUserInboundPortURI != null && !CoffeeMachineUserInboundPortURI.isEmpty()
 	 * }
 	 * pre	{@code
-	 * LaundryInternalControlInboundPortURI != null && !LaundryInternalControlInboundPortURI.isEmpty()
+	 * CoffeeMachineInternalControlInboundPortURI != null && !CoffeeMachineInternalControlInboundPortURI.isEmpty()
 	 * }
 	 * pre	{@code
-	 * LaundryExternalControlInboundPortURI != null && !LaundryExternalControlInboundPortURI.isEmpty()
+	 * CoffeeMachineExternalControlInboundPortURI != null && !CoffeeMachineExternalControlInboundPortURI.isEmpty()
 	 * }
 	 * post	{@code
 	 * true
@@ -127,11 +131,11 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 	 *                                             perform unit tests, otherwise it
 	 *                                             executes integration tests
 	 *                                             actions.
-	 * @param LaundryUserInboundPortURI            URI of the user component
+	 * @param CoffeeMachineUserInboundPortURI            URI of the user component
 	 *                                             interface inbound port.
-	 * @param LaundryInternalControlInboundPortURI URI of the internal control
+	 * @param CoffeeMachineInternalControlInboundPortURI URI of the internal control
 	 *                                             component interface inbound port.
-	 * @param LaundryExternalControlInboundPortURI URI of the external control
+	 * @param CoffeeMachineExternalControlInboundPortURI URI of the external control
 	 *                                             component interface inbound port.
 	 * @throws Exception <i>to do</i>.
 	 */
@@ -150,13 +154,13 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 	 * 
 	 * <pre>
 	 * pre	{@code
-	 * LaundryUserInboundPortURI != null && !LaundryUserInboundPortURI.isEmpty()
+	 * CoffeeMachineUserInboundPortURI != null && !CoffeeMachineUserInboundPortURI.isEmpty()
 	 * }
 	 * pre	{@code
-	 * LaundryInternalControlInboundPortURI != null && !LaundryInternalControlInboundPortURI.isEmpty()
+	 * CoffeeMachineInternalControlInboundPortURI != null && !CoffeeMachineInternalControlInboundPortURI.isEmpty()
 	 * }
 	 * pre	{@code
-	 * LaundryExternalControlInboundPortURI != null && !LaundryExternalControlInboundPortURI.isEmpty()
+	 * CoffeeMachineExternalControlInboundPortURI != null && !CoffeeMachineExternalControlInboundPortURI.isEmpty()
 	 * }
 	 * post	{@code
 	 * true
@@ -169,11 +173,11 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 	 *                                             actions.
 	 * @param reflectionInboundPortURI             URI of the reflection inbound
 	 *                                             port of the component.
-	 * @param LaundryUserInboundPortURI            URI of the user component
+	 * @param CoffeeMachineUserInboundPortURI            URI of the user component
 	 *                                             interface inbound port.
-	 * @param LaundryInternalControlInboundPortURI URI of the internal control
+	 * @param CoffeeMachineInternalControlInboundPortURI URI of the internal control
 	 *                                             component interface inbound port.
-	 * @param LaundryExternalControlInboundPortURI URI of the external control
+	 * @param CoffeeMachineExternalControlInboundPortURI URI of the external control
 	 *                                             component interface inbound port.
 	 * @throws Exception <i>to do</i>.
 	 */
@@ -194,24 +198,24 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 	 * 
 	 * <pre>
 	 * pre	{@code
-	 * LaundryUserInboundPortURI != null && !LaundryUserInboundPortURI.isEmpty()
+	 * CoffeeMachineUserInboundPortURI != null && !CoffeeMachineUserInboundPortURI.isEmpty()
 	 * }
 	 * pre	{@code
-	 * LaundryInternalControlInboundPortURI != null && !LaundryInternalControlInboundPortURI.isEmpty()
+	 * CoffeeMachineInternalControlInboundPortURI != null && !CoffeeMachineInternalControlInboundPortURI.isEmpty()
 	 * }
 	 * pre	{@code
-	 * LaundryExternalControlInboundPortURI != null && !LaundryExternalControlInboundPortURI.isEmpty()
+	 * CoffeeMachineExternalControlInboundPortURI != null && !CoffeeMachineExternalControlInboundPortURI.isEmpty()
 	 * }
 	 * post	{@code
 	 * true
 	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param LaundryUserInboundPortURI            URI of the user component
+	 * @param CoffeeMachineUserInboundPortURI            URI of the user component
 	 *                                             interface inbound port.
-	 * @param LaundryInternalControlInboundPortURI URI of the internal control
+	 * @param CoffeeMachineInternalControlInboundPortURI URI of the internal control
 	 *                                             component interface inbound port.
-	 * @param LaundryExternalControlInboundPortURI URI of the external control
+	 * @param CoffeeMachineExternalControlInboundPortURI URI of the external control
 	 *                                             component interface inbound port.
 	 * @throws Exception <i>to do</i>.
 	 */
@@ -234,11 +238,11 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 		this.statistics = new TestsStatistics();
 
 		/*
-		 * assert LaundryUnitTester.implementationInvariants(this) : new
+		 * assert CoffeeMachineUnitTester.implementationInvariants(this) : new
 		 * ImplementationInvariantException(
-		 * "LaundryTester.implementationInvariants(this)"); assert
-		 * LaundryUnitTester.invariants(this) : new
-		 * InvariantException("LaundryTester.invariants(this)");
+		 * "CoffeeMachineTester.implementationInvariants(this)"); assert
+		 * CoffeeMachineUnitTester.invariants(this) : new
+		 * InvariantException("CoffeeMachineTester.invariants(this)");
 		 */
 	}
 
@@ -498,7 +502,7 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 				this.logMessage("    Then the state of the coffee machine is on");
 			} else {
 				this.logMessage("     but was: off");
-
+				this.statistics.incorrectResult();
 			}
 
 			this.logMessage("    When I put the coffee machine on MAX mode");
@@ -507,6 +511,7 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 				this.logMessage("    Then the mode of the coffee machine is MAX");
 			} else {
 				this.logMessage(" but was " + this.cmuop.getMode());
+				this.statistics.incorrectResult();
 			}
 
 			this.logMessage("    When I fill water in the coffee machine");
@@ -518,6 +523,7 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 				this.logMessage("    Then the mode of the coffee machine is NORMAL");
 			} else {
 				this.logMessage(" but was " + this.cmuop.getMode());
+				this.statistics.incorrectResult();
 			}
 
 			this.cmuop.turnOff();
@@ -525,9 +531,47 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
 		}
+		this.statistics.updateStatistics();
 
 	}
 
+	/**
+	 * test making an Expresso in eco mode.
+	 * 
+	 * <p>
+	 * <strong>Description</strong>
+	 * </p>
+	 * 
+	 * <p>
+	 * Gherkin specification
+	 * </p>
+	 * <p>
+	 * </p>
+	 * 
+	 * <pre>
+	 * Feature: make an Expresso in ECO mode
+	 *   Scenario: getting the state of the Coffee Machine when on
+	 *     Given the Coffee Machine is initialised
+	 *     And the ECO mode is set
+	 *     And the Coffee Machine has been filled with water
+	 *     When I make an Expresso
+	 *     Then the mode of the Coffee Machine is NORMAL
+	 * </pre>
+	 * 
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 * 
+	 * <pre>
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 */
 	protected void testMakeExpressoInEcoMode() {
 		this.logMessage("Feature: make an Expresso in MAX mode");
 		this.logMessage("	Given the Coffee Machine is initialised");
@@ -568,10 +612,12 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 			}
 
 			this.cmuop.turnOff();
+
 		} catch (Exception e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
 		}
+		this.statistics.updateStatistics();
 
 	}
 
@@ -581,7 +627,7 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 		this.testTurnOnTurnOff();
 		this.testMakeExpressoInMaxMode();
 		this.testMakeExpressoInEcoMode();
-		
+
 		this.statistics.statisticsReport(this);
 
 	}
@@ -598,10 +644,8 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 		super.start();
 
 		try {
-			System.out.println("Connexion utilisateur (CMTest)");
 			this.doPortConnection(this.cmuop.getPortURI(), this.coffeeMachineUserInboundPortURI,
 					CoffeeMachineUserConnector.class.getCanonicalName());
-			System.out.println("Connexion interne (CMTest)");
 			this.doPortConnection(this.cmiip.getPortURI(), this.coffeeMachineInternalControlInboundPortURI,
 					CoffeeMachineInternalConnector.class.getCanonicalName());
 
@@ -627,13 +671,17 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 			clocksServerOutboundPort = null;
 
 			Instant startInstant = ac.getStartInstant();
-			Instant LaundrySwitchOn = startInstant.plusSeconds(SWITCH_ON_DELAY);
-			Instant LaundrySwitchOff = startInstant.plusSeconds(SWITCH_OFF_DELAY);
+			Instant CoffeeMachineSwitchOn = startInstant.plusSeconds(SWITCH_ON_DELAY);
+			Instant CoffeeMachineSwitchOff = startInstant.plusSeconds(SWITCH_OFF_DELAY);
+			Instant CoffeeMachineMakeExpressoOnEcoMode = startInstant.plusSeconds(MAKE_EXPRESSO_ON_ECO_MODE_DELAY);
+			Instant CoffeeMachineMakeExpressoOnMaxMode = startInstant.plusSeconds(MAKE_EXPRESSO_ON_ECO_MODE_DELAY);
 			this.traceMessage("Coffee Machine tester waits until start.\n");
 			ac.waitUntilStart();
 			this.traceMessage("Coffee Machine tester schedules switch on and off.\n");
-			long delayToSwitchOn = ac.nanoDelayUntilInstant(LaundrySwitchOn);
-			long delayToSwitchOff = ac.nanoDelayUntilInstant(LaundrySwitchOff);
+			long delayToSwitchOn = ac.nanoDelayUntilInstant(CoffeeMachineSwitchOn);
+			long delayToSwitchOff = ac.nanoDelayUntilInstant(CoffeeMachineSwitchOff);
+			long delayToMakeExpressoOnEcoMode = ac.nanoDelayUntilInstant(CoffeeMachineMakeExpressoOnEcoMode);
+			long delayToMakeExpressoOnMaxMode = ac.nanoDelayUntilInstant(CoffeeMachineMakeExpressoOnMaxMode);
 
 			// This is to avoid mixing the 'this' of the task object with the 'this'
 			// representing the component object in the code of the next methods run
@@ -645,7 +693,6 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 				public void run() {
 					try {
 						o.traceMessage("Coffee Machine switches on.\n");
-						System.out.println("Allumage machine cafe (CMTest)");
 						cmuop.turnOn();
 					} catch (Throwable e) {
 						e.printStackTrace();
@@ -653,7 +700,37 @@ public class CoffeeMachineUnitTester extends AbstractComponent {
 				}
 			}, delayToSwitchOn, TimeUnit.NANOSECONDS);
 
-			// to be completed with a more covering scenario
+			
+			this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
+				@Override
+				public void run() {
+					try {
+						o.traceMessage("Coffee Machine makes coffee on eco mode.\n");
+						cmuop.fillWater();
+						cmuop.setEcoMode();
+						cmuop.makeExpresso();
+					} catch (Throwable e) {
+						e.printStackTrace();
+					}
+				}
+			}, delayToMakeExpressoOnEcoMode, TimeUnit.NANOSECONDS);
+			
+			
+			this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
+				@Override
+				public void run() {
+					try {
+						o.traceMessage("Coffee Machine makes coffee on max mode.\n");
+						cmuop.fillWater();
+						cmuop.setMaxMode();
+						cmuop.makeExpresso();
+					} catch (Throwable e) {
+						e.printStackTrace();
+					}
+				}
+			}, delayToMakeExpressoOnMaxMode, TimeUnit.NANOSECONDS);
+			
+			
 
 			// schedule the switch off Coffee Machine
 			this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {

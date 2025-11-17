@@ -88,15 +88,10 @@ public class ConnectorGenerator {
             method.append("}\n");
 
             try {
-                // Debug: afficher le code généré pour chaque méthode
-                System.out.println("Génération de la méthode: " + m.name);
-                System.out.println("Code:\n" + method.toString());
                 
                 CtMethod cm = CtNewMethod.make(method.toString(), cc);
                 cc.addMethod(cm);
             } catch (CannotCompileException cce) {
-                System.err.println("Erreur compilation méthode " + m.name + " : " + cce.getMessage());
-                System.err.println("Code généré:\n" + method.toString());
                 String fallback = "public " + (m.returnType==null?"void":m.returnType) + " " + m.name + "() throws Exception { throw new RuntimeException(\"method generation failed: " + m.name + "\"); }";
                 cc.addMethod(CtNewMethod.make(fallback, cc));
             }

@@ -39,16 +39,7 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 
 	// BCM4Java information
 
-	/**
-	 * in clock-driven scenario, the delay from the start instant at which the
-	 * Coffee Machine is switched on.
-	 */
-	public static final int SWITCH_ON_DELAY = 2;
-	/**
-	 * in clock-driven scenario, the delay from the start instant at which the
-	 * Coffee Machine is switched off.
-	 */
-	public static final int SWITCH_OFF_DELAY = 5;
+	
 
 	/** when true, methods trace their actions. */
 	public static boolean VERBOSE = true;
@@ -109,6 +100,8 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 
 	protected String uid;
 
+	protected boolean isIntegrationTestMode;
+
 	/** when tracing, x coordinate of the window relative position. */
 	public static int X_RELATIVE_POSITION = 0;
 	/** when tracing, y coordinate of the window relative position. */
@@ -135,8 +128,9 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 	 * 
 	 * @throws Exception <i>to do</i>.
 	 */
-	protected CoffeeMachine() throws Exception {
-		this(USER_INBOUND_PORT_URI, INTERNAL_CONTROL_INBOUND_PORT_URI, EXTERNAL_CONTROL_INBOUND_PORT_URI);
+	protected CoffeeMachine(boolean isIntegrationTestMode) throws Exception {
+		this(isIntegrationTestMode, USER_INBOUND_PORT_URI, INTERNAL_CONTROL_INBOUND_PORT_URI,
+				EXTERNAL_CONTROL_INBOUND_PORT_URI);
 
 	}
 
@@ -162,10 +156,10 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 	 * @param CoffeeMachineInboundPortURI URI of the hair dryer inbound port.
 	 * @throws Exception <i>to do</i>.
 	 */
-	protected CoffeeMachine(String CoffeeMachineUserInboundPortURI, String CoffeeMachineInternalInboundURI,
-			String CoffeeMachineExternalInboundURI) throws Exception {
-		this(REFLECTION_INBOUND_PORT_URI, CoffeeMachineUserInboundPortURI, CoffeeMachineInternalInboundURI,
-				CoffeeMachineExternalInboundURI);
+	protected CoffeeMachine(boolean isIntegrationTestMode, String CoffeeMachineUserInboundPortURI,
+			String CoffeeMachineInternalInboundURI, String CoffeeMachineExternalInboundURI) throws Exception {
+		this(isIntegrationTestMode, REFLECTION_INBOUND_PORT_URI, CoffeeMachineUserInboundPortURI,
+				CoffeeMachineInternalInboundURI, CoffeeMachineExternalInboundURI);
 	}
 
 	/**
@@ -195,15 +189,19 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 	 * @param CoffeeMachineInboundPortURI URI of the hair dryer inbound port.
 	 * @throws Exception <i>to do</i>.
 	 */
-	protected CoffeeMachine(String reflectionInboundPortURI, String coffeeMachineUserInboundPortURI,
-			String coffeeMachineInternalInboundURI, String coffeeMachineExternalInboundURI) throws Exception {
+	protected CoffeeMachine(boolean isIntegrationTestMode, String reflectionInboundPortURI,
+			String coffeeMachineUserInboundPortURI, String coffeeMachineInternalInboundURI,
+			String coffeeMachineExternalInboundURI) throws Exception {
 		super(reflectionInboundPortURI, 1, 1);
-		this.initialise(coffeeMachineUserInboundPortURI, coffeeMachineInternalInboundURI,
+		this.initialise(isIntegrationTestMode, coffeeMachineUserInboundPortURI, coffeeMachineInternalInboundURI,
 				coffeeMachineExternalInboundURI);
 	}
 
-	protected void initialise(String coffeeMachineUserInboundPortURI, String coffeeMachineInternalInboundURI,
-			String coffeeMachineExternalInboundURI) throws Exception {
+	protected void initialise(boolean isIntegrationTestMode, String coffeeMachineUserInboundPortURI,
+			String coffeeMachineInternalInboundURI, String coffeeMachineExternalInboundURI) throws Exception {
+
+		this.isIntegrationTestMode = isIntegrationTestMode;
+
 		this.cmiip = new CoffeeMachineInternalInboundPort(coffeeMachineInternalInboundURI, this);
 		this.cmiip.publishPort();
 
@@ -213,10 +211,12 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 		this.cmecjip = new CoffeeMachineExternalControlJava4InboundPort(coffeeMachineExternalInboundURI, this);
 		this.cmecjip.publishPort();
 
-		System.out.println("Machine à café publication port Registration (CM)");
-		this.rop = new RegistrationOutboundPort(this);
-		this.rop.publishPort();
-		System.out.println("Machine à café port Registration publié (CM)");
+		if (isIntegrationTestMode) {
+			System.out.println("Machine à café publication port Registration (CM)");
+			this.rop = new RegistrationOutboundPort(this);
+			this.rop.publishPort();
+			System.out.println("Machine à café port Registration publié (CM)");
+		}
 
 		this.machineTotalConsumption = new Measure<Double>(0.0, POWER_UNIT);
 		this.currentState = INITIAL_STATE;
@@ -245,10 +245,13 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 		super.start();
 		try {
 			// Publication du port d'enregistrement
-			System.out.println("Connexion avec HEM pour enregistrement (CM)");
-			this.doPortConnection(this.rop.getPortURI(), HEM.REGISTRATION_COFFEE_INBOUND_PORT_URI,
-					RegistrationConnector.class.getCanonicalName());
-			System.out.println("Connexion avec HEM pour enregistrement réalisée (CM)");
+			// Connexion avec le HEM réalisée uniquement en cas de test d'intégration
+			if (isIntegrationTestMode) {
+				System.out.println("Connexion avec HEM pour enregistrement (CM)");
+				this.doPortConnection(this.rop.getPortURI(), HEM.REGISTRATION_COFFEE_INBOUND_PORT_URI,
+						RegistrationConnector.class.getCanonicalName());
+				System.out.println("Connexion avec HEM pour enregistrement réalisée (CM)");
+			}
 
 		} catch (Throwable e) {
 			throw new ComponentStartException(e);
@@ -264,7 +267,9 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 			this.cmiip.unpublishPort();
 			this.cmuip.unpublishPort();
 			this.cmecjip.unpublishPort();
-			this.rop.unpublishPort();
+			if (isIntegrationTestMode) {
+				this.rop.unpublishPort();
+			}
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
 		}
@@ -287,11 +292,11 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 
 		assert !this.on() : new PreconditionException("!on()");
 
-		this.traceMessage("Coffee Machine registering to HEM");
-		System.out.println("Enregistrement de la machine à café (CM)");
-		this.rop.register(uid, cmecjip.getPortURI(), XML_COFFEE_MACHINE_ADAPTER_DESCRIPTOR);
-		System.out.println("Machine à café enregistrée sur le HEM (CM)");
-		this.traceMessage("Coffee Machine registered to HEM !");
+		if (isIntegrationTestMode) {
+			this.traceMessage("Coffee Machine registering to HEM");
+			this.rop.register(uid, cmecjip.getPortURI(), XML_COFFEE_MACHINE_ADAPTER_DESCRIPTOR);
+			this.traceMessage("Coffee Machine registered to HEM !");
+		}
 
 		this.currentState = CoffeeMachineState.ON;
 		this.currentMode = CoffeeMachineMode.SUSPEND;
@@ -309,11 +314,13 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 
 		assert this.on() : new PreconditionException("on()");
 
-		this.rop.unregister(uid);
-		this.doPortDisconnection(this.rop.getPortURI());
-
+		if (isIntegrationTestMode) {
+			this.rop.unregister(uid);
+			this.doPortDisconnection(this.rop.getPortURI());
+		}
 		this.currentState = CoffeeMachineState.OFF;
 		this.currentMode = CoffeeMachineMode.SUSPEND;
+
 		/*
 		 * As the coffee machine is switched off so the water is no longer warmed, then
 		 * the water temperature cool down until it's reach it's minimal temperature
@@ -520,7 +527,7 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 		assert this.getMode() == CoffeeMachineMode.MAX || this.getMode() == CoffeeMachineMode.ECO
 				|| this.getMode() == CoffeeMachineMode.NORMAL
 				: new PreconditionException(
-						"getMode() == CoffeeMachineMode.MAX || getMode() == CoffeeMachineMode.SUSPEND || this.getMode() == CoffeeMachineMode.ECO");
+						"getMode() == CoffeeMachineMode.MAX || getMode() == CoffeeMachineMode.NORMAL || this.getMode() == CoffeeMachineMode.ECO");
 
 		this.currentMode = CoffeeMachineMode.SUSPEND;
 		this.setCurrentPowerLevel(new Measure<Double>(Constants.SUSPENDED_MODE_POWER, POWER_UNIT));
@@ -532,7 +539,6 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 
 	@Override
 	public void setEcoMode() throws Exception {
-		System.out.println("Setting eco mode");
 		if (CoffeeMachine.VERBOSE) {
 			this.traceMessage("Coffee Machine turns to eco mode.\n");
 		}
@@ -541,7 +547,7 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 		assert this.getMode() == CoffeeMachineMode.MAX || this.getMode() == CoffeeMachineMode.SUSPEND
 				|| this.getMode() == CoffeeMachineMode.NORMAL
 				: new PreconditionException(
-						"getMode() == CoffeeMachineMode.MAX || getMode() == CoffeeMachineMode.SUSPEND || this.getMode() == CoffeeMachineMode.SUSPEND");
+						"getMode() == CoffeeMachineMode.MAX || getMode() == CoffeeMachineMode.NORMAL || this.getMode() == CoffeeMachineMode.SUSPEND");
 
 		this.currentMode = CoffeeMachineMode.ECO;
 		this.setCurrentPowerLevel(new Measure<Double>(Constants.ECO_MODE_POWER, POWER_UNIT));
@@ -655,12 +661,26 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 
 	@Override
 	public void setCurrentPowerLevel(Measure<Double> powerLevel) throws Exception {
+		this.currentPowerLevel = powerLevel;
 		if (CoffeeMachine.VERBOSE) {
 			this.traceMessage(
-					"Coffee Machine return it's current power level " + HIGH_POWER_IN_WATTS.getData() + "W.\n");
+					"Coffee Machine return it's current power level " +this.currentPowerLevel + "W.\n");
 		}
-		this.currentPowerLevel = powerLevel;
 
+	}
+
+	@Override
+	public void setMode(int mode) throws Exception {
+		if (mode == 1) {
+			this.setSuspendMode();
+		} else if (mode == 2) {
+			this.setEcoMode();
+		} else if (mode == 3) {
+			this.setNormalMode();
+		} else if (mode == 4) {
+			this.setMaxMode();
+		}
+		
 	}
 
 }

@@ -31,7 +31,7 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 	protected boolean isSuspended;
 
 	public CoffeeMachineConnector() {
-		this.currentMode = MAX_MODE;
+		this.currentMode = MIN_MODE;
 		this.isSuspended = false;
 	}
 
@@ -49,12 +49,9 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 				return Constants.NORMAL_MODE_POWER;
 			case 4:
 				return Constants.MAX_MODE_POWER;
-	
 			default:
 				return Constants.SUSPENDED_MODE_POWER;
 		}
-		
-		
 	}
 
 	public void setPowerLevel(double newPowerLevel) throws Exception {
@@ -68,8 +65,9 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 		((CoffeeMachineExternalControlJava4CI) this.offering).setCurrentPowerLevelJava4(newPowerLevel);
 	}
 	
-	protected void		computeAndSetNewPowerLevel(int newMode) throws Exception
+	protected void	computeAndSetNewPowerLevel(int newMode) throws Exception
 	{
+		
 		double newPowerLevel = this.computePowerLevel(newMode);
 		this.setPowerLevel(newPowerLevel);
 	}
@@ -87,6 +85,7 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 
 		try {
 			this.currentMode++;
+			((CoffeeMachineExternalControlJava4CI) this.offering).setMode(currentMode);
 			this.computeAndSetNewPowerLevel(this.currentMode);
 		} catch (Exception e) {
 			return false;
@@ -103,6 +102,7 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 		
 		try {
 			this.currentMode--;
+			((CoffeeMachineExternalControlJava4CI) this.offering).setMode(currentMode);
 			this.computeAndSetNewPowerLevel(this.currentMode);
 		} catch (Exception e) {
 			return false;
@@ -160,6 +160,7 @@ public class CoffeeMachineConnector extends AbstractConnector implements Adjusta
 	public boolean resume() throws Exception {
 		assert this.suspended() : new PreconditionException("suspended()");
 		try {
+			((CoffeeMachineExternalControlJava4CI) this.offering).setMode(this.currentMode);
 			this.computeAndSetNewPowerLevel(this.currentMode);
 			this.isSuspended = false;
 		} catch (Exception e) {

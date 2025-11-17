@@ -12,7 +12,7 @@ public interface CoffeeMachineExternalControlI extends CoffeeMachineTemperatureI
 	
 	public void setCurrentPowerLevel(Measure<Double> powerLevel) throws Exception;
 	
-
+	public void setMode(int mode) throws Exception;
 	
 	
 

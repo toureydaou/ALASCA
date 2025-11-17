@@ -89,6 +89,12 @@ public class CoffeeMachineExternalControlOutboundPort extends AbstractOutboundPo
 
 	}
 
+	@Override
+	public void setMode(int mode) throws Exception {
+		((CoffeeMachineExternalControlCI)this.getConnector()).setMode(mode);
+		
+	}
+
 
 
 }

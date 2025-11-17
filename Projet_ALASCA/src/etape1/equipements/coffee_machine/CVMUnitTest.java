@@ -27,7 +27,7 @@ public class CVMUnitTest extends AbstractCVM {
 	 */
 	@Override
 	public void deploy() throws Exception {
-		AbstractComponent.createComponent(CoffeeMachine.class.getCanonicalName(), new Object[] {});
+		AbstractComponent.createComponent(CoffeeMachine.class.getCanonicalName(), new Object[] {false});
 
 		AbstractComponent.createComponent(CoffeeMachineUnitTester.class.getCanonicalName(), new Object[] { true });
 

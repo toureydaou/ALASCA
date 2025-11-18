@@ -72,10 +72,15 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 	public static final Measure<Double> MIN_TEMPARATURE = new Measure<Double>(20.0, TEMPERATURE_UNIT);
 
 	public static final Measure<Double> HIGH_POWER_IN_WATTS = new Measure<Double>(Constants.MAX_MODE_POWER, POWER_UNIT);
+	public static final Measure<Double> ECO_POWER_IN_WATTS = new Measure<Double>(Constants.ECO_MODE_POWER, POWER_UNIT);
+	public static final Measure<Double> NORMAL_POWER_IN_WATTS = new Measure<Double>(Constants.NORMAL_MODE_POWER, POWER_UNIT);
+	public static final Measure<Double> SUSPENDED_POWER_IN_WATTS = new Measure<Double>(Constants.SUSPENDED_MODE_POWER, POWER_UNIT);
 	public static final Measure<Double> LOW_POWER_IN_WATTS = new Measure<Double>(0.0, POWER_UNIT);
 	public static final Measure<Double> VOLTAGE = new Measure<Double>(Constants.MACHINE_VOLTAGE, TENSION_UNIT);
 
 	public static final Measure<Double> WATER_CAPACITY = new Measure<Double>(Constants.WATER_CAPACITY, LITERS);
+	
+	public static final Measure<Double> CUP_OF_CAFE_CAPACITY = new Measure<Double>(Constants.CUP_CAPACITY, LITERS);
 
 	public static final CoffeeMachineState INITIAL_STATE = CoffeeMachineState.OFF;
 

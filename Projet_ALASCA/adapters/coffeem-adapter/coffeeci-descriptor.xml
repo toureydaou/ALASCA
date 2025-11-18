@@ -5,7 +5,7 @@
     offered="etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlJava4CI">
 
   
-  <consumption nominal="15200" min="0" max="1200"/>
+  <consumption nominal="1500" min="0" max="1500"/>
 
   
   <required>java.lang.Math</required>
@@ -31,9 +31,9 @@
             if (mode == 1) {
 				return 3.0;
 			} else if (mode == 2) {
-				return 300.0;
+				return 700.0;
 			} else if (mode == 3) {
-				return 800.0;
+				return 1000.0;
 			} else if (mode == 4) {
 				return 1500.0;
 			} else  {

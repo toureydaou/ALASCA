@@ -5,7 +5,10 @@ import java.util.concurrent.TimeUnit;
 
 import etape1.equipements.coffee_machine.CoffeeMachine;
 import etape1.equipements.coffee_machine.CoffeeMachineUnitTester;
+import etape1.equipements.fan.Fan;
+import etape1.equipements.fan.FanTester;
 import etape1.equipements.hem.HEM;
+import etape1.equipments.meter.ElectricMeter;
 import fr.sorbonne_u.components.AbstractComponent;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
@@ -194,6 +197,15 @@ public class CVMIntegrationTest extends AbstractCVM {
 		CoffeeMachineUnitTester.VERBOSE = true;
 		CoffeeMachineUnitTester.X_RELATIVE_POSITION = 0;
 		CoffeeMachineUnitTester.Y_RELATIVE_POSITION = 3;
+		ElectricMeter.VERBOSE = true;
+		ElectricMeter.X_RELATIVE_POSITION = 2;
+		ElectricMeter.Y_RELATIVE_POSITION = 0;
+		Fan.VERBOSE = true;
+		Fan.X_RELATIVE_POSITION = 2;
+		Fan.Y_RELATIVE_POSITION = 1;
+		FanTester.VERBOSE = true;
+		FanTester.X_RELATIVE_POSITION = 2;
+		FanTester.Y_RELATIVE_POSITION = 2;
 
 		assert CVMIntegrationTest.implementationInvariants(this)
 				: new InvariantException("CVMIntegrationTest.glassBoxInvariants(this)");
@@ -214,11 +226,25 @@ public class CVMIntegrationTest extends AbstractCVM {
 				CLOCK_URI,
 				// start time in Unix epoch time
 				TimeUnit.MILLISECONDS.toNanos(unixEpochStartTimeInMillis), START_INSTANT, ACCELERATION_FACTOR });
+		
+		AbstractComponent.createComponent(
+				ElectricMeter.class.getCanonicalName(),
+				new Object[]{});
 
 		AbstractComponent.createComponent(CoffeeMachine.class.getCanonicalName(), new Object[] {true});
 
 		AbstractComponent.createComponent(CoffeeMachineUnitTester.class.getCanonicalName(), new Object[] { false });
+		
+		
+		AbstractComponent.createComponent(
+				Fan.class.getCanonicalName(),
+				new Object[]{});
 
+		AbstractComponent.createComponent(
+					FanTester.class.getCanonicalName(),
+					new Object[]{true});
+		
+	
 		AbstractComponent.createComponent(HEM.class.getCanonicalName(), new Object[] { true });
 
 		super.deploy();

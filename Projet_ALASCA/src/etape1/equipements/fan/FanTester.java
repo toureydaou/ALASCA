@@ -1,5 +1,14 @@
 package etape1.equipements.fan;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import etape1.CVMIntegrationTest;
+import etape1.equipements.fan.connections.connectors.FanUserConnector;
+import etape1.equipements.fan.connections.ports.FanOutboundPort;
+import etape1.equipements.fan.interfaces.FanImplementationI.FanMode;
+import etape1.equipements.fan.interfaces.FanImplementationI.FanState;
+import etape1.equipements.fan.interfaces.FanUserCI;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -37,9 +46,8 @@ import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.BCMException;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
-
-import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.AssertionChecking;
+import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PreconditionException;
 import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
@@ -49,19 +57,10 @@ import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 import tests_utils.TestsStatistics;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import etape1.CVMIntegrationTest;
-import etape1.equipements.fan.connections.connectors.FanConnector;
-import etape1.equipements.fan.connections.ports.FanOutboundPort;
-import etape1.equipements.fan.interfaces.FanUserCI;
-import etape1.equipements.fan.interfaces.FanImplementationI.FanMode;
-import etape1.equipements.fan.interfaces.FanImplementationI.FanState;
-
 // -----------------------------------------------------------------------------
 /**
- * The class <code>LaundryTester</code> implements a component performing
- * tests for the class <code>Laundry</code> as a BCM4Java component.
+ * The class <code>FanTester</code> implements a component performing
+ * tests for the class <code>Fan</code> as a BCM4Java component.
  *
  * <p><strong>Description</strong></p>
  * 
@@ -99,9 +98,9 @@ extends		AbstractComponent
 
 	/* when true, the component performs a unit test.						*/
 	protected final boolean				isUnitTest;
-	/* outbound port connecting to the hair dryer component.				*/
-	protected FanOutboundPort		hdop;
-	/* URI of the hair dryer inbound port to connect to.					*/
+	/* outbound port connecting to the fan component.				*/
+	protected FanOutboundPort		fop;
+	/* URI of the fan inbound port to connect to.					*/
 	protected String					FanInboundPortURI;
 
 	/** collector of test statistics.										*/
@@ -172,7 +171,7 @@ extends		AbstractComponent
 	// -------------------------------------------------------------------------
 
 	/**
-	 * create a hair dryer tester component.
+	 * create a fan tester component.
 	 * 
 	 * <p><strong>Contract</strong></p>
 	 * 
@@ -190,7 +189,7 @@ extends		AbstractComponent
 	}
 
 	/**
-	 * create a hair dryer tester component.
+	 * create a fan tester component.
 	 * 
 	 * <p><strong>Contract</strong></p>
 	 * 
@@ -200,7 +199,7 @@ extends		AbstractComponent
 	 * </pre>
 	 *
 	 * @param isUnitTest				when true, the component performs a unit test.
-	 * @param FanInboundPortURI	URI of the hair dryer inbound port to connect to.
+	 * @param FanInboundPortURI	URI of the fan inbound port to connect to.
 	 * @throws Exception				<i>to do</i>.
 	 */
 	protected			FanTester(
@@ -221,7 +220,7 @@ extends		AbstractComponent
 	}
 
 	/**
-	 * create a hair dryer tester component.
+	 * create a fan tester component.
 	 * 
 	 * <p><strong>Contract</strong></p>
 	 * 
@@ -231,7 +230,7 @@ extends		AbstractComponent
 	 * </pre>
 	 *
 	 * @param isUnitTest				when true, the component performs a unit test.
-	 * @param FanInboundPortURI	URI of the hair dryer inbound port to connect to.
+	 * @param FanInboundPortURI	URI of the fan inbound port to connect to.
 	 * @param reflectionInboundPortURI	URI of the inbound port offering the <code>ReflectionI</code> interface.
 	 * @throws Exception				<i>to do</i>.
 	 */
@@ -248,7 +247,7 @@ extends		AbstractComponent
 	}
 
 	/**
-	 * initialise a hair dryer tester component.
+	 * initialise a fan tester component.
 	 * 
 	 * <p><strong>Contract</strong></p>
 	 * 
@@ -257,7 +256,7 @@ extends		AbstractComponent
 	 * post	{@code true}	// no postcondition.
 	 * </pre>
 	 *
-	 * @param FanInboundPortURI	URI of the hair dryer inbound port to connect to.
+	 * @param FanInboundPortURI	URI of the fan inbound port to connect to.
 	 * @throws Exception				<i>to do</i>.
 	 */
 	protected void		initialise(
@@ -265,11 +264,11 @@ extends		AbstractComponent
 		) throws Exception
 	{
 		this.FanInboundPortURI = FanInboundPortURI;
-		this.hdop = new FanOutboundPort(this);
-		this.hdop.publishPort();
+		this.fop = new FanOutboundPort(this);
+		this.fop.publishPort();
 
 		if (VERBOSE) {
-			this.tracer.get().setTitle("Hair dryer tester component");
+			this.tracer.get().setTitle("Fan tester component");
 			this.tracer.get().setRelativePosition(X_RELATIVE_POSITION,
 												  Y_RELATIVE_POSITION);
 			this.toggleTracing();
@@ -279,9 +278,9 @@ extends		AbstractComponent
 
 		assert	implementationInvariants(this) :
 				new ImplementationInvariantException(
-						"LaundryTester.implementationInvariants(this)");
+						"FanTester.implementationInvariants(this)");
 		assert	invariants(this) :
-				new InvariantException("LaundryTester.invariants(this)");
+				new InvariantException("FanTester.invariants(this)");
 	}
 
 	// -------------------------------------------------------------------------
@@ -289,18 +288,18 @@ extends		AbstractComponent
 	// -------------------------------------------------------------------------
 
 	/**
-	 * test of the {@code getState} method when the hair dryer is off.
+	 * test of the {@code getState} method when the fan is off.
 	 * 
 	 * <p><strong>Description</strong></p>
 	 * 
 	 * <p>Gherkin specification:</p>
 	 * <pre>
-	 * Feature: Getting the state of the hair dryer
+	 * Feature: Getting the state of the fan
 	 * 
 	 *   Scenario: getting the state when off
-	 *     Given the hair dryer is initialised and never been used yet
-	 *     When the hair dryer has not been used yet
-	 *     Then the hair dryer is off
+	 *     Given the fan is initialised and never been used yet
+	 *     When the fan has not been used yet
+	 *     Then the fan is off
 	 * </pre>
 	 * 
 	 * <p><strong>Contract</strong></p>
@@ -313,15 +312,15 @@ extends		AbstractComponent
 	 */
 	public void			testGetState()
 	{
-		this.logMessage("Feature: Getting the state of the hair dryer");
+		this.logMessage("Feature: Getting the state of the fan");
 		this.logMessage("  Scenario: getting the state when off");
-		this.logMessage("    Given the hair dryer is initialised");
-		this.logMessage("    And the hair dryer has not been used yet");
+		this.logMessage("    Given the fan is initialised");
+		this.logMessage("    And the fan has not been used yet");
 		FanState result = null;
 		try {
-			this.logMessage("    When I test the state of the hair dryer");
-			result = this.hdop.getState();
-			this.logMessage("    Then the state of the hair dryer is off");
+			this.logMessage("    When I test the state of the fan");
+			result = this.fop.getState();
+			this.logMessage("    Then the state of the fan is off");
 			if (!FanState.OFF.equals(result)) {
 				this.statistics.incorrectResult();
 				this.logMessage("     but was: " + result);
@@ -335,18 +334,18 @@ extends		AbstractComponent
 	}
 
 	/**
-	 * test of the {@code getMode} method when the hair dryer is off.
+	 * test of the {@code getMode} method when the fan is off.
 	 * 
 	 * <p><strong>Description</strong></p>
 	 * 
 	 * <p>Gherkin specification:</p>
 	 * <pre>
-	 * Feature: Getting the mode of the hair dryer
+	 * Feature: Getting the mode of the fan
 	 * 
 	 *   Scenario: getting the mode when off
-	 *     Given the hair dryer is initialised and never been used yet
+	 *     Given the fan is initialised and never been used yet
 	 *     When the method getMode is called
-	 *     Then the result is that the hair dryer is in low mode
+	 *     Then the result is that the fan is in low mode
 	 * </pre>
 	 * 
 	 * <p><strong>Contract</strong></p>
@@ -359,14 +358,14 @@ extends		AbstractComponent
 	 */
 	public void			testGetMode()
 	{
-		this.logMessage("Feature: Getting the mode of the hair dryer");
+		this.logMessage("Feature: Getting the mode of the fan");
 		this.logMessage("  Scenario: getting the mode when off");
-		this.logMessage("    Given the hair dryer is initialised");
+		this.logMessage("    Given the fan is initialised");
 		FanMode result = null;
 		try {
-			this.logMessage("    When the hair dryer has not been used yet");
-			result = this.hdop.getMode();
-			this.logMessage("    Then the hair dryer is low");
+			this.logMessage("    When the fan has not been used yet");
+			result = this.fop.getMode();
+			this.logMessage("    Then the fan is low");
 			if (!FanMode.LOW.equals(result)) {
 				this.logMessage("     but was: " + result);	
 				this.statistics.incorrectResult();
@@ -374,6 +373,7 @@ extends		AbstractComponent
 		} catch (Throwable e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
+			
 		}
 
 		this.statistics.updateStatistics();
@@ -386,27 +386,27 @@ extends		AbstractComponent
 	 * 
 	 * <p>Gherkin specification:</p>
 	 * <pre>
-	 * Feature: turning the hair dryer on and off
+	 * Feature: turning the fan on and off
 	 * 
 	 *   Scenario: turning on when off
-	 *     Given the hair dryer is off
-	 *     When the hair dryer is turned on
-	 *     Then the hair dryer is on
-	 *     And the hair dryer is low
+	 *     Given the fan is off
+	 *     When the fan is turned on
+	 *     Then the fan is on
+	 *     And the fan is low
 	 * 
 	 *   Scenario: turning on when on
-	 *     Given the hair dryer is on
-	 *     When the hair dryer is turned on
+	 *     Given the fan is on
+	 *     When the fan is turned on
 	 *     Then a precondition exception is thrown
 	 * 
 	 *   Scenario: turning off when on
-	 *     Given the hair dryer is on
-	 *     When the hair dryer is turned off
-	 *     Then the hair dryer is off
+	 *     Given the fan is on
+	 *     When the fan is turned off
+	 *     Then the fan is off
 	 * 
 	 *   Scenario: turning off when off
-	 *     Given the hair dryer is off
-	 *     When the hair dryer is turned off
+	 *     Given the fan is off
+	 *     When the fan is turned off
 	 *     Then a precondition exception is thrown
 	 * </pre>
 	 * 
@@ -420,27 +420,27 @@ extends		AbstractComponent
 	 */
 	public void			testTurnOnOff()
 	{
-		this.logMessage("Feature: turning the hair dryer on and off");
+		this.logMessage("Feature: turning the fan on and off");
 		this.logMessage("  Scenario: turning on when off");
 		FanState resultState = null;
 		FanMode resultMode = null;
 		try {
-			this.logMessage("    Given the hair dryer is off");
-			resultState = this.hdop.getState();
+			this.logMessage("    Given the fan is off");
+			resultState = this.fop.getState();
 			if (!FanState.OFF.equals(resultState)) {
 				this.logMessage("     but was: " + resultState);
 				this.statistics.failedCondition();
 			}
-			this.logMessage("    When the hair dryer is turned on");
-			this.hdop.turnOn();
-			this.logMessage("    Then the hair dryer is on");
-			resultState = this.hdop.getState();
+			this.logMessage("    When the fan is turned on");
+			this.fop.turnOn();
+			this.logMessage("    Then the fan is on");
+			resultState = this.fop.getState();
 			if (!FanState.ON.equals(resultState)) {
 				this.logMessage("     but was: " + resultState);
 				this.statistics.incorrectResult();
 			}
-			this.logMessage("    And the hair dryer is in mode low");
-			resultMode = this.hdop.getMode();
+			this.logMessage("    And the fan is in mode low");
+			resultMode = this.fop.getMode();
 			if (!FanMode.LOW.equals(resultMode)) {
 				this.logMessage("     but was: " + resultState);
 				this.statistics.incorrectResult();
@@ -448,14 +448,15 @@ extends		AbstractComponent
 		} catch (Throwable e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
+			
 		}
 
 		this.statistics.updateStatistics();
 
 		this.logMessage("  Scenario: turning on when on");
-		this.logMessage("    Given the hair dryer is on");
+		this.logMessage("    Given the fan is on");
 		try {
-			resultState = this.hdop.getState();
+			resultState = this.fop.getState();
 			if (!FanState.ON.equals(resultState)) {
 				this.logMessage("     but was: " + resultState);
 				this.statistics.failedCondition();
@@ -464,12 +465,12 @@ extends		AbstractComponent
 			this.statistics.failedCondition();
 			this.logMessage("     but the exception " + e + " has been raised");
 		}
-		this.logMessage("    When the hair dryer is turned on");
+		this.logMessage("    When the fan is turned on");
 		this.logMessage("    Then a precondition exception is thrown");
 		boolean old = BCMException.VERBOSE;
 		try {
 			BCMException.VERBOSE = false;
-			this.hdop.turnOn();
+			this.fop.turnOn();
 			this.logMessage("     but it was not thrown");
 			this.statistics.incorrectResult();
 		} catch(Throwable e) {
@@ -481,9 +482,9 @@ extends		AbstractComponent
 		this.statistics.updateStatistics();
 
 		this.logMessage("  Scenario: turning off when on");
-		this.logMessage("    Given the hair dryer is on");
+		this.logMessage("    Given the fan is on");
 		try {
-			resultState = this.hdop.getState();
+			resultState = this.fop.getState();
 			if (!FanState.ON.equals(resultState)) {
 				this.logMessage("     but was: " + resultState);
 				this.statistics.failedCondition();
@@ -491,12 +492,13 @@ extends		AbstractComponent
 		} catch (Throwable e) {
 			this.statistics.failedCondition();
 			this.logMessage("     but the exception " + e + " has been raised");
+			
 		}
-		this.logMessage("    When the hair dryer is turned off");
+		this.logMessage("    When the fan is turned off");
 		try {
-			this.hdop.turnOff();
-			this.logMessage("    Then the hair dryer is off");
-			resultState = this.hdop.getState();
+			this.fop.turnOff();
+			this.logMessage("    Then the fan is off");
+			resultState = this.fop.getState();
 			if (!FanState.OFF.equals(resultState)) {
 				this.logMessage("     but was: " + resultState);
 				this.statistics.incorrectResult();
@@ -504,14 +506,15 @@ extends		AbstractComponent
 		} catch (Throwable e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
+			
 		}
 
 		this.statistics.updateStatistics();
 
 		this.logMessage("  Scenario: turning off when off");
-		this.logMessage("    Given the hair dryer is off");
+		this.logMessage("    Given the fan is off");
 		try {
-			resultState = this.hdop.getState();
+			resultState = this.fop.getState();
 			if (!FanState.OFF.equals(resultState)) {
 				this.logMessage("     but was: " + resultState);
 				this.statistics.failedCondition();
@@ -519,16 +522,19 @@ extends		AbstractComponent
 		} catch (Throwable e) {
 			this.statistics.failedCondition();
 			this.logMessage("     but the exception " + e + " has been raised");
+			
 		}
-		this.logMessage("    When the hair dryer is turned off");
+		this.logMessage("    When the fan is turned off");
 		this.logMessage("    Then a precondition exception is thrown");
 		old = BCMException.VERBOSE;
 		try {
 			BCMException.VERBOSE = false;
-			this.hdop.turnOff();
+			this.fop.turnOff();
 			this.logMessage("     but the precondition exception was not thrown");
 			this.statistics.incorrectResult();
 		} catch (Throwable e) {
+			this.statistics.failedCondition();
+			this.logMessage("     but the exception " + e + " has been raised");
 			
 		} finally {
 			BCMException.VERBOSE = old;
@@ -538,38 +544,38 @@ extends		AbstractComponent
 	}
 
 	/**
-	 * test switching mode of the hair dryer.
+	 * test switching mode of the fan.
 	 * 
 	 * <p><strong>Description</strong></p>
 	 * 
 	 * <p>Gherkin specification:</p>
 	 * <pre>
-	 * Feature: switching the hair dryer low and high.
+	 * Feature: switching the fan low and high.
 	 * 
-	 *   Scenario: set the hair dryer high from low
-	 *     Given the hair dryer is on
-	 *     And the hair dryer is low
-	 *     When the hair dryer is set high
-	 *     Then the hair dryer is on
-	 *     And  the hair dryer is high
+	 *   Scenario: set the fan high from low
+	 *     Given the fan is on
+	 *     And the fan is low
+	 *     When the fan is set high
+	 *     Then the fan is on
+	 *     And  the fan is high
 	 * 
-	 *   Scenario: set the hair dryer high from high
-	 *     Given the hair dryer is on
-	 *     And the hair dryer is high
-	 *     When the hair dryer is set high
+	 *   Scenario: set the fan high from high
+	 *     Given the fan is on
+	 *     And the fan is high
+	 *     When the fan is set high
 	 *     Then an exception is thrown
 	 * 
-	 *   Scenario: set the hair dryer low from high
-	 *     Given the hair dryer is on
-	 *     And the hair dryer is high
-	 *     When the hair dryer is set low
-	 *     Then the hair dryer is on
-	 *     And the hair dryer is low
+	 *   Scenario: set the fan low from high
+	 *     Given the fan is on
+	 *     And the fan is high
+	 *     When the fan is set low
+	 *     Then the fan is on
+	 *     And the fan is low
 	 * 
-	 *   Scenario: set the hair dryer low from low
-	 *     Given the hair dryer is on
-	 *     And the hair dryer is low
-	 *     When the hair dryer is set low
+	 *   Scenario: set the fan low from low
+	 *     Given the fan is on
+	 *     And the fan is low
+	 *     When the fan is set low
 	 *     Then an exception is thrown
 	 * </pre>
 	 * 
@@ -583,14 +589,14 @@ extends		AbstractComponent
 	 */
 	public void			testSetLowHigh()
 	{
-		this.logMessage("Feature: switching the hair dryer low and high.");
-		this.logMessage("  Scenario: set the hair dryer high from low");
-		this.logMessage("    Given the hair dryer is on");
+		this.logMessage("Feature: switching the fan low and high.");
+		this.logMessage("  Scenario: set the fan high from low");
+		this.logMessage("    Given the fan is on");
 		FanState resultState = null;
 		FanMode resultMode = null;
 		try {
-			this.hdop.turnOn();
-			resultState = this.hdop.getState();
+			this.fop.turnOn();
+			resultState = this.fop.getState();
 			if (!FanState.ON.equals(resultState)) {
 				this.logMessage("     but was: " + resultState);
 				this.statistics.failedCondition();
@@ -598,10 +604,11 @@ extends		AbstractComponent
 		} catch (Throwable e) {
 			this.statistics.failedCondition();
 			this.logMessage("     but the exception " + e + " has been raised");
+			
 		}
 		try {
-			this.logMessage("    And the hair dryer is low");
-			resultMode = this.hdop.getMode();
+			this.logMessage("    And the fan is low");
+			resultMode = this.fop.getMode();
 			if (!FanMode.LOW.equals(resultMode)) {
 				this.logMessage("     but was: " + resultMode);
 				this.statistics.failedCondition();
@@ -609,46 +616,51 @@ extends		AbstractComponent
 		} catch (Throwable e) {
 			this.statistics.failedCondition();
 			this.logMessage("     but the exception " + e + " has been raised");
+			
 		}
 		try {
-			this.logMessage("    When the hair dryer is set high");
-			this.logMessage("    Then the hair dryer is on");
-			this.hdop.setHigh();
-			resultState = this.hdop.getState();
+			this.logMessage("    When the fan is set high");
+			this.logMessage("    Then the fan is on");
+			this.fop.setHigh();
+			resultState = this.fop.getState();
 			if (!FanState.ON.equals(resultState)) {
 				this.logMessage("     but was: " + resultState);
 				this.statistics.incorrectResult();
 			}
 		} catch (Throwable e) {
-			this.statistics.incorrectResult();
+			this.statistics.failedCondition();
 			this.logMessage("     but the exception " + e + " has been raised");
+			
 		}
 		try {
-			this.logMessage("    And  the hair dryer is high");
-			resultMode = this.hdop.getMode();
+			this.logMessage("    And  the fan is high");
+			resultMode = this.fop.getMode();
 			if (!FanMode.HIGH.equals(resultMode)) {
 				this.logMessage("     but was: " + resultMode);
 				this.statistics.incorrectResult();
 			}
 		} catch (Throwable e) {
-			this.statistics.incorrectResult();
+			this.statistics.failedCondition();
 			this.logMessage("     but the exception " + e + " has been raised");
+			
 		}
 
 		this.statistics.updateStatistics();
 
-		this.logMessage("  Scenario: set the hair dryer high from high");
-		this.logMessage("    Given the hair dryer is on");
-		this.logMessage("    And the hair dryer is high");
-		this.logMessage("    When the hair dryer is set high");
+		this.logMessage("  Scenario: set the fan high from high");
+		this.logMessage("    Given the fan is on");
+		this.logMessage("    And the fan is high");
+		this.logMessage("    When the fan is set high");
 		this.logMessage("    Then a precondition exception is thrown");
 		boolean old = BCMException.VERBOSE;
 		try {
 			BCMException.VERBOSE = false;
-			this.hdop.setHigh();
+			this.fop.setHigh();
 			this.logMessage("     but it was not thrown");
 			this.statistics.incorrectResult();
 		} catch (Throwable e) {
+			this.statistics.failedCondition();
+			this.logMessage("     but the exception " + e + " has been raised");
 			
 		} finally {
 			BCMException.VERBOSE = old;
@@ -656,48 +668,52 @@ extends		AbstractComponent
 
 		this.statistics.updateStatistics();
 
-		this.logMessage("  Scenario: set the hair dryer low from high");
-		this.logMessage("    Given the hair dryer is on");
-		this.logMessage("    And the hair dryer is high");
-		this.logMessage("    When the hair dryer is set low");
+		this.logMessage("  Scenario: set the fan low from high");
+		this.logMessage("    Given the fan is on");
+		this.logMessage("    And the fan is high");
+		this.logMessage("    When the fan is set low");
 		try {
-			this.hdop.setLow();
-			this.logMessage("    Then the hair dryer is on");
-			resultState = this.hdop.getState();
+			this.fop.setLow();
+			this.logMessage("    Then the fan is on");
+			resultState = this.fop.getState();
 			if (!FanState.ON.equals(resultState)) {
 				this.logMessage("     but was: " + resultState);
 				this.statistics.incorrectResult();
 			}
 		} catch (Throwable e) {
-			this.statistics.incorrectResult();
+			this.statistics.failedCondition();
 			this.logMessage("     but the exception " + e + " has been raised");
+			
 		}
 		try {
-			this.logMessage("    And the hair dryer is low");
-			resultMode = this.hdop.getMode();
+			this.logMessage("    And the fan is low");
+			resultMode = this.fop.getMode();
 			if (!FanMode.LOW.equals(resultMode)) {
 				this.logMessage("     but was: " + resultMode);
 				this.statistics.incorrectResult();
 			}
 		} catch (Throwable e) {
-			this.statistics.incorrectResult();
+			this.statistics.failedCondition();
 			this.logMessage("     but the exception " + e + " has been raised");
+			
 		}
 
 		this.statistics.updateStatistics();
 
-		this.logMessage("  Scenario: set the hair dryer low from low");
-		this.logMessage("    Given the hair dryer is on");
-		this.logMessage("    And the hair dryer is low");
-		this.logMessage("    When the hair dryer is set low");
+		this.logMessage("  Scenario: set the fan low from low");
+		this.logMessage("    Given the fan is on");
+		this.logMessage("    And the fan is low");
+		this.logMessage("    When the fan is set low");
 		this.logMessage("    Then a precondition exception is thrown");
 		old = BCMException.VERBOSE;
 		try {
 			BCMException.VERBOSE = false;
-			this.hdop.setLow();
+			this.fop.setLow();
 			this.logMessage("     but it was not thrown");
 			this.statistics.incorrectResult();
 		} catch (Throwable e) {
+			this.statistics.failedCondition();
+			this.logMessage("     but the exception " + e + " has been raised");
 			
 		} finally {
 			BCMException.VERBOSE = old;
@@ -707,7 +723,7 @@ extends		AbstractComponent
 
 		// turn off at the end of the tests
 		try {
-			this.hdop.turnOff();
+			this.fop.turnOff();
 		} catch (Throwable e) {
 			assertTrue(false);
 		}
@@ -758,9 +774,9 @@ extends		AbstractComponent
 
 		try {
 			this.doPortConnection(
-							this.hdop.getPortURI(),
+							this.fop.getPortURI(),
 							FanInboundPortURI,
-							FanConnector.class.getCanonicalName());
+							FanUserConnector.class.getCanonicalName());
 		} catch (Throwable e) {
 			throw new ComponentStartException(e) ;
 		}
@@ -780,7 +796,7 @@ extends		AbstractComponent
 					clocksServerOutboundPort.getPortURI(),
 					ClocksServer.STANDARD_INBOUNDPORT_URI,
 					ClocksServerConnector.class.getCanonicalName());
-			this.traceMessage("Hair Dryer Tester gets the clock.\n");
+			this.traceMessage("Fan Tester gets the clock.\n");
 			AcceleratedClock ac =
 					clocksServerOutboundPort.getClock(
 										CVMIntegrationTest.CLOCK_URI);
@@ -788,12 +804,12 @@ extends		AbstractComponent
 			clocksServerOutboundPort.unpublishPort();
 			clocksServerOutboundPort = null;
 
-			this.traceMessage("Hair Dryer Tester waits until start.\n");
+			this.traceMessage("Fan Tester waits until start.\n");
 			ac.waitUntilStart();
 		}
-		this.traceMessage("Hair Dryer Tester starts the tests.\n");
+		this.traceMessage("Fan Tester starts the tests.\n");
 		this.runAllUnitTests();
-		this.traceMessage("Hair Dryer Tester ends.\n");
+		this.traceMessage("Fan Tester ends.\n");
 	}
 
 	/**
@@ -802,7 +818,7 @@ extends		AbstractComponent
 	@Override
 	public synchronized void	finalise() throws Exception
 	{
-		this.doPortDisconnection(this.hdop.getPortURI());
+		this.doPortDisconnection(this.fop.getPortURI());
 		super.finalise();
 	}
 
@@ -813,7 +829,7 @@ extends		AbstractComponent
 	public synchronized void	shutdown() throws ComponentShutdownException
 	{
 		try {
-			this.hdop.unpublishPort();
+			this.fop.unpublishPort();
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e) ;
 		}

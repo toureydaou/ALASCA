@@ -1,5 +1,6 @@
 package etape1.equipements.fan.interfaces;
 
+import physical_data.MeasurementUnit;
 
 public interface FanImplementationI {
 	// -------------------------------------------------------------------------
@@ -8,7 +9,7 @@ public interface FanImplementationI {
 
 		/**
 		 * The enumeration <code>FanState</code> describes the operation
-		 * states of the hair dryer.
+		 * states of the fan.
 		 *
 		 * <p><strong>Description</strong></p>
 		 * 
@@ -18,20 +19,20 @@ public interface FanImplementationI {
 		 */
 		public static enum	FanState
 		{
-			/** hair dryer is on.												*/
+			/** fan is on.												*/
 			ON,
-			/** hair dryer is off.												*/
+			/** fan is off.												*/
 			OFF
 		}
 
 		/**
 		 * The enumeration <code>FanMode</code> describes the operation
-		 * modes of the hair dryer.
+		 * modes of the fan.
 		 *
 		 * <p><strong>Description</strong></p>
 		 * 
 		 * <p>
-		 * The hair dryer can be either in <code>LOW</code> mode (warm and slow) or
+		 * The fan can be either in <code>LOW</code> mode (warm and slow) or
 		 * in <code>HIGH</code> mode (hot and fast).
 		 * </p>
 		 * 
@@ -49,12 +50,18 @@ public interface FanImplementationI {
 			HIGH
 		}
 
+		/** measurement unit for power used in this appliance.					*/
+		public static final MeasurementUnit	POWER_UNIT = MeasurementUnit.WATTS;
+		/** measurement unit for tension used in this appliance.				*/
+		public static final MeasurementUnit	TENSION_UNIT = MeasurementUnit.VOLTS;
+		
+		
 		// -------------------------------------------------------------------------
 		// Component services signatures
 		// -------------------------------------------------------------------------
 
 		/**
-		 * return the current state of the hair dryer.
+		 * return the current state of the fan.
 		 * 
 		 * <p><strong>Contract</strong></p>
 		 * 
@@ -63,13 +70,13 @@ public interface FanImplementationI {
 		 * post	{@code true}	// no postcondition.
 		 * </pre>
 		 *
-		 * @return				the current state of the hair dryer.
+		 * @return				the current state of the fan.
 		 * @throws Exception 	<i>to do</i>.
 		 */
 		public FanState	getState() throws Exception;
 
 		/**
-		 * return the current operation mode of the hair dryer.
+		 * return the current operation mode of the fan.
 		 * 
 		 * <p><strong>Contract</strong></p>
 		 * 
@@ -78,13 +85,13 @@ public interface FanImplementationI {
 		 * post	{@code true}	// no postcondition.
 		 * </pre>
 		 *
-		 * @return				the current state of the hair dryer.
+		 * @return				the current state of the fan.
 		 * @throws Exception 	<i>to do</i>.
 		 */
 		public FanMode	getMode() throws Exception;
 
 		/**
-		 * turn on the hair dryer, put in the low temperature and slow fan mode.
+		 * turn on the fan, put in the low temperature and slow fan mode.
 		 * 
 		 * <p><strong>Contract</strong></p>
 		 * 
@@ -99,7 +106,7 @@ public interface FanImplementationI {
 		public void			turnOn() throws Exception;
 
 		/**
-		 * turn off the hair dryer.
+		 * turn off the fan.
 		 * 
 		 * <p><strong>Contract</strong></p>
 		 * 
@@ -113,7 +120,7 @@ public interface FanImplementationI {
 		public void			turnOff() throws Exception;
 
 		/**
-		 * set the hair dryer in high mode.
+		 * set the fan in high mode.
 		 * 
 		 * <p><strong>Contract</strong></p>
 		 * 
@@ -129,7 +136,7 @@ public interface FanImplementationI {
 
 		
 		/**
-		 * set the hair dryer in low mode.
+		 * set the fan in low mode.
 		 * 
 		 * <p><strong>Contract</strong></p>
 		 * 
@@ -144,7 +151,7 @@ public interface FanImplementationI {
 		public void			setMedium() throws Exception;
 		
 		/**
-		 * set the hair dryer in low mode.
+		 * set the fan in low mode.
 		 * 
 		 * <p><strong>Contract</strong></p>
 		 * 

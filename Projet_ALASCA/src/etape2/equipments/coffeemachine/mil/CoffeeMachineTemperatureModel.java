@@ -49,6 +49,7 @@ public class CoffeeMachineTemperatureModel extends AtomicHIOA {
 	public static final String URI = CoffeeMachineTemperatureModel.class.getSimpleName();
 
 	public static boolean VERBOSE = true;
+	public static boolean DEBUG = true;
 
 	/** Capacité thermique spécifique de l'eau en J/kg/°C (ou Kelvin). */
 	protected static double WATER_SPECIFIC_HEAT_CAPACITY = Constants.WATER_THERMAL_CAPACITY ;
@@ -205,13 +206,14 @@ public class CoffeeMachineTemperatureModel extends AtomicHIOA {
 		if (!this.currentWaterLevel.isInitialised() || !this.currentHeatingPower.isInitialised()) {
 			notInitialisedYet++;
 		}
-
-		// Si nous ne sommes pas initialisés mais que nos dépendances le sont
-		if (!this.currentWaterTemperature.isInitialised()) {
-			double derivative = this.computeDerivatives(AMBIENT_TEMPERATURE);
-			this.currentWaterTemperature.initialise(AMBIENT_TEMPERATURE, derivative);
-			justInitialised++;
+		else {
 			
+			if (!this.currentWaterTemperature.isInitialised()) {
+				// Ici, on peut appeler computeDerivatives sans risque de NullPointerException
+				double derivative = this.computeDerivatives(AMBIENT_TEMPERATURE);
+				this.currentWaterTemperature.initialise(AMBIENT_TEMPERATURE, derivative);
+				justInitialised++;
+			}
 		}
 
 		return new Pair<>(justInitialised, notInitialisedYet);

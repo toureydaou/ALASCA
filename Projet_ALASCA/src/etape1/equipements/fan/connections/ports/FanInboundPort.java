@@ -41,15 +41,15 @@ import fr.sorbonne_u.exceptions.PreconditionException;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>LaundryInboundPort</code> implements an inbound port for
- * the <code>LaundryUserCI</code> component interface.
+ * The class <code>FanInboundPort</code> implements an inbound port for
+ * the <code>FanUserCI</code> component interface.
  *
  * <p><strong>Description</strong></p>
  * 
  * <p><strong>Implementation Invariants</strong></p>
  * 
  * <pre>
- * invariant	{@code getOwner() instanceof LaundryImplementationI}
+ * invariant	{@code getOwner() instanceof FanImplementationI}
  * </pre>
  * 
  * <p><strong>Invariants</strong></p>
@@ -83,7 +83,7 @@ implements	FanUserCI
 	 * 
 	 * <pre>
 	 * pre	{@code owner != null}
-	 * pre	{@code owner instanceof LaundryImplementationI}
+	 * pre	{@code owner instanceof FanImplementationI}
 	 * post	{@code true}	// no more postcondition.
 	 * </pre>
 	 *
@@ -95,7 +95,7 @@ implements	FanUserCI
 		super(FanUserCI.class, owner);
 		assert	owner instanceof FanImplementationI :
 				new PreconditionException(
-						"owner instanceof LaundryImplementationI");
+						"owner instanceof FanImplementationI");
 	}
 
 	/**
@@ -106,7 +106,7 @@ implements	FanUserCI
 	 * <pre>
 	 * pre	{@code uri != null && !uri.isEmpty()}
 	 * pre	{@code owner != null}
-	 * pre	{@code owner instanceof LaundryImplementationI}
+	 * pre	{@code owner instanceof FanImplementationI}
 	 * post	{@code true}	// no more postcondition.
 	 * </pre>
 	 *
@@ -122,7 +122,7 @@ implements	FanUserCI
 		super(uri, FanUserCI.class, owner);
 		assert	owner instanceof FanImplementationI :
 				new PreconditionException(
-						"owner instanceof LaundryImplementationI");
+						"owner instanceof FanImplementationI");
 	}
 
 	// -------------------------------------------------------------------------
@@ -130,7 +130,7 @@ implements	FanUserCI
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getState()
+	 * @see etape1.equipements.fan.interfaces.FanUserCI.equipments.Fan.FanUserCI#getState()
 	 */
 	@Override
 	public FanState	getState() throws Exception
@@ -140,7 +140,7 @@ implements	FanUserCI
 	}
 
 	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getMode()
+	 * @see etape1.equipements.fan.interfaces.FanUserCI.equipments.Fan.FanUserCI#getMode()
 	 */
 	@Override
 	public FanMode	getMode() throws Exception
@@ -150,7 +150,7 @@ implements	FanUserCI
 	}
 
 	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#turnOn()
+	 * @see etape1.equipements.fan.interfaces.FanUserCI.equipments.Fan.FanUserCI#turnOn()
 	 */
 	@Override
 	public void			turnOn() throws Exception
@@ -162,7 +162,7 @@ implements	FanUserCI
 	}
 
 	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#turnOff()
+	 * @see etape1.equipements.fan.interfaces.FanUserCI.equipments.Fan.FanUserCI#turnOff()
 	 */
 	@Override
 	public void			turnOff() throws Exception
@@ -174,7 +174,7 @@ implements	FanUserCI
 	}
 
 	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#setHigh()
+	 * @see etape1.equipements.fan.interfaces.FanUserCI.equipments.Fan.FanUserCI#setHigh()
 	 */
 	@Override
 	public void			setHigh() throws Exception
@@ -186,7 +186,7 @@ implements	FanUserCI
 	}
 
 	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#setLow()
+	 * @see etape1.equipements.fan.interfaces.FanUserCI.equipments.Fan.FanUserCI#setLow()
 	 */
 	@Override
 	public void			setLow() throws Exception

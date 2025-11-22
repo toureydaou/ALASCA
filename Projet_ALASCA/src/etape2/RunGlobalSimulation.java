@@ -2,15 +2,61 @@ package etape2;
 
 import java.time.Instant;
 import java.util.ArrayList;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import etape1.equipments.batteries.Batteries;
+import etape1.equipments.generator.Generator;
+import etape1.equipments.solar_panel.SolarPanel;
 import etape2.GlobalCoupledModel.GlobalReport;
+import etape2.equipments.batteries.mil.BatteriesPowerModel;
+import etape2.equipments.batteries.mil.BatteriesSimulationConfiguration;
+import etape2.equipments.batteries.mil.events.BatteriesRequiredPowerChanged;
+import etape2.equipments.coffeemachine.mil.CoffeeMachineElectricityModel;
+import etape2.equipments.coffeemachine.mil.CoffeeMachineTemperatureModel;
+import etape2.equipments.coffeemachine.mil.CoffeeMachineUnitTesterModel;
 import etape2.equipments.coffeemachine.mil.events.DoNotHeat;
-import etape2.equipments.coffeemachine.mil.events.Heat;
-import etape2.equipments.coffeemachine.mil.events.SetPowerCoffeeMachine.PowerValue;
+import etape2.equipments.coffeemachine.mil.events.FillWaterCoffeeMachine;
+import etape2.equipments.coffeemachine.mil.events.FillWaterCoffeeMachine.WaterValue;
+import etape2.equipments.coffeemachine.mil.events.MakeCoffee;
+import etape2.equipments.coffeemachine.mil.events.ServeCoffee;
+import etape2.equipments.coffeemachine.mil.events.SetEcoModeCoffeeMachine;
+import etape2.equipments.coffeemachine.mil.events.SetMaxModeCoffeeMachine;
+import etape2.equipments.coffeemachine.mil.events.SetNormalModeCoffeeMachine;
+import etape2.equipments.coffeemachine.mil.events.SetPowerCoffeeMachine;
+import etape2.equipments.coffeemachine.mil.events.SetSuspendedModeCoffeeMachine;
+import etape2.equipments.coffeemachine.mil.events.SwitchOffCoffeeMachine;
+import etape2.equipments.coffeemachine.mil.events.SwitchOnCoffeeMachine;
+import etape2.equipments.fan.mil.FanElectricityModel;
+import etape2.equipments.fan.mil.FanSimpleUserModel;
+import etape2.equipments.fan.mil.events.SetHighModeFan;
+import etape2.equipments.fan.mil.events.SetLowModeFan;
+import etape2.equipments.fan.mil.events.SetMediumModeFan;
+import etape2.equipments.fan.mil.events.SwitchOffFan;
+import etape2.equipments.fan.mil.events.SwitchOnFan;
+import etape2.equipments.generator.mil.GeneratorFuelModel;
+import etape2.equipments.generator.mil.GeneratorGlobalTesterModel;
+import etape2.equipments.generator.mil.GeneratorPowerModel;
+import etape2.equipments.generator.mil.GeneratorSimulationConfiguration;
+import etape2.equipments.generator.mil.events.GeneratorRequiredPowerChanged;
+import etape2.equipments.generator.mil.events.Refill;
+import etape2.equipments.generator.mil.events.Start;
+import etape2.equipments.generator.mil.events.Stop;
+import etape2.equipments.generator.mil.events.TankEmpty;
+import etape2.equipments.generator.mil.events.TankNoLongerEmpty;
+import etape2.equipments.meter.mil.ElectricMeterElectricityModel;
+import etape2.equipments.solar_panel.mil.AstronomicalSunRiseAndSetModel;
+import etape2.equipments.solar_panel.mil.DeterministicSunIntensityModel;
+import etape2.equipments.solar_panel.mil.DeterministicSunRiseAndSetModel;
+import etape2.equipments.solar_panel.mil.SolarPanelPowerModel;
+import etape2.equipments.solar_panel.mil.SolarPanelSimulationConfigurationI;
+import etape2.equipments.solar_panel.mil.StochasticSunIntensityModel;
+import etape2.equipments.solar_panel.mil.SunIntensityModelI;
+import etape2.equipments.solar_panel.mil.SunRiseAndSetModelI;
+import etape2.equipments.solar_panel.mil.events.SunriseEvent;
+import etape2.equipments.solar_panel.mil.events.SunsetEvent;
 import fr.sorbonne_u.devs_simulation.architectures.Architecture;
 import fr.sorbonne_u.devs_simulation.architectures.ArchitectureI;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.AtomicHIOA_Descriptor;
@@ -77,49 +123,43 @@ public class			RunGlobalSimulation
 																new HashMap<>();
 
 			atomicModelDescriptors.put(
-					HairDryerElectricityModel.URI,
+					FanElectricityModel.URI,
 					AtomicHIOA_Descriptor.create(
-							HairDryerElectricityModel.class,
-							HairDryerElectricityModel.URI,
+							FanElectricityModel.class,
+							FanElectricityModel.URI,
 							GlobalSimulationConfigurationI.TIME_UNIT,
 							null));
 			// for atomic model, we use an AtomicModelDescriptor
 			atomicModelDescriptors.put(
-					HairDryerSimpleUserModel.URI,
+					FanSimpleUserModel.URI,
 					AtomicModelDescriptor.create(
-							HairDryerSimpleUserModel.class,
-							HairDryerSimpleUserModel.URI,
+							FanSimpleUserModel.class,
+							FanSimpleUserModel.URI,
 							GlobalSimulationConfigurationI.TIME_UNIT,
 							null));
 
-			// Heater models
+			// CoffeeMachine models
 
 			atomicModelDescriptors.put(
-					HeaterElectricityModel.URI,
+					CoffeeMachineElectricityModel.URI,
 					AtomicHIOA_Descriptor.create(
-							HeaterElectricityModel.class,
-							HeaterElectricityModel.URI,
+							CoffeeMachineElectricityModel.class,
+							CoffeeMachineElectricityModel.URI,
 							GlobalSimulationConfigurationI.TIME_UNIT,
 							null));
 			atomicModelDescriptors.put(
-					HeaterTemperatureModel.URI,
+					CoffeeMachineTemperatureModel.URI,
 					AtomicHIOA_Descriptor.create(
-							HeaterTemperatureModel.class,
-							HeaterTemperatureModel.URI,
+							CoffeeMachineTemperatureModel.class,
+							CoffeeMachineTemperatureModel.URI,
 							GlobalSimulationConfigurationI.TIME_UNIT,
 							null));
+			
 			atomicModelDescriptors.put(
-					ExternalTemperatureModel.URI,
-					AtomicHIOA_Descriptor.create(
-							ExternalTemperatureModel.class,
-							ExternalTemperatureModel.URI,
-							GlobalSimulationConfigurationI.TIME_UNIT,
-							null));
-			atomicModelDescriptors.put(
-					HeaterUnitTesterModel.URI,
+					CoffeeMachineUnitTesterModel.URI,
 					AtomicModelDescriptor.create(
-							HeaterUnitTesterModel.class,
-							HeaterUnitTesterModel.URI,
+							CoffeeMachineUnitTesterModel.class,
+							CoffeeMachineUnitTesterModel.URI,
 							GlobalSimulationConfigurationI.TIME_UNIT,
 							null));
 
@@ -199,7 +239,8 @@ public class			RunGlobalSimulation
 					AtomicHIOA_Descriptor.create(
 							GeneratorFuelModel.class,
 							GeneratorFuelModel.URI,
-							GeneratorSimulationConfiguration.TIME_UNIT,
+							GeneratorSimulationConfiguration.TIME_UNIT, 
+							null));
 			
 			atomicModelDescriptors.put(
 					GeneratorPowerModel.URI,
@@ -207,6 +248,7 @@ public class			RunGlobalSimulation
 							GeneratorPowerModel.class,
 							GeneratorPowerModel.URI,
 							GeneratorSimulationConfiguration.TIME_UNIT,
+							null));
 			
 			atomicModelDescriptors.put(
 					GeneratorGlobalTesterModel.URI,
@@ -231,12 +273,11 @@ public class			RunGlobalSimulation
 
 			// the set of submodels of the coupled model, given by their URIs
 			Set<String> submodels = new HashSet<String>();
-			submodels.add(HairDryerElectricityModel.URI);
-			submodels.add(HairDryerSimpleUserModel.URI);
-			submodels.add(HeaterElectricityModel.URI);
-			submodels.add(HeaterTemperatureModel.URI);
-			submodels.add(ExternalTemperatureModel.URI);
-			submodels.add(HeaterUnitTesterModel.URI);
+			submodels.add(FanElectricityModel.URI);
+			submodels.add(FanSimpleUserModel.URI);
+			submodels.add(CoffeeMachineElectricityModel.URI);
+			submodels.add(CoffeeMachineTemperatureModel.URI);
+			submodels.add(CoffeeMachineUnitTesterModel.URI);
 			submodels.add(BatteriesPowerModel.URI);
 			submodels.add(sunRiseAndSetURI);
 			submodels.add(sunIntensityModelURI);
@@ -253,74 +294,121 @@ public class			RunGlobalSimulation
 			Map<EventSource,EventSink[]> connections =
 										new HashMap<EventSource,EventSink[]>();
 
-			// Hair dryer events
+			// Fan events
 
 			connections.put(
-				new EventSource(HairDryerSimpleUserModel.URI,
-								SwitchOnHairDryer.class),
+				new EventSource(FanSimpleUserModel.URI,
+								SwitchOnFan.class),
 				new EventSink[] {
-					new EventSink(HairDryerElectricityModel.URI,
-								  SwitchOnHairDryer.class)
+					new EventSink(FanElectricityModel.URI,
+								  SwitchOnFan.class)
 				});
 			connections.put(
-				new EventSource(HairDryerSimpleUserModel.URI,
-								SwitchOffHairDryer.class),
+				new EventSource(FanSimpleUserModel.URI,
+								SwitchOffFan.class),
 				new EventSink[] {
-					new EventSink(HairDryerElectricityModel.URI,
-								  SwitchOffHairDryer.class)
+					new EventSink(FanElectricityModel.URI,
+								  SwitchOffFan.class)
 				});
 			connections.put(
-				new EventSource(HairDryerSimpleUserModel.URI,
-								SetHighHairDryer.class),
+				new EventSource(FanSimpleUserModel.URI,
+								SetHighModeFan.class),
 				new EventSink[] {
-					new EventSink(HairDryerElectricityModel.URI,
-								  SetHighHairDryer.class)
+					new EventSink(FanElectricityModel.URI,
+								  SetHighModeFan.class)
 				});
 			connections.put(
-				new EventSource(HairDryerSimpleUserModel.URI,
-								SetLowHairDryer.class),
+					new EventSource(FanSimpleUserModel.URI,
+									SetMediumModeFan.class),
+					new EventSink[] {
+						new EventSink(FanElectricityModel.URI,
+									  SetMediumModeFan.class)
+					});
+			connections.put(
+				new EventSource(FanSimpleUserModel.URI,
+								SetLowModeFan.class),
 				new EventSink[] {
-					new EventSink(HairDryerElectricityModel.URI,
-								  SetLowHairDryer.class)
+					new EventSink(FanElectricityModel.URI,
+								  SetLowModeFan.class)
 				});
 
-			// Heater events
+			// CoffeeMachine events
 
 			connections.put(
-				new EventSource(HeaterUnitTesterModel.URI,
-								SetPowerHeater.class),
-				new EventSink[] {
-					new EventSink(HeaterElectricityModel.URI,
-								  SetPowerHeater.class)
-				});
+					new EventSource(CoffeeMachineUnitTesterModel.URI,
+									SetPowerCoffeeMachine.class),
+					new EventSink[] {
+							new EventSink(CoffeeMachineElectricityModel.URI,
+										  SetPowerCoffeeMachine.class)
+					});
 			connections.put(
-				new EventSource(HeaterUnitTesterModel.URI,
-								SwitchOnHeater.class),
-				new EventSink[] {
-						new EventSink(HeaterElectricityModel.URI,
-									  SwitchOnHeater.class)
-				});
+					new EventSource(CoffeeMachineUnitTesterModel.URI,
+									SwitchOnCoffeeMachine.class),
+					new EventSink[] {
+							new EventSink(CoffeeMachineElectricityModel.URI,
+										  SwitchOnCoffeeMachine.class)
+					});
 			connections.put(
-				new EventSource(HeaterUnitTesterModel.URI,
-								SwitchOffHeater.class),
-				new EventSink[] {
-					new EventSink(HeaterElectricityModel.URI,
-								  SwitchOffHeater.class),
-					new EventSink(HeaterTemperatureModel.URI,
-								  SwitchOffHeater.class)
-				});
+					new EventSource(CoffeeMachineUnitTesterModel.URI,
+									SwitchOffCoffeeMachine.class),
+					new EventSink[] {
+							new EventSink(CoffeeMachineElectricityModel.URI,
+										  SwitchOffCoffeeMachine.class),
+							new EventSink(CoffeeMachineTemperatureModel.URI,
+										  SwitchOffCoffeeMachine.class)
+					});
 			connections.put(
-				new EventSource(HeaterUnitTesterModel.URI, Heat.class),
-				new EventSink[] {
-					new EventSink(HeaterElectricityModel.URI, Heat.class),
-					new EventSink(HeaterTemperatureModel.URI, Heat.class)
-				});
+					new EventSource(CoffeeMachineUnitTesterModel.URI, MakeCoffee.class),
+					new EventSink[] {
+							new EventSink(CoffeeMachineElectricityModel.URI,
+										  MakeCoffee.class),
+							new EventSink(CoffeeMachineTemperatureModel.URI,
+									MakeCoffee.class)
+					});
 			connections.put(
-				new EventSource(HeaterUnitTesterModel.URI, DoNotHeat.class),
-				new EventSink[] {
-					new EventSink(HeaterElectricityModel.URI, DoNotHeat.class),
-					new EventSink(HeaterTemperatureModel.URI, DoNotHeat.class)
-				});
+					new EventSource(CoffeeMachineUnitTesterModel.URI, DoNotHeat.class),
+					new EventSink[] {
+							new EventSink(CoffeeMachineElectricityModel.URI,
+										  DoNotHeat.class),
+							new EventSink(CoffeeMachineTemperatureModel.URI,
+										  DoNotHeat.class)
+					});
+			connections.put(
+					new EventSource(CoffeeMachineUnitTesterModel.URI, ServeCoffee.class),
+					new EventSink[] {
+							new EventSink(CoffeeMachineElectricityModel.URI,
+										  ServeCoffee.class),
+					});
+			connections.put(
+					new EventSource(CoffeeMachineUnitTesterModel.URI, SetEcoModeCoffeeMachine.class),
+					new EventSink[] {
+							new EventSink(CoffeeMachineElectricityModel.URI,
+										  SetEcoModeCoffeeMachine.class),
+					});
+			connections.put(
+					new EventSource(CoffeeMachineUnitTesterModel.URI, SetMaxModeCoffeeMachine.class),
+					new EventSink[] {
+							new EventSink(CoffeeMachineElectricityModel.URI,
+										  SetMaxModeCoffeeMachine.class),
+					});
+			connections.put(
+					new EventSource(CoffeeMachineUnitTesterModel.URI, SetNormalModeCoffeeMachine.class),
+					new EventSink[] {
+							new EventSink(CoffeeMachineElectricityModel.URI,
+										  SetNormalModeCoffeeMachine.class),
+					});
+			connections.put(
+					new EventSource(CoffeeMachineUnitTesterModel.URI, SetSuspendedModeCoffeeMachine.class),
+					new EventSink[] {
+							new EventSink(CoffeeMachineElectricityModel.URI,
+										  SetSuspendedModeCoffeeMachine.class),
+					});
+			connections.put(
+					new EventSource(CoffeeMachineUnitTesterModel.URI, FillWaterCoffeeMachine.class),
+					new EventSink[] {
+							new EventSink(CoffeeMachineElectricityModel.URI,
+									FillWaterCoffeeMachine.class),
+					});
 
 			// Batteries events
 
@@ -401,21 +489,23 @@ public class			RunGlobalSimulation
 			Map<VariableSource,VariableSink[]> bindings =
 					new HashMap<VariableSource,VariableSink[]>();
 
-			// Bindings among heater models
+			// Bindings among coffee machine models
 
-			bindings.put(
-				new VariableSource("externalTemperature", Double.class,
-								   ExternalTemperatureModel.URI),
-				new VariableSink[] {
-					new VariableSink("externalTemperature", Double.class,
-									 HeaterTemperatureModel.URI)
-				});
+			
 			bindings.put(
 				new VariableSource("currentHeatingPower", Double.class,
-								   HeaterElectricityModel.URI),
+								   CoffeeMachineElectricityModel.URI),
 				new VariableSink[] {
 					new VariableSink("currentHeatingPower", Double.class,
-									 HeaterTemperatureModel.URI)
+									 CoffeeMachineTemperatureModel.URI)
+				});
+			
+			bindings.put(
+				new VariableSource("currentWaterLevel", Double.class,
+								   CoffeeMachineElectricityModel.URI),
+				new VariableSink[] {
+					new VariableSink("currentWaterLevel", Double.class,
+									 CoffeeMachineTemperatureModel.URI)
 				});
 
 			// Bindings among solar panel models
@@ -482,18 +572,18 @@ public class			RunGlobalSimulation
 
 			bindings.put(
 				new VariableSource("currentIntensity", Double.class,
-								   HairDryerElectricityModel.URI),
+								   FanElectricityModel.URI),
 				new VariableSink[] {
 					new VariableSink("currentIntensity", Double.class,
-									 "currentHairDryerIntensity", Double.class,
+									 "currentFanIntensity", Double.class,
 									 ElectricMeterElectricityModel.URI)
 				});
 			bindings.put(
 				new VariableSource("currentIntensity", Double.class,
-								   HeaterElectricityModel.URI),
+								   CoffeeMachineElectricityModel.URI),
 				new VariableSink[] {
 					new VariableSink("currentIntensity", Double.class,
-									 "currentHeaterIntensity", Double.class,
+									 "currentCoffeeMachineIntensity", Double.class,
 									 ElectricMeterElectricityModel.URI)
 				});
 
@@ -533,23 +623,28 @@ public class			RunGlobalSimulation
 
 			simParams.put(
 				ModelI.createRunParameterName(
-					HairDryerElectricityModel.URI,
-					HairDryerElectricityModel.LOW_MODE_CONSUMPTION_RPNAME),
-				660.0);
+					FanElectricityModel.URI,
+					FanElectricityModel.LOW_MODE_CONSUMPTION_RPNAME),
+				200.0);
+			simParams.put(
+					ModelI.createRunParameterName(
+						FanElectricityModel.URI,
+						FanElectricityModel.MEDIUM_MODE_CONSUMPTION_RPNAME),
+					500.0);
 			simParams.put(
 				ModelI.createRunParameterName(
-					HairDryerElectricityModel.URI,
-					HairDryerElectricityModel.HIGH_MODE_CONSUMPTION_RPNAME),
-				1320.0);
+					FanElectricityModel.URI,
+					FanElectricityModel.HIGH_MODE_CONSUMPTION_RPNAME),
+				800.0);
 			simParams.put(
 				ModelI.createRunParameterName(
-					HairDryerSimpleUserModel.URI,
-					HairDryerSimpleUserModel.MEAN_STEP_RPNAME),
+					FanSimpleUserModel.URI,
+					FanSimpleUserModel.MEAN_STEP_RPNAME),
 				0.05);
 			simParams.put(
 				ModelI.createRunParameterName(
-					HairDryerSimpleUserModel.URI,
-					HairDryerSimpleUserModel.MEAN_DELAY_RPNAME),
+					FanSimpleUserModel.URI,
+					FanSimpleUserModel.MEAN_DELAY_RPNAME),
 				2.0);
 
 			// run parameters for solar panel models
@@ -649,19 +744,17 @@ public class			RunGlobalSimulation
 
 			// Tracing configuration
 
-			HairDryerElectricityModel.VERBOSE = false;
-			HairDryerElectricityModel.DEBUG = false;
-			HairDryerSimpleUserModel.VERBOSE = false;
-			HairDryerSimpleUserModel.DEBUG = false;
+			FanElectricityModel.VERBOSE = true;
+			FanElectricityModel.DEBUG = false;
+			FanSimpleUserModel.VERBOSE = true;
+			FanSimpleUserModel.DEBUG = false;
 
-			HeaterElectricityModel.VERBOSE = false;
-			HeaterElectricityModel.DEBUG = false;
-			HeaterTemperatureModel.VERBOSE = false;
-			HeaterTemperatureModel.DEBUG  = false;
-			ExternalTemperatureModel.VERBOSE = false;
-			ExternalTemperatureModel.DEBUG  = false;
-			HeaterUnitTesterModel.VERBOSE = false;
-			HeaterUnitTesterModel.DEBUG  = false;
+			CoffeeMachineElectricityModel.VERBOSE = false;
+			CoffeeMachineElectricityModel.DEBUG = true;
+			CoffeeMachineTemperatureModel.VERBOSE = false;
+			CoffeeMachineTemperatureModel.DEBUG  = true;
+			CoffeeMachineUnitTesterModel.VERBOSE = true;
+			CoffeeMachineUnitTesterModel.DEBUG  = false;
 
 			BatteriesPowerModel.VERBOSE = true;
 			BatteriesPowerModel.DEBUG = false;
@@ -722,38 +815,38 @@ public class			RunGlobalSimulation
 	protected static TestScenario	CLASSICAL =
 		new TestScenario(
 				"-----------------------------------------------------\n" +
-				"Classical\n\n" +
+				"Classical Global Simulation\n\n" +
 				"  Gherkin specification\n\n" +
-				"    Feature: heater operation\n\n" +
-				"      Scenario: heater switched on\n" +
-				"        Given a heater that is off\n" +
-				"        When it is switched on\n" +
-				"        Then it is on but not heating though set at the highest power level\n" +
-				"      Scenario: heater heats\n" +
-				"        Given a heater that is on and not heating\n" +
-				"        When it is asked to heat\n" +
-				"        Then it is on and it heats at the current power level\n" +
-				"      Scenario: heater stops heating\n" +
-				"        Given a hair dryer that is heating\n" +
-				"        When it is asked not to heat\n" +
-				"        Then it is on but it stops heating\n" +
-				"      Scenario: heater heats\n" +
-				"        Given a heater that is on and not heating\n" +
-				"        When it is asked to heat\n" +
-				"        Then it is on and it heats at the current power level\n" +
-				"      Scenario: heater set a different power level\n" +
-				"        Given a heater that is heating\n" +
-				"        When it is set to a new power level\n" +
-				"        Then it is on and it heats at the new power level\n" +
-				"      Scenario: hair dryer switched off\n" +
-				"        Given a hair dryer that is on\n" +
-				"        When it is switched of\n" +
-				"        Then it is off\n" +
-				"    Feature: generator production\n\n" +
-				"      Scenario: generator produces for a limited time without emptying the tank\n" +
-				"        Given a standard generator with a tank not full neither empty\n" +
-				"        When it is producing for a limited time\n" +
-				"        Then the tank level goes down but stays not empty\n" +
+				"    Feature: Global Energy Management with Coffee Machine\n\n" +
+				"      Scenario: Generator startup\n" +
+				"        Given a generator with fuel\n" +
+				"        When it is started at 12:15\n" +
+				"        Then it begins producing power\n\n" +
+				"      Scenario: Coffee Machine initialization\n" +
+				"        Given a coffee machine that is off\n" +
+				"        When it is switched on at 12:30\n" +
+				"        Then it enters standby mode\n\n" +
+				"      Scenario: Coffee Machine preparation\n" +
+				"        Given the coffee machine is on\n" +
+				"        When water is filled (1.0L) at 13:00\n" +
+				"        And the mode is set to MAX at 13:30\n" +
+				"        Then the machine is configured for high power heating\n\n" +
+				"      Scenario: Brewing process\n" +
+				"        Given the machine has water and is configured\n" +
+				"        When the MakeCoffee command is issued at 14:00\n" +
+				"        Then the machine heats up and consumes electricity\n\n" +
+				"      Scenario: Serving coffee\n" +
+				"        Given the heating phase is active/done\n" +
+				"        When coffee is served at 14:30\n" +
+				"        Then the water level decreases\n\n" +
+				"      Scenario: Coffee Machine shutdown\n" +
+				"        Given the coffee machine is active\n" +
+				"        When it is switched off at 16:30\n" +
+				"        Then it stops consuming power\n\n" +
+				"      Scenario: Generator shutdown\n" +
+				"        Given the generator is running\n" +
+				"        When it is stopped at 17:30\n" +
+				"        Then it stops producing power\n" +
 				"-----------------------------------------------------\n",
 				"\n-----------------------------------------------------\n" +
 				"End Classical\n" +
@@ -764,8 +857,8 @@ public class			RunGlobalSimulation
 				(simulationEngine, testScenario, simulationParameters) -> {
 					simulationParameters.put(
 						ModelI.createRunParameterName(
-							HeaterUnitTesterModel.URI,
-							HeaterUnitTesterModel.TEST_SCENARIO_RP_NAME),
+							CoffeeMachineUnitTesterModel.URI,
+							CoffeeMachineUnitTesterModel.TEST_SCENARIO_RP_NAME),
 						testScenario);
 					simulationParameters.put(
 						ModelI.createRunParameterName(
@@ -853,57 +946,56 @@ public class			RunGlobalSimulation
 						},
 						(m, t) -> {}),
 					new SimulationTestStep(
-						HeaterUnitTesterModel.URI,
+						CoffeeMachineUnitTesterModel.URI,
 						Instant.parse("2025-10-20T12:30:00.00Z"),
 						(m, t) -> {
 							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new SwitchOnHeater(t));
+							ret.add(new SwitchOnCoffeeMachine(t));
 							return ret;
 						},
 						(m, t) -> {}),
 					new SimulationTestStep(
-						HeaterUnitTesterModel.URI,
+						CoffeeMachineUnitTesterModel.URI,
 						Instant.parse("2025-10-20T13:00:00.00Z"),
 						(m, t) -> {
 							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new Heat(t));
+							ret.add(new FillWaterCoffeeMachine(t, new WaterValue(1.0)));
 							return ret;
 						},
 						(m, t) -> {}),
 					new SimulationTestStep(
-						HeaterUnitTesterModel.URI,
+						CoffeeMachineUnitTesterModel.URI,
 						Instant.parse("2025-10-20T13:30:00.00Z"),
 						(m, t) -> {
 							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new DoNotHeat(t));
+							ret.add(new SetMaxModeCoffeeMachine(t));
 							return ret;
 						},
 						(m, t) -> {}),
 					new SimulationTestStep(
-						HeaterUnitTesterModel.URI,
+						CoffeeMachineUnitTesterModel.URI,
 						Instant.parse("2025-10-20T14:00:00.00Z"),
 						(m, t) -> {
 							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new Heat(t));
+							ret.add(new MakeCoffee(t));
 							return ret;
 						},
 						(m, t) -> {}),
 					new SimulationTestStep(
-						HeaterUnitTesterModel.URI,
+						CoffeeMachineUnitTesterModel.URI,
 						Instant.parse("2025-10-20T14:30:00.00Z"),
 						(m, t) -> {
 							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new SetPowerHeater(t,
-									   				   new PowerValue(880.0)));
+							ret.add(new ServeCoffee(t));
 							return ret;
 						},
 						(m, t) -> {}),
 					new SimulationTestStep(
-						HeaterUnitTesterModel.URI,
+						CoffeeMachineUnitTesterModel.URI,
 						Instant.parse("2025-10-20T16:30:00.00Z"),
 						(m, t) -> {
 							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new SwitchOffHeater(t));
+							ret.add(new SwitchOffCoffeeMachine(t));
 							return ret;
 						},
 						(m, t) -> {}),

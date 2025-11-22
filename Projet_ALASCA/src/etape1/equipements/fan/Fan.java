@@ -1,15 +1,18 @@
 package etape1.equipements.fan;
 
+import etape1.bases.RegistrationCI;
 import etape1.equipements.fan.connections.ports.FanInboundPort;
 import etape1.equipements.fan.interfaces.FanImplementationI;
 import etape1.equipements.fan.interfaces.FanUserCI;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
+import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PreconditionException;
+import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
 import physical_data.Measure;
 import physical_data.MeasurementUnit;
 
@@ -18,12 +21,12 @@ import physical_data.MeasurementUnit;
 
 
 /**
- * The class <code>Laundry</code> implements the hair dryer component.
+ * The class <code>Fan</code> implements the fan component.
  *
  * <p><strong>Description</strong></p>
  * 
  * <p>
- * The hair dryer is an uncontrollable appliance, hence it does not connect
+ * The fan is an uncontrollable appliance, hence it does not connect
  * with the household energy manager. However, it will connect later to the
  * electric panel to take its (simulated) electricity consumption into account.
  * </p>
@@ -51,17 +54,18 @@ import physical_data.MeasurementUnit;
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
 @OfferedInterfaces(offered={FanUserCI.class})
+@RequiredInterfaces(required = { RegistrationCI.class, ClocksServerCI.class })
 public class Fan extends AbstractComponent implements FanImplementationI {
 	// -------------------------------------------------------------------------
 		// Constants and variables
 		// -------------------------------------------------------------------------
 
-		/** URI of the hair dryer inbound port used in tests.					*/
+		/** URI of the fan inbound port used in tests.					*/
 		public static final String			REFLECTION_INBOUND_PORT_URI =
-															"HAIR-DRYER-RIP-URI";	
-		/** URI of the hair dryer inbound port used in tests.					*/
+															"FAN-RIP-URI";	
+		/** URI of the fan inbound port used in tests.					*/
 		public static final String			INBOUND_PORT_URI =
-													"HAIR-DRYER-INBOUND-PORT-URI";
+													"FAN-INBOUND-PORT-URI";
 
 		/** when true, methods trace their actions.								*/
 		public static boolean				VERBOSE = false;
@@ -69,32 +73,39 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		public static int					X_RELATIVE_POSITION = 0;
 		/** when tracing, y coordinate of the window relative position.			*/
 		public static int					Y_RELATIVE_POSITION = 0;
+		
+		public static final Measure<Double>	LOW_POWER_IN_WATTS =
+				new Measure<Double>(
+							Constants.LOW_POWER_MODE_FAN,
+							MeasurementUnit.WATTS);
+		
+		public static final Measure<Double>	MEDIUM_POWER_IN_WATTS =
+				new Measure<Double>(
+						Constants.MEDIUM_POWER_MODE_FAN,
+							MeasurementUnit.WATTS);
 
 		public static final Measure<Double>	HIGH_POWER_IN_WATTS =
 												new Measure<Double>(
-															800.0,
+														Constants.HIGH_POWER_MODE_FAN,
 															MeasurementUnit.WATTS);
-		public static final Measure<Double>	LOW_POWER_IN_WATTS =
-												new Measure<Double>(
-															60.0,
-															MeasurementUnit.WATTS);
+		
 		public static final Measure<Double>	VOLTAGE =
 												new Measure<Double>(
-															220.0,
+														Constants.VOLTAGE_FAN,
 															MeasurementUnit.VOLTS);
 
-		/** initial state of the hair dryer.									*/
+		/** initial state of the fan.									*/
 		protected static final FanState	INITIAL_STATE = FanState.OFF;
-		/** initial mode of the hair dryer.										*/
+		/** initial mode of the fan.										*/
 		protected static final FanMode	INITIAL_MODE = FanMode.LOW;
 
-		/** current state (on, off) of the hair dryer.							*/
+		/** current state (on, off) of the fan.							*/
 		protected FanState			currentState;
-		/** current mode of operation (low, high) of the hair dryer.			*/
+		/** current mode of operation (low, high) of the fan.			*/
 		protected FanMode				currentMode;
 
 		/** inbound port offering the <code>FanCI</code> interface.		*/
-		protected FanInboundPort		hdip;
+		protected FanInboundPort		fip;
 
 		// -------------------------------------------------------------------------
 		// Invariants
@@ -182,7 +193,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		// -------------------------------------------------------------------------
 
 		/**
-		 * create a hair dryer component.
+		 * create a fan component.
 		 * 
 		 * <p><strong>Contract</strong></p>
 		 * 
@@ -200,7 +211,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * create a hair dryer component.
+		 * create a fan component.
 		 * 
 		 * <p><strong>Contract</strong></p>
 		 * 
@@ -210,7 +221,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		 * post	{@code getMode() == FanMode.LOW}
 		 * </pre>
 		 * 
-		 * @param FanInboundPortURI	URI of the hair dryer inbound port.
+		 * @param FanInboundPortURI	URI of the fan inbound port.
 		 * @throws Exception				<i>to do</i>.
 		 */
 		protected			Fan(String FanInboundPortURI)
@@ -220,7 +231,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * create a hair dryer component with the given reflection innbound port
+		 * create a fan component with the given reflection innbound port
 		 * URI.
 		 * 
 		 * <p><strong>Contract</strong></p>
@@ -233,7 +244,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		 * </pre>
 		 *
 		 * @param reflectionInboundPortURI	URI of the reflection innbound port of the component.
-		 * @param FanInboundPortURI	URI of the hair dryer inbound port.
+		 * @param FanInboundPortURI	URI of the fan inbound port.
 		 * @throws Exception				<i>to do</i>.
 		 */
 		protected			Fan(
@@ -246,7 +257,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * initialise the hair dryer component.
+		 * initialise the fan component.
 		 * 
 		 * <p><strong>Contract</strong></p>
 		 * 
@@ -256,7 +267,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		 * post	{@code getMode() == FanMode.LOW}
 		 * </pre>
 		 * 
-		 * @param FanInboundPortURI	URI of the hair dryer inbound port.
+		 * @param FanInboundPortURI	URI of the fan inbound port.
 		 * @throws Exception				<i>to do</i>.
 		 */
 		protected void		initialise(String FanInboundPortURI)
@@ -271,11 +282,11 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 
 			this.currentState = INITIAL_STATE;
 			this.currentMode = INITIAL_MODE;
-			this.hdip = new FanInboundPort(FanInboundPortURI, this);
-			this.hdip.publishPort();
+			this.fip = new FanInboundPort(FanInboundPortURI, this);
+			this.fip.publishPort();
 
 			if (Fan.VERBOSE) {
-				this.tracer.get().setTitle("Hair dryer component");
+				this.tracer.get().setTitle("Fan component");
 				this.tracer.get().setRelativePosition(X_RELATIVE_POSITION,
 													  Y_RELATIVE_POSITION);
 				this.toggleTracing();
@@ -283,9 +294,9 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 
 			assert	Fan.implementationInvariants(this) :
 					new ImplementationInvariantException(
-							"Laundry.implementationInvariants(this)");
+							"Fan.implementationInvariants(this)");
 			assert	Fan.invariants(this) :
-					new InvariantException("Laundry.invariants(this)");
+					new InvariantException("Fan.invariants(this)");
 		}
 
 		// -------------------------------------------------------------------------
@@ -299,7 +310,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		public synchronized void	shutdown() throws ComponentShutdownException
 		{
 			try {
-				this.hdip.unpublishPort();
+				this.fip.unpublishPort();
 			} catch (Throwable e) {
 				throw new ComponentShutdownException(e) ;
 			}
@@ -311,13 +322,13 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		// -------------------------------------------------------------------------
 
 		/**
-		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#getState()
+		 * @see etape1.equipements.Fan.interfaces.FanImplementationI.equipments.Fan.FanImplementationI#getState()
 		 */
 		@Override
 		public FanState	getState() throws Exception
 		{
 			if (Fan.VERBOSE) {
-				this.traceMessage("Hair dryer returns its state : " +
+				this.traceMessage("Fan returns its state : " +
 														this.currentState + ".\n");
 			}
 
@@ -325,13 +336,13 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#getMode()
+		 * @see etape1.equipements.Fan.interfaces.FanImplementationI.equipments.Fan.FanImplementationI#getMode()
 		 */
 		@Override
 		public FanMode	getMode() throws Exception
 		{
 			if (Fan.VERBOSE) {
-				this.traceMessage("Hair dryer returns its mode : " +
+				this.traceMessage("Fan returns its mode : " +
 														this.currentMode + ".\n");
 			}
 
@@ -339,13 +350,13 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#turnOn()
+		 * @see etape1.equipements.Fan.interfaces.FanImplementationI.equipments.Fan.FanImplementationI#turnOn()
 		 */
 		@Override
 		public void			turnOn() throws Exception
 		{
 			if (Fan.VERBOSE) {
-				this.traceMessage("Hair dryer is turned on.\n");
+				this.traceMessage("Fan is turned on.\n");
 			}
 
 			assert	this.getState() == FanState.OFF :
@@ -356,13 +367,13 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#turnOff()
+		 * @see etape1.equipements.Fan.interfaces.FanImplementationI.equipments.Fan.FanImplementationI#turnOff()
 		 */
 		@Override
 		public void			turnOff() throws Exception
 		{
 			if (Fan.VERBOSE) {
-				this.traceMessage("Hair dryer is turned off.\n");
+				this.traceMessage("Fan is turned off.\n");
 			}
 
 			assert	this.getState() == FanState.ON :
@@ -372,13 +383,13 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#setHigh()
+		 * @see etape1.equipements.Fan.interfaces.FanImplementationI.equipments.Fan.FanImplementationI#setHigh()
 		 */
 		@Override
 		public void			setHigh() throws Exception
 		{
 			if (Fan.VERBOSE) {
-				this.traceMessage("Hair dryer is set high.\n");
+				this.traceMessage("Fan is set high.\n");
 			}
 
 			assert	this.getState() == FanState.ON :
@@ -389,13 +400,13 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		}
 
 		/**
-		 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#setLow()
+		 * @see etape1.equipements.Fan.interfaces.FanImplementationI.equipments.Fan.FanImplementationI#setLow()
 		 */
 		@Override
 		public void			setLow() throws Exception
 		{
 			if (Fan.VERBOSE) {
-				this.traceMessage("Hair dryer is set low.\n");
+				this.traceMessage("Fan is set low.\n");
 			}
 
 			assert	this.getState() == FanState.ON :

@@ -3,7 +3,6 @@ package etape1.equipements.registration.ports;
 import etape1.bases.RegistrationCI;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractInboundPort;
-import fr.sorbonne_u.exceptions.PreconditionException;
 
 public class RegistrationInboundPort extends AbstractInboundPort implements RegistrationCI {
 

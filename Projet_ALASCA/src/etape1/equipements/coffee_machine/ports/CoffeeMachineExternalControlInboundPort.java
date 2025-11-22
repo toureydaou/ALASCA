@@ -88,7 +88,7 @@ public class CoffeeMachineExternalControlInboundPort extends AbstractInboundPort
 		assert implementedInterface != null
 				&& CoffeeMachineExternalControlCI.class.isAssignableFrom(implementedInterface)
 				: new PreconditionException("implementedInterface != null && "
-						+ "CoffeeMachineExternalControlCI.class.isAssignableFrom(" + "implementedInterface)");
+						+ "FanControlCI.class.isAssignableFrom(" + "implementedInterface)");
 		//assert owner instanceof CoffeeMachineExternalControlI
 			//	: new PreconditionException("owner instanceof CoffeeMachineExternalControlI");
 	}

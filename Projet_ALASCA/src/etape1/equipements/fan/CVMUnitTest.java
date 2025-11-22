@@ -38,7 +38,7 @@ import fr.sorbonne_u.components.exceptions.BCMException;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>CVMUnitTest</code> performs unit tests on the hair dryer
+ * The class <code>CVMUnitTest</code> performs unit tests on the fan
  * component.
  *
  * <p><strong>Description</strong></p>

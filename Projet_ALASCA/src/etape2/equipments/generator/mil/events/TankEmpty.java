@@ -1,12 +1,11 @@
-package etape1.equipements.fan.connections.connectors;
-
-import etape1.equipements.fan.interfaces.FanUserCI;
+package etape2.equipments.generator.mil.events;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
-// This software is a computer program whose purpose is to implement a mock-up
-// of household energy management system.
+// This software is a computer program whose purpose is to provide a
+// basic component programming model to program with components
+// distributed applications in the Java programming language.
 //
 // This software is governed by the CeCILL-C license under French law and
 // abiding by the rules of distribution of free software.  You can use,
@@ -34,12 +33,16 @@ import etape1.equipements.fan.interfaces.FanUserCI;
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
-import fr.sorbonne_u.components.connectors.AbstractConnector;
+import fr.sorbonne_u.devs_simulation.models.events.Event;
+import fr.sorbonne_u.devs_simulation.models.interfaces.AtomicModelI;
+import fr.sorbonne_u.devs_simulation.models.time.Time;
+import etape2.equipments.generator.mil.TankLevelManagementI;
+import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>LaundryUserConnector</code> implements a connector for
- * the <code>LaundryUserCI</code> component interface.
+ * The class <code>TankEmpty</code> implements the event that signals that the
+ * generator tank is empty.
  *
  * <p><strong>Description</strong></p>
  * 
@@ -55,72 +58,59 @@ import fr.sorbonne_u.components.connectors.AbstractConnector;
  * invariant	{@code true}	// no more invariant
  * </pre>
  * 
- * <p>Created on : 2023-09-19</p>
+ * <p>Created on : 2025-10-21</p>
  * 
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public class			FanConnector
-extends		AbstractConnector
-implements	FanUserCI
+public class			TankEmpty
+extends		Event
 {
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getState()
-	 */
-	@Override
-	public FanState	getState() throws Exception
-	{
-		return ((FanUserCI)this.offering).getState();
-	}
+	// -------------------------------------------------------------------------
+	// Constants and variables
+	// -------------------------------------------------------------------------
+
+	private static final long serialVersionUID = 1L;
+
+	// -------------------------------------------------------------------------
+	// Constructors
+	// -------------------------------------------------------------------------
 
 	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#getMode()
+	 * create a <code>TankEmpty</code> event.
+	 * 
+	 * <p><strong>Contract</strong></p>
+	 * 
+	 * <pre>
+	 * pre	{@code timeOfOccurrence != null}
+	 * post	{@code getTimeOfOccurrence().equals(timeOfOccurrence)}
+	 * post	{@code getEventInformation() == null}
+	 * </pre>
+	 *
+	 * @param timeOfOccurrence	time of occurrence of the event.
 	 */
-	@Override
-	public	FanMode	getMode() throws Exception
+	public				TankEmpty(Time timeOfOccurrence)
 	{
-		return ((FanUserCI)this.offering).getMode();
+		super(timeOfOccurrence, null);
 	}
+
+	// -------------------------------------------------------------------------
+	// Methods
+	// -------------------------------------------------------------------------
 
 	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#turnOn()
+	 * @see fr.sorbonne_u.devs_simulation.models.events.Event#executeOn(fr.sorbonne_u.devs_simulation.models.interfaces.AtomicModelI)
 	 */
 	@Override
-	public void			turnOn() throws Exception
+	public void			executeOn(AtomicModelI model)
 	{
-		((FanUserCI)this.offering).turnOn();
-	}
+		// Preconditions checking
+		assert	model instanceof TankLevelManagementI :
+				new NeoSim4JavaException(
+						"Precondition violation: model instanceof "
+						+ "GeneratorUserI");
 
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#turnOff()
-	 */
-	@Override
-	public void			turnOff() throws Exception
-	{
-		((FanUserCI)this.offering).turnOff();
-	}
-
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#setHigh()
-	 */
-	@Override
-	public void			setHigh() throws Exception
-	{
-		((FanUserCI)this.offering).setHigh();
-	}
-
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryUserCI.equipments.Fan.FanUserCI#setLow()
-	 */
-	@Override
-	public void			setLow() throws Exception
-	{
-		((FanUserCI)this.offering).setLow();
-	}
-
-	@Override
-	public void setMedium() throws Exception {
-		((FanUserCI)this.offering).setMedium();
-		
+		TankLevelManagementI m = (TankLevelManagementI) model;
+		m.signalTankEmpty();
 	}
 }
 // -----------------------------------------------------------------------------

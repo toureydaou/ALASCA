@@ -15,6 +15,11 @@ import etape1.equipements.hem.connections.CoffeeMachineConnector;
 import etape1.equipements.hem.ports.AdjustableOutboundPort;
 import etape1.equipements.registration.ports.RegistrationI;
 import etape1.equipements.registration.ports.RegistrationInboundPort;
+import etape1.equipments.meter.ElectricMeter;
+import etape1.equipments.meter.ElectricMeterCI;
+import etape1.equipments.meter.ElectricMeterUnitTester;
+import etape1.equipments.meter.connections.ElectricMeterConnector;
+import etape1.equipments.meter.connections.ElectricMeterOutboundPort;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -111,7 +116,7 @@ import tests_utils.TestsStatistics;
  * 
  * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-@RequiredInterfaces(required = { ClocksServerCI.class, AdjustableCI.class, RegistrationCI.class })
+@RequiredInterfaces(required = { ClocksServerCI.class, AdjustableCI.class, RegistrationCI.class, ElectricMeterCI.class })
 @OfferedInterfaces(offered = { RegistrationCI.class })
 public class HEM extends AbstractComponent implements RegistrationI {
 	// -------------------------------------------------------------------------
@@ -133,10 +138,10 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	private HashMap<String, Boolean> equipementsRegitered;
 
 	/** port to connect to the electric meter. */
-	/*
-	 * protected ElectricMeterOutboundPort meterop;
-	 * 
-	 *//** port to connect to the batteries. */
+	
+	protected ElectricMeterOutboundPort meterop;
+	 
+	 /** port to connect to the batteries. */
 	/*
 	 * protected BatteriesOutboundPort batteriesop;
 	 *//** port to connect to the solar panel. */
@@ -291,6 +296,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 		}
 
 		this.performTest = performTest;
+		this.statistics = new TestsStatistics();
 
 		// by default, consider this execution as one in the pre-first step
 		// and manage the heater in a customised way.
@@ -323,6 +329,13 @@ public class HEM extends AbstractComponent implements RegistrationI {
 		try {
 			this.coffeeop = new AdjustableOutboundPort(this);
 			this.coffeeop.publishPort();
+			
+			this.meterop = new ElectricMeterOutboundPort(this);
+			this.meterop.publishPort();
+			this.doPortConnection(
+					this.meterop.getPortURI(),
+					ElectricMeter.ELECTRIC_METER_INBOUND_PORT_URI,
+					ElectricMeterConnector.class.getCanonicalName());
 		} catch (Throwable e) {
 			throw new ComponentStartException(e);
 		}
@@ -359,7 +372,9 @@ public class HEM extends AbstractComponent implements RegistrationI {
 		this.traceMessage("HEM starts.\n");
 
 		if (this.performTest) {
-
+			this.logMessage("Electric meter tests start.");
+			this.testMeter();
+			this.logMessage("Electric meter tests end.");
 			if (this.isPreFirstStep) {
 				this.scheduleTestCoffee();
 			} else {
@@ -375,6 +390,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	@Override
 	public synchronized void finalise() throws Exception {
 
+		this.doPortDisconnection(this.meterop.getPortURI());
 		if (this.coffeeop.connected())
 			this.doPortDisconnection(this.coffeeop.getPortURI());
 
@@ -387,7 +403,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	@Override
 	public synchronized void shutdown() throws ComponentShutdownException {
 		try {
-
+			this.meterop.unpublishPort();
 			if (this.isPreFirstStep) {
 				this.coffeeop.unpublishPort();
 			} else {
@@ -403,6 +419,11 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	// -------------------------------------------------------------------------
 	// Internal methods
 	// -------------------------------------------------------------------------
+	
+	protected void		testMeter() throws Exception
+	{
+		ElectricMeterUnitTester.runAllTests(this, this.meterop, this.statistics);
+	}
 
 	// Registration Methods
 

@@ -1,7 +1,7 @@
 package etape2.equipments.fan.mil.events;
 
-import etape1.equipements.fan.interfaces.FanImplementationI.FanState;
-import etape2.equipments.fan.mil.FanElectricityModel;
+import etape2.equipments.fan.mil.AbstractFanEvent;
+import etape2.equipments.fan.mil.FanOperationI;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -35,7 +35,7 @@ import etape2.equipments.fan.mil.FanElectricityModel;
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
-import fr.sorbonne_u.devs_simulation.es.events.ES_Event;
+
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;
 import fr.sorbonne_u.devs_simulation.models.interfaces.AtomicModelI;
@@ -76,7 +76,7 @@ import fr.sorbonne_u.devs_simulation.models.time.Time;
  * 
  * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public class SwitchOffFan extends ES_Event implements FanEventI {
+public class SwitchOffFan extends		AbstractFanEvent implements FanEventI {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
@@ -118,7 +118,7 @@ public class SwitchOffFan extends ES_Event implements FanEventI {
 	@Override
 	public boolean hasPriorityOver(EventI e) {
 		// if many Fan events occur at the same time, the
-		// SwitchOffHairDryer one will be executed after all others.
+		// SwitchOffFan one will be executed after all others.
 		return false;
 	}
 
@@ -127,18 +127,11 @@ public class SwitchOffFan extends ES_Event implements FanEventI {
 	 */
 	@Override
 	public void executeOn(AtomicModelI model) {
-		assert model instanceof FanElectricityModel
-				: new NeoSim4JavaException("Precondition violation: model instanceof " + "FanElectricityModel || "
-						+ "model instanceof FanTemperatureModel");
+		assert	model instanceof FanOperationI :
+			new NeoSim4JavaException(
+					"model instanceof FanOperationI");
 
-		if (model instanceof FanElectricityModel) {
-			FanElectricityModel fan = (FanElectricityModel) model;
-			assert fan.getState() != FanState.OFF
-					: new NeoSim4JavaException("model not in the right state, should not be "
-							+ "FanElectricityModel.State.ON but is " + fan.getState());
-			fan.setState(FanState.OFF, this.getTimeOfOccurrence());
-			fan.toggleConsumptionHasChanged();
-		}
+		((FanOperationI)model).turnOff();
 	}
 }
 // -----------------------------------------------------------------------------

@@ -3,7 +3,7 @@ package etape2.equipments.coffeemachine.mil.events;
 
 
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
-import etape2.equipments.coffeemachine.mil.CoffeeMachineElectricityModel;
+import etape2.equipments.coffeemachine.mil.CoffeeMachineOperationI;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -121,20 +121,19 @@ implements	CoffeeMachineEventI
 	@Override
 	public void			executeOn(AtomicModelI model)
 	{
-		assert	model instanceof CoffeeMachineElectricityModel :
+		assert	model instanceof CoffeeMachineOperationI :
 				new NeoSim4JavaException(
 						"Precondition violation: model instanceof "
-						+ "CoffeeMachineElectricityModel");
+						+ "CoffeeMachineOperationI");
 
-		CoffeeMachineElectricityModel coffeeMachine = (CoffeeMachineElectricityModel)model;
-		
+		CoffeeMachineOperationI coffeeMachine = (CoffeeMachineOperationI)model;
+
 		assert	coffeeMachine.getState() == CoffeeMachineState.OFF :
 				new NeoSim4JavaException(
 						"model not in the right state, should be "
-						+ "CoffeeMachineElectricityModel.State.OFF but is "
+						+ "CoffeeMachineState.OFF but is "
 						+ coffeeMachine.getState());
-		coffeeMachine.setState(CoffeeMachineState.ON,
-						this.getTimeOfOccurrence());
+		coffeeMachine.setState(CoffeeMachineState.ON);
 	}
 }
 // -----------------------------------------------------------------------------

@@ -3,7 +3,7 @@ package etape2.equipments.coffeemachine.mil.events;
 import etape1.equipements.coffee_machine.CoffeeMachine;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
 import etape2.equipments.coffeemachine.mil.CoffeeMachineElectricityModel;
-import etape2.equipments.coffeemachine.mil.CoffeeMachineTemperatureModel;
+import etape2.equipments.coffeemachine.mil.CoffeeMachineOperationI;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
@@ -138,21 +138,24 @@ public class ServeCoffee extends Event implements CoffeeMachineEventI {
 	 */
 	@Override
 	public void executeOn(AtomicModelI model) {
-		assert model instanceof CoffeeMachineElectricityModel || model instanceof CoffeeMachineTemperatureModel
+		assert model instanceof CoffeeMachineOperationI
 				: new NeoSim4JavaException("Precondition violation: model instanceof "
-						+ "CoffeeMachineElectricityModel || " + "model instanceof CoffeeMachineTemperatureModel");
+						+ "CoffeeMachineOperationI");
 
+		CoffeeMachineOperationI coffeeMachine = (CoffeeMachineOperationI) model;
+
+		// Water level operations only for electricity models
 		if (model instanceof CoffeeMachineElectricityModel) {
-			CoffeeMachineElectricityModel coffeeMachine = (CoffeeMachineElectricityModel) model;
+			CoffeeMachineElectricityModel elecModel = (CoffeeMachineElectricityModel) model;
 			assert coffeeMachine.getState() == CoffeeMachineState.ON
-					&& coffeeMachine.getCurrentWaterLevel().getValue() > 0.1
+					&& elecModel.getCurrentWaterLevel().getValue() > 0.1
 					: new NeoSim4JavaException("model not in the right state, should be "
-							+ "CoffeeMachineElectricityModel.State.ON but is " + coffeeMachine.getState());
-			coffeeMachine.setState(CoffeeMachineState.ON, this.getTimeOfOccurrence());
-			double newWaterLevel = coffeeMachine.getCurrentWaterLevel().getValue() - CoffeeMachine.CUP_OF_CAFE_CAPACITY.getData();
+							+ "CoffeeMachineState.ON but is " + coffeeMachine.getState());
+			double newWaterLevel = elecModel.getCurrentWaterLevel().getValue() - CoffeeMachine.CUP_OF_CAFE_CAPACITY.getData();
 			coffeeMachine.setCurrentWaterLevel(newWaterLevel, timeOfOccurrence);
-			
-		} 
+		}
+
+		coffeeMachine.setState(CoffeeMachineState.ON);
 	}
 }
 // -----------------------------------------------------------------------------

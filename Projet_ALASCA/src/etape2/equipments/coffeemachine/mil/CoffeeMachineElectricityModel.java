@@ -165,7 +165,7 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 @ModelExportedVariable(name = "currentHeatingPower", type = Double.class)
 @ModelExportedVariable(name = "currentWaterLevel", type = Double.class)
 //-----------------------------------------------------------------------------
-public class CoffeeMachineElectricityModel extends AtomicHIOA {
+public class CoffeeMachineElectricityModel extends AtomicHIOA implements CoffeeMachineOperationI{
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
@@ -880,6 +880,24 @@ public class CoffeeMachineElectricityModel extends AtomicHIOA {
 	@Override
 	public SimulationReportI getFinalReport() {
 		return new CoffeeMachineElectricityReport(this.getURI(), this.totalConsumption);
+	}
+
+	@Override
+	public void setState(CoffeeMachineState s) {
+		CoffeeMachineState old = this.currentState;
+		this.currentState = s;
+		if (old != s) {
+			this.consumptionHasChanged = true;
+		}
+	}
+
+	@Override
+	public void setMode(CoffeeMachineMode m) {
+		CoffeeMachineMode old = this.currentMode;
+		this.currentMode = m;
+		if (old != m) {
+			this.consumptionHasChanged = true;
+		}
 	}
 }
 // -----------------------------------------------------------------------------

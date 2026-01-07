@@ -97,7 +97,7 @@ public class Fan extends AbstractComponent implements FanImplementationI {
 		/** initial state of the fan.									*/
 		protected static final FanState	INITIAL_STATE = FanState.OFF;
 		/** initial mode of the fan.										*/
-		protected static final FanMode	INITIAL_MODE = FanMode.LOW;
+		public static final FanMode	INITIAL_MODE = FanMode.LOW;
 
 		/** current state (on, off) of the fan.							*/
 		protected FanState			currentState;

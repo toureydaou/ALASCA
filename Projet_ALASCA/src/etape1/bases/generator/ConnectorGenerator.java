@@ -77,7 +77,6 @@ public class ConnectorGenerator {
             method.append(" { \n");
            
             if (m.body != null && !m.body.trim().isEmpty()) {
-                // Ajoutez des accolades pour créer un bloc valide
                 method.append(m.body).append("\n");
             } else {
                

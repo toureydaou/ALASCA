@@ -16,6 +16,8 @@ import etape1.equipements.coffee_machine.ports.CoffeeMachineUserInboundPort;
 import etape1.equipements.hem.HEM;
 import etape1.equipements.registration.connector.RegistrationConnector;
 import etape1.equipements.registration.ports.RegistrationOutboundPort;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
@@ -24,8 +26,7 @@ import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.exceptions.PostconditionException;
 import fr.sorbonne_u.exceptions.PreconditionException;
 import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
-import physical_data.Measure;
-import physical_data.MeasurementUnit;
+
 
 @OfferedInterfaces(offered = { CoffeeMachineUserCI.class, CoffeeMachineInternalControlCI.class,
 		CoffeeMachineExternalControlJava4CI.class })

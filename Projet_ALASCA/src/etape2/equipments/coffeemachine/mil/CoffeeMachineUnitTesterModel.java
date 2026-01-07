@@ -46,14 +46,15 @@ import etape2.equipments.coffeemachine.mil.events.SetPowerCoffeeMachine;
 import etape2.equipments.coffeemachine.mil.events.SetSuspendedModeCoffeeMachine;
 import etape2.equipments.coffeemachine.mil.events.SwitchOffCoffeeMachine;
 import etape2.equipments.coffeemachine.mil.events.SwitchOnCoffeeMachine;
+import fr.sorbonne_u.components.cyphy.utils.tests.AbstractTestScenarioBasedAtomicModel;
+import fr.sorbonne_u.components.cyphy.utils.tests.TestScenarioWithSimulation;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
 import fr.sorbonne_u.devs_simulation.models.annotations.ModelExternalEvents;
 import fr.sorbonne_u.devs_simulation.models.interfaces.ModelI;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulationReportI;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
-import tests_utils.AbstractTestScenarioBasedAtomicModel;
-import tests_utils.TestScenario;
+
 
 // -----------------------------------------------------------------------------
 /**
@@ -97,7 +98,7 @@ import tests_utils.TestScenario;
  * 
  * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-@ModelExternalEvents(exported = { SwitchOnCoffeeMachine.class, SwitchOffCoffeeMachine.class,
+@ModelExternalEvents(exported = { SwitchOnCoffeeMachine.class, SwitchOffCoffeeMachine.class, 
 		SetEcoModeCoffeeMachine.class, SetMaxModeCoffeeMachine.class, SetNormalModeCoffeeMachine.class, SetSuspendedModeCoffeeMachine.class,
 		FillWaterCoffeeMachine.class, MakeCoffee.class, ServeCoffee.class, DoNotHeat.class, SetPowerCoffeeMachine.class })
 // -----------------------------------------------------------------------------
@@ -183,7 +184,7 @@ public class CoffeeMachineUnitTesterModel extends AbstractTestScenarioBasedAtomi
 		assert simParams != null : new MissingRunParameterException("simParams != null");
 		assert simParams.containsKey(testScenarioName) : new MissingRunParameterException(testScenarioName);
 
-		this.setTestScenario((TestScenario) simParams.get(testScenarioName));
+		this.setTestScenario((TestScenarioWithSimulation) simParams.get(testScenarioName));
 	}
 
 	// -------------------------------------------------------------------------

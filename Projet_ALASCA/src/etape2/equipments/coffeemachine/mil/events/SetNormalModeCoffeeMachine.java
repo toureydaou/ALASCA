@@ -4,6 +4,7 @@ import etape1.equipements.coffee_machine.Constants;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineMode;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
 import etape2.equipments.coffeemachine.mil.CoffeeMachineElectricityModel;
+import etape2.equipments.coffeemachine.mil.CoffeeMachineOperationI;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -129,19 +130,17 @@ public class SetNormalModeCoffeeMachine extends ES_Event implements CoffeeMachin
 	 */
 	@Override
 	public void executeOn(AtomicModelI model) {
-		assert model instanceof CoffeeMachineElectricityModel
+		assert model instanceof CoffeeMachineOperationI
 				: new NeoSim4JavaException("Precondition violation: model instanceof "
-						+ "CoffeeMachineElectricityModel || " + "model instanceof CoffeeMachineTemperatureModel");
+						+ "CoffeeMachineOperationI");
 
-		if (model instanceof CoffeeMachineElectricityModel) {
-			CoffeeMachineElectricityModel coffeeMachine = (CoffeeMachineElectricityModel) model;
-			assert coffeeMachine.getState() == CoffeeMachineState.ON
-					&& coffeeMachine.getMode() != CoffeeMachineMode.NORMAL
-					: new NeoSim4JavaException(
-							"model not in the right state, should not be " + coffeeMachine.getMode());
-			coffeeMachine.setStateMode(CoffeeMachineState.ON, CoffeeMachineMode.NORMAL);
-			coffeeMachine.setCurrentHeatingPower(Constants.NORMAL_MODE_POWER, this.getTimeOfOccurrence());
-		}
+		CoffeeMachineOperationI coffeeMachine = (CoffeeMachineOperationI) model;
+		assert coffeeMachine.getState() == CoffeeMachineState.ON
+				&& coffeeMachine.getMode() != CoffeeMachineMode.NORMAL
+				: new NeoSim4JavaException(
+						"model not in the right state, should not be " + coffeeMachine.getMode());
+		coffeeMachine.setStateMode(CoffeeMachineState.ON, CoffeeMachineMode.NORMAL);
+		coffeeMachine.setCurrentHeatingPower(Constants.NORMAL_MODE_POWER, this.getTimeOfOccurrence());
 	}
 }
 // -----------------------------------------------------------------------------

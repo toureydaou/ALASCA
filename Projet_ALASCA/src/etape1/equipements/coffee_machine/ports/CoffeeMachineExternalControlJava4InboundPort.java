@@ -2,8 +2,9 @@ package etape1.equipements.coffee_machine.ports;
 
 import etape1.equipements.coffee_machine.CoffeeMachine;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlJava4CI;
+import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.ComponentI;
-import physical_data.Measure;
+
 
 public class CoffeeMachineExternalControlJava4InboundPort extends CoffeeMachineExternalControlInboundPort
 		implements CoffeeMachineExternalControlJava4CI {

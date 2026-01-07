@@ -1,6 +1,6 @@
 package etape1.equipements.coffee_machine.interfaces;
 
-import physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.Measure;
 
 public interface CoffeeMachineTemperatureI {
 

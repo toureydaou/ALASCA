@@ -1,0 +1,145 @@
+<control-adapter
+    xmlns="http://www.sorbonne-universite.fr/alasca/control-adapter"
+    uid="1A10000"
+    offered="fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlJava4CI">
+  <consumption nominal="2200" min="0" max="2200"/>
+  <required>java.lang.Math</required>
+  <required>fr.sorbonne_u.exceptions.PreconditionException</required>
+  <instance-var modifiers= "protected static" type="int" name="MAX_MODE"
+                static-init="6"/>
+  <instance-var modifiers= "protected static" type="double"
+                name="MIN_ADMISSIBLE_TEMP" static-init="12.0"/>
+  <instance-var modifiers= "protected static" type="double"
+                name="MAX_ADMISSIBLE_DELTA" static-init="10.0"/>
+  <instance-var modifiers= "protected" type="int" name="currentMode"
+                static-init="MAX_MODE"/>
+  <instance-var modifiers= "protected" type="boolean" name="isSuspended"
+                static-init="false"/>
+  <internal modifiers= "protected" type="double"
+            name="computePowerLevel">
+    <parameter type="int" name="mode"/>
+    <thrown>java.lang.Exception</thrown>
+    <body equipmentRef="heater">
+      if (mode &lt;= 0 || mode &gt; MAX_MODE) {
+        throw new fr.sorbonne_u.exceptions.PreconditionException("mode &gt; 0 &amp;&amp; mode &lt;= MAX_MODE");
+	  }
+      double maxPowerLevel = heater.getMaxPowerLevelJava4();
+      return (mode - 1) * maxPowerLevel/(MAX_MODE - 1);
+    </body>
+  </internal>
+  <internal modifiers= "protected" type="void"
+            name="setPowerLevel">
+    <parameter type="double" name="newPowerLevel"/>
+    <thrown>java.lang.Exception</thrown>
+    <body equipmentRef="heater">
+      if (newPowerLevel &lt; 0.0) {
+		throw new fr.sorbonne_u.exceptions.PreconditionException("newPowerLevel &gt;= 0.0");
+	  }
+      double maxPowerLevel = heater.getMaxPowerLevelJava4();
+      if (newPowerLevel > maxPowerLevel) {
+		newPowerLevel = maxPowerLevel;
+	  }
+      heater.setCurrentPowerLevelJava4(newPowerLevel);
+    </body>
+  </internal>
+  <internal modifiers= "protected" type="void"
+            name="computeAndSetNewPowerLevel">
+    <parameter type="int" name="newMode"/>
+    <thrown>java.lang.Exception</thrown>
+    <body equipmentRef="heater">
+      if (newMode &lt;= 0 || newMode &gt; MAX_MODE) {
+        throw new fr.sorbonne_u.exceptions.PreconditionException("newMode &gt; 0 &amp;&amp; newMode &lt;= MAX_MODE");
+	  }
+      double newPowerLevel = computePowerLevel(newMode);
+      setPowerLevel(newPowerLevel);
+    </body>
+  </internal>
+  <maxMode><body>return MAX_MODE;</body></maxMode>
+  <upMode>
+    <body>
+      try {
+        computeAndSetNewPowerLevel(currentMode + 1);
+        currentMode++;
+      } catch(Exception e) {
+        return false;
+      }
+      return true;
+    </body>
+  </upMode>
+  <downMode>
+    <body>
+      try {
+        computeAndSetNewPowerLevel(currentMode - 1);
+        currentMode--;
+      } catch(Exception e) {
+        return false;
+      }
+      return true;
+    </body>
+  </downMode>
+  <setMode>
+    <parameter name="modeIndex"/>
+    <body>
+      try {
+        computeAndSetNewPowerLevel(modeIndex);
+        currentMode = modeIndex;
+      } catch(Exception e) {
+        return false;
+      }
+      return true;
+    </body>
+  </setMode>
+  <currentMode>
+    <body>
+      return currentMode;
+    </body>
+  </currentMode>
+  <getModeConsumption>
+  	<parameter name="modeIndex"/>
+  	<body>
+  		return computePowerLevel(modeIndex);
+  	</body>
+  </getModeConsumption>
+  <suspended>
+    <body>
+      return isSuspended;
+    </body>
+  </suspended>
+  <suspend>
+    <body equipmentRef="heater">
+      try {
+        heater.setCurrentPowerLevelJava4(0.0);
+        isSuspended = true;
+      } catch(Exception e) {
+        return false;
+      }
+      return true;
+    </body>
+  </suspend>
+  <resume>
+    <body equipmentRef="heater">
+      try {
+        computeAndSetNewPowerLevel(currentMode);
+        isSuspended = false;
+      } catch(Exception e) {
+        return false;
+      }
+      return true;
+    </body>
+  </resume>
+  <emergency>
+    <body equipmentRef="heater">
+      double currentTemperature = heater.getCurrentTemperatureJava4();
+      double targetTemperature = heater.getTargetTemperatureJava4();
+      double delta = Math.abs(targetTemperature - currentTemperature);
+      double ret = -1.0;
+      if (currentTemperature &lt; MIN_ADMISSIBLE_TEMP ||
+                                    delta &gt;= MAX_ADMISSIBLE_DELTA) {
+        ret = 1.0;
+      } else {
+        ret = delta/MAX_ADMISSIBLE_DELTA;
+      }
+      return ret;
+    </body>
+  </emergency>
+</control-adapter>

@@ -1,9 +1,10 @@
 package etape1.equipements.coffee_machine.ports;
 
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineInternalControlCI;
+import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractOutboundPort;
-import physical_data.Measure;
+
 
 public class CoffeeMachineInternalOutboundPort extends AbstractOutboundPort implements CoffeeMachineInternalControlCI {
 

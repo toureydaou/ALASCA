@@ -1,6 +1,6 @@
 package etape1.equipements.coffee_machine;
 
-public class Constants {
+public abstract class Constants {
 
 	public static final double MACHINE_VOLTAGE = 220.0;
 	public static final double WATER_CAPACITY = 1.0;

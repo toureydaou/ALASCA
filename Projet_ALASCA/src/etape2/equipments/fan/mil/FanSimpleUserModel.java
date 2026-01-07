@@ -59,93 +59,105 @@ import fr.sorbonne_u.exceptions.AssertionChecking;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>FanSimpleUserModel</code> defines a very simple user
- * model for the fan simulator.
+ * The class <code>FanSimpleUserModel</code> defines a very simple user model
+ * for the fan simulator.
  *
- * <p><strong>Description</strong></p>
+ * <p>
+ * <strong>Description</strong>
+ * </p>
  * 
  * <p>
  * This model is meant to illustrate how to program MIL models simulating user
  * actions by sending events to other models.
  * </p>
  * <p>
- * Here, we use an event scheduling atomic model to output events at random
- * time intervals in a predefined cycle to test all of the different modes in
- * the fan. Note that the exported events are indeed subclasses of
- * event scheduling events {@code ES_Event}. Hence, this example also shows
- * how to program this type of event scheduling simulation models.
+ * Here, we use an event scheduling atomic model to output events at random time
+ * intervals in a predefined cycle to test all of the different modes in the
+ * fan. Note that the exported events are indeed subclasses of event scheduling
+ * events {@code ES_Event}. Hence, this example also shows how to program this
+ * type of event scheduling simulation models.
  * </p>
  * <p>
  * Event scheduling models are constructed around an event list that contains
  * events scheduled to be executed at future time in the simulation time. The
- * class {@code AtomicES_Model} hence defines the main methods to execute
- * the transitions. Internal transitions simply occurs at the time of the next
- * event in the event list and then, if the event is internal, execute that
- * event on the model (by calling the method {@code executeOn} defined on the
- * event. If the next event is external, it must be emitted towards other
- * models. This is performed by the method {@code AtomicES_Model#output}
+ * class {@code AtomicES_Model} hence defines the main methods to execute the
+ * transitions. Internal transitions simply occurs at the time of the next event
+ * in the event list and then, if the event is internal, execute that event on
+ * the model (by calling the method {@code executeOn} defined on the event. If
+ * the next event is external, it must be emitted towards other models. This is
+ * performed by the method {@code AtomicES_Model#output}
  * </p>
  * 
  * <ul>
  * <li>Imported events: none</li>
- * <li>Exported events:
- *   {@code SwitchOnFan},
- *   {@code SwitchOffFan},
- *   {@code SetLowFan},
- *   {@code SetHighFan}</li>
+ * <li>Exported events: {@code SwitchOnFan}, {@code SwitchOffFan},
+ * {@code SetLowFan}, {@code SetHighFan}</li>
  * </ul>
  * 
- * <p><strong>Implementation Invariants</strong></p>
+ * <p>
+ * <strong>Implementation Invariants</strong>
+ * </p>
  * 
  * <pre>
- * invariant	{@code STEP_MEAN_DURATION > 0.0}
- * invariant	{@code DELAY_MEAN_DURATION > 0.0}
- * invariant	{@code rg != null}
+ * invariant	{@code
+ * STEP_MEAN_DURATION > 0.0
+ * }
+ * invariant	{@code
+ * DELAY_MEAN_DURATION > 0.0
+ * }
+ * invariant	{@code
+ * rg != null
+ * }
  * </pre>
  * 
- * <p><strong>Invariants</strong></p>
+ * <p>
+ * <strong>Invariants</strong>
+ * </p>
  * 
  * <pre>
- * invariant	{@code URI != null && !URI.isEmpty()}
- * invariant	{@code MEAN_STEP_RPNAME != null && !MEAN_STEP_RPNAME.isEmpty()}
- * invariant	{@code MEAN_DELAY_RPNAME != null && !MEAN_DELAY_RPNAME.isEmpty()}
+ * invariant	{@code
+ * URI != null && !URI.isEmpty()
+ * }
+ * invariant	{@code
+ * MEAN_STEP_RPNAME != null && !MEAN_STEP_RPNAME.isEmpty()
+ * }
+ * invariant	{@code
+ * MEAN_DELAY_RPNAME != null && !MEAN_DELAY_RPNAME.isEmpty()
+ * }
  * </pre>
  * 
- * <p>Created on : 2023-09-29</p>
+ * <p>
+ * Created on : 2023-09-29
+ * </p>
  * 
- * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
 // -----------------------------------------------------------------------------
-@ModelExternalEvents(exported = {SwitchOnFan.class,
-								 SwitchOffFan.class,
-								 SetLowModeFan.class,
-								 SetMediumModeFan.class,
-								 SetHighModeFan.class})
+@ModelExternalEvents(exported = { SwitchOnFan.class, SwitchOffFan.class, SetLowModeFan.class, SetMediumModeFan.class,
+		SetHighModeFan.class })
 // -----------------------------------------------------------------------------
-public class			FanSimpleUserModel
-extends		AtomicES_Model
-{
+public class FanSimpleUserModel extends AtomicES_Model {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
 
-	private static final long	serialVersionUID = 1L;
-	/** URI for an instance model; works as long as only one instance is
-	 *  created.															*/
-	public static final String	URI =
-								FanSimpleUserModel.class.getSimpleName();
-	/** when true, leaves a trace of the execution of the model.			*/
-	public static boolean		VERBOSE = true;
-	/** when true, leaves a debugging trace of the execution of the model.	*/
-	public static boolean		DEBUG = false;
+	private static final long serialVersionUID = 1L;
+	/**
+	 * URI for an instance model; works as long as only one instance is created.
+	 */
+	public static final String URI = FanSimpleUserModel.class.getSimpleName();
+	/** when true, leaves a trace of the execution of the model. */
+	public static boolean VERBOSE = true;
+	/** when true, leaves a debugging trace of the execution of the model. */
+	public static boolean DEBUG = false;
 
-	/** time interval between event outputs in hours.						*/
-	protected static double		STEP_MEAN_DURATION = 5.0/60.0; // 5 minutes
-	/** time interval between fan usages in hours.					*/
-	protected static double		DELAY_MEAN_DURATION = 4.0;
+	/** time interval between event outputs in hours. */
+	protected static double STEP_MEAN_DURATION = 5.0 / 60.0; // 5 minutes
+	/** time interval between fan usages in hours. */
+	protected static double DELAY_MEAN_DURATION = 4.0;
 
-	/**	the random number generator from common math library.				*/
-	protected final RandomDataGenerator	rg ;
+	/** the random number generator from common math library. */
+	protected final RandomDataGenerator rg;
 
 	// -------------------------------------------------------------------------
 	// Invariants
@@ -155,57 +167,56 @@ extends		AtomicES_Model
 	 * return true if the static implementation invariants are observed, false
 	 * otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @return			true if the static implementation invariants are observed, false otherwise.
+	 * @return true if the static implementation invariants are observed, false
+	 *         otherwise.
 	 */
-	protected static boolean	staticImplementationInvariants()
-	{
+	protected static boolean staticImplementationInvariants() {
 		boolean ret = true;
-		ret &= AssertionChecking.checkStaticImplementationInvariant(
-				STEP_MEAN_DURATION > 0.0,
-				FanSimpleUserModel.class,
+		ret &= AssertionChecking.checkStaticImplementationInvariant(STEP_MEAN_DURATION > 0.0, FanSimpleUserModel.class,
 				"STEP_MEAN_DURATION > 0.0");
-		ret &= AssertionChecking.checkStaticImplementationInvariant(
-				DELAY_MEAN_DURATION > 0.0,
-				FanSimpleUserModel.class,
+		ret &= AssertionChecking.checkStaticImplementationInvariant(DELAY_MEAN_DURATION > 0.0, FanSimpleUserModel.class,
 				"DELAY_MEAN_DURATION > 0.0");
 		return ret;
 	}
 
 	/**
-	 * return true if the implementation invariants are observed, false
-	 * otherwise.
+	 * return true if the implementation invariants are observed, false otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code instance != null}
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * instance != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param instance	instance to be tested.
-	 * @return			true if the implementation invariants are observed, false otherwise.
+	 * @param instance instance to be tested.
+	 * @return true if the implementation invariants are observed, false otherwise.
 	 */
-	protected static boolean	implementationInvariants(
-		FanSimpleUserModel instance
-		)
-	{
-		assert	instance != null :
-				new NeoSim4JavaException("Precondition violation: "
-						+ "instance != null");
+	protected static boolean implementationInvariants(FanSimpleUserModel instance) {
+		assert instance != null : new NeoSim4JavaException("Precondition violation: " + "instance != null");
 
 		boolean ret = true;
 		ret &= staticImplementationInvariants();
-		ret &= AssertionChecking.checkImplementationInvariant(
-				instance.rg != null,
-				FanSimpleUserModel.class,
-				instance,
+		ret &= AssertionChecking.checkImplementationInvariant(instance.rg != null, FanSimpleUserModel.class, instance,
 				"rg != null");
 		return ret;
 	}
@@ -213,51 +224,53 @@ extends		AtomicES_Model
 	/**
 	 * return true if the static invariants are observed, false otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @return	true if the black-box invariants are observed, false otherwise.
+	 * @return true if the black-box invariants are observed, false otherwise.
 	 */
-	protected static boolean	staticInvariants()
-	{
+	protected static boolean staticInvariants() {
 		boolean ret = true;
-		ret &= AssertionChecking.checkStaticInvariant(
-				URI != null && !URI.isEmpty(),
-				FanSimpleUserModel.class,
+		ret &= AssertionChecking.checkStaticInvariant(URI != null && !URI.isEmpty(), FanSimpleUserModel.class,
 				"URI != null && !URI.isEmpty()");
-		ret &= AssertionChecking.checkStaticInvariant(
-				MEAN_STEP_RPNAME != null && !MEAN_STEP_RPNAME.isEmpty(),
-				FanSimpleUserModel.class,
-				"MEAN_STEP_RPNAME != null && !MEAN_STEP_RPNAME.isEmpty()");
-		ret &= AssertionChecking.checkStaticInvariant(
-				MEAN_DELAY_RPNAME != null && !MEAN_DELAY_RPNAME.isEmpty(),
-				FanSimpleUserModel.class,
-				"MEAN_DELAY_RPNAME != null && !MEAN_DELAY_RPNAME.isEmpty()");
+		ret &= AssertionChecking.checkStaticInvariant(MEAN_STEP_RPNAME != null && !MEAN_STEP_RPNAME.isEmpty(),
+				FanSimpleUserModel.class, "MEAN_STEP_RPNAME != null && !MEAN_STEP_RPNAME.isEmpty()");
+		ret &= AssertionChecking.checkStaticInvariant(MEAN_DELAY_RPNAME != null && !MEAN_DELAY_RPNAME.isEmpty(),
+				FanSimpleUserModel.class, "MEAN_DELAY_RPNAME != null && !MEAN_DELAY_RPNAME.isEmpty()");
 		return ret;
 	}
 
 	/**
 	 * return true if the invariants are observed, false otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code instance != null}
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * instance != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param instance	instance to be tested.
-	 * @return			true if the black-box invariants are observed, false otherwise.
+	 * @param instance instance to be tested.
+	 * @return true if the black-box invariants are observed, false otherwise.
 	 */
-	protected static boolean	invariants(FanSimpleUserModel instance)
-	{
-		assert	instance != null :
-				new NeoSim4JavaException("Precondition violation: "
-						+ "instance != null");
+	protected static boolean invariants(FanSimpleUserModel instance) {
+		assert instance != null : new NeoSim4JavaException("Precondition violation: " + "instance != null");
 
 		boolean ret = true;
 		ret &= staticInvariants();
@@ -271,41 +284,55 @@ extends		AtomicES_Model
 	/**
 	 * create a fan tester MIL model instance.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code uri == null || !uri.isEmpty()}
-	 * pre	{@code simulatedTimeUnit != null}
-	 * pre	{@code simulationEngine != null && !simulationEngine.isModelSet()}
-	 * pre	{@code simulationEngine instanceof AtomicEngine}
-	 * post	{@code !isDebugModeOn()}
-	 * post	{@code getURI() != null && !getURI().isEmpty()}
-	 * post	{@code uri == null || getURI().equals(uri)}
-	 * post	{@code getSimulatedTimeUnit().equals(simulatedTimeUnit)}
-	 * post	{@code getSimulationEngine().equals(simulationEngine)}
+	 * pre	{@code
+	 * uri == null || !uri.isEmpty()
+	 * }
+	 * pre	{@code
+	 * simulatedTimeUnit != null
+	 * }
+	 * pre	{@code
+	 * simulationEngine != null && !simulationEngine.isModelSet()
+	 * }
+	 * pre	{@code
+	 * simulationEngine instanceof AtomicEngine
+	 * }
+	 * post	{@code
+	 * !isDebugModeOn()
+	 * }
+	 * post	{@code
+	 * getURI() != null && !getURI().isEmpty()
+	 * }
+	 * post	{@code
+	 * uri == null || getURI().equals(uri)
+	 * }
+	 * post	{@code
+	 * getSimulatedTimeUnit().equals(simulatedTimeUnit)
+	 * }
+	 * post	{@code
+	 * getSimulationEngine().equals(simulationEngine)
+	 * }
 	 * </pre>
 	 *
-	 * @param uri				URI of the model.
-	 * @param simulatedTimeUnit	time unit used for the simulation time.
-	 * @param simulationEngine	simulation engine to which the model is attached.
-	 * @throws Exception		<i>to do.</i>
+	 * @param uri               URI of the model.
+	 * @param simulatedTimeUnit time unit used for the simulation time.
+	 * @param simulationEngine  simulation engine to which the model is attached.
+	 * @throws Exception <i>to do.</i>
 	 */
-	public				FanSimpleUserModel(
-		String uri,
-		TimeUnit simulatedTimeUnit,
-		AtomicSimulatorI simulationEngine
-		) throws Exception
-	{
+	public FanSimpleUserModel(String uri, TimeUnit simulatedTimeUnit, AtomicSimulatorI simulationEngine)
+			throws Exception {
 		super(uri, simulatedTimeUnit, simulationEngine);
 
 		this.rg = new RandomDataGenerator();
 		this.getSimulationEngine().setLogger(new StandardLogger());
 
-		assert	FanSimpleUserModel.implementationInvariants(this) :
-				new NeoSim4JavaException(
-						"FanTesterModel.implementationInvariants(this)");
-		assert	FanSimpleUserModel.invariants(this) :
-				new NeoSim4JavaException("FanTesterModel.invariants(this)");
+		assert FanSimpleUserModel.implementationInvariants(this)
+				: new NeoSim4JavaException("FanTesterModel.implementationInvariants(this)");
+		assert FanSimpleUserModel.invariants(this) : new NeoSim4JavaException("FanTesterModel.invariants(this)");
 	}
 
 	// -------------------------------------------------------------------------
@@ -313,23 +340,27 @@ extends		AtomicES_Model
 	// -------------------------------------------------------------------------
 
 	/**
-	 * generate the next event in the test scenario; current implementation
-	 * cycles through {@code SwitchOnFan}, {@code SetHighFan},
-	 * {@code SetLowFan} and {@code SwitchOffFan} in this order
-	 * at a random time interval following a gaussian distribution with
-	 * mean {@code STEP_MEAN_DURATION} and standard deviation
-	 * {@code STEP_MEAN_DURATION/2.0}.
+	 * generate the next event in the test scenario; current implementation cycles
+	 * through {@code SwitchOnFan}, {@code SetHighFan}, {@code SetLowFan} and
+	 * {@code SwitchOffFan} in this order at a random time interval following a
+	 * gaussian distribution with mean {@code STEP_MEAN_DURATION} and standard
+	 * deviation {@code STEP_MEAN_DURATION/2.0}.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code eventList.peek() != null}
-	 * post	{@code eventList.peek() != null}
+	 * pre	{@code
+	 * eventList.peek() != null
+	 * }
+	 * post	{@code
+	 * eventList.peek() != null
+	 * }
 	 * </pre>
 	 *
 	 */
-	protected void		generateNextEvent()
-	{
+	protected void generateNextEvent() {
 		EventI current = this.eventList.peek();
 		// compute the next event type given the current event
 		ES_EventI nextEvent = null;
@@ -363,28 +394,31 @@ extends		AtomicES_Model
 	}
 
 	/**
-	 * compute the time of the next event, adding a random delay to
-	 * {@code from}.
+	 * compute the time of the next event, adding a random delay to {@code from}.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code from != null}
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * from != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param from	time from which a delay will be added to get the time of the next event.
-	 * @return		the time of the next event, adding a random delay to {@code from}.
+	 * @param from time from which a delay will be added to get the time of the next
+	 *             event.
+	 * @return the time of the next event, adding a random delay to {@code from}.
 	 */
-	protected Time		computeTimeOfNextEvent(Time from)
-	{
-		assert	from != null;
+	protected Time computeTimeOfNextEvent(Time from) {
+		assert from != null;
 
 		// generate randomly the next time interval but force it to be
-		// greater than 0 by returning at least 0.1 
-		double delay = Math.max(this.rg.nextGaussian(STEP_MEAN_DURATION,
-													 STEP_MEAN_DURATION/2.0),
-								0.1);
+		// greater than 0 by returning at least 0.1
+		double delay = Math.max(this.rg.nextGaussian(STEP_MEAN_DURATION, STEP_MEAN_DURATION / 2.0), 0.1);
 		// compute the new time by adding the delay to from
 		Time t = from.add(new Duration(delay, this.getSimulatedTimeUnit()));
 		return t;
@@ -394,25 +428,29 @@ extends		AtomicES_Model
 	 * compute the time of the next fan usage, adding a random delay to
 	 * {@code from}.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code from != null}
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * from != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param from	time from which a delay will be added to get the time of the next event.
-	 * @return		the time of the next event, adding a random delay to {@code from}.
+	 * @param from time from which a delay will be added to get the time of the next
+	 *             event.
+	 * @return the time of the next event, adding a random delay to {@code from}.
 	 */
-	protected Time		computeTimeOfNextUsage(Time from)
-	{
-		assert	from != null;
+	protected Time computeTimeOfNextUsage(Time from) {
+		assert from != null;
 
 		// generate randomly the next time interval but force it to be
-		// greater than 0 by returning at least 0.1 
-		double delay = Math.max(this.rg.nextGaussian(DELAY_MEAN_DURATION,
-													 DELAY_MEAN_DURATION/10.0),
-								0.1);
+		// greater than 0 by returning at least 0.1
+		double delay = Math.max(this.rg.nextGaussian(DELAY_MEAN_DURATION, DELAY_MEAN_DURATION / 10.0), 0.1);
 		// compute the new time by adding the delay to from
 		Time t = from.add(new Duration(delay, this.getSimulatedTimeUnit()));
 		return t;
@@ -426,8 +464,7 @@ extends		AtomicES_Model
 	 * @see fr.sorbonne_u.devs_simulation.es.models.AtomicES_Model#initialiseState(fr.sorbonne_u.devs_simulation.models.time.Time)
 	 */
 	@Override
-	public void			initialiseState(Time initialTime)
-	{
+	public void initialiseState(Time initialTime) {
 		super.initialiseState(initialTime);
 
 		// reinitialise the random number generator to get good samples
@@ -440,8 +477,7 @@ extends		AtomicES_Model
 		// re-initialisation of the time of occurrence of the next event
 		// required here after adding a new event in the schedule.
 		this.nextTimeAdvance = this.timeAdvance();
-		this.timeOfNextEvent =
-				this.getCurrentStateTime().add(this.getNextTimeAdvance());
+		this.timeOfNextEvent = this.getCurrentStateTime().add(this.getNextTimeAdvance());
 
 		if (VERBOSE) {
 			this.logMessage("simulation begins.");
@@ -452,8 +488,7 @@ extends		AtomicES_Model
 	 * @see fr.sorbonne_u.devs_simulation.es.models.AtomicES_Model#output()
 	 */
 	@Override
-	public ArrayList<EventI>	output()
-	{
+	public ArrayList<EventI> output() {
 		// generate and schedule the next event
 		if (this.eventList.peek() != null) {
 			this.generateNextEvent();
@@ -466,8 +501,7 @@ extends		AtomicES_Model
 	 * @see fr.sorbonne_u.devs_simulation.models.interfaces.ModelI#endSimulation(fr.sorbonne_u.devs_simulation.models.time.Time)
 	 */
 	@Override
-	public void			endSimulation(Time endTime)
-	{
+	public void endSimulation(Time endTime) {
 		if (VERBOSE) {
 			this.logMessage("simulation ends.");
 		}
@@ -478,28 +512,23 @@ extends		AtomicES_Model
 	// Optional DEVS simulation protocol: simulation run parameters
 	// -------------------------------------------------------------------------
 
-	/** run parameter name for {@code STEP_MEAN_DURATION}.					*/
-	public static final String		MEAN_STEP_RPNAME = "STEP_MEAN_DURATION";
-	/** run parameter name for {@code STEP_MEAN_DURATION}.					*/
-	public static final String		MEAN_DELAY_RPNAME = "STEP_MEAN_DURATION";
+	/** run parameter name for {@code STEP_MEAN_DURATION}. */
+	public static final String MEAN_STEP_RPNAME = "STEP_MEAN_DURATION";
+	/** run parameter name for {@code STEP_MEAN_DURATION}. */
+	public static final String MEAN_DELAY_RPNAME = "STEP_MEAN_DURATION";
 
 	/**
 	 * @see fr.sorbonne_u.devs_simulation.models.interfaces.ModelI#setSimulationRunParameters(Map)
 	 */
 	@Override
-	public void			setSimulationRunParameters(
-		Map<String, Object> simParams
-		) throws MissingRunParameterException
-	{
+	public void setSimulationRunParameters(Map<String, Object> simParams) throws MissingRunParameterException {
 		super.setSimulationRunParameters(simParams);
 
-		String stepName =
-				ModelI.createRunParameterName(getURI(), MEAN_STEP_RPNAME);
+		String stepName = ModelI.createRunParameterName(getURI(), MEAN_STEP_RPNAME);
 		if (simParams.containsKey(stepName)) {
 			STEP_MEAN_DURATION = (double) simParams.get(stepName);
 		}
-		String delayName =
-				ModelI.createRunParameterName(getURI(), MEAN_DELAY_RPNAME);
+		String delayName = ModelI.createRunParameterName(getURI(), MEAN_DELAY_RPNAME);
 		if (simParams.containsKey(delayName)) {
 			DELAY_MEAN_DURATION = (double) simParams.get(delayName);
 		}
@@ -513,8 +542,7 @@ extends		AtomicES_Model
 	 * @see fr.sorbonne_u.devs_simulation.models.interfaces.ModelI#getFinalReport()
 	 */
 	@Override
-	public SimulationReportI	getFinalReport()
-	{
+	public SimulationReportI getFinalReport() {
 		return null;
 	}
 }

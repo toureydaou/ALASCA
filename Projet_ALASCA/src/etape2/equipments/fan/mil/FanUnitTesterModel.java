@@ -42,14 +42,14 @@ import etape2.equipments.fan.mil.events.SetLowModeFan;
 import etape2.equipments.fan.mil.events.SetMediumModeFan;
 import etape2.equipments.fan.mil.events.SwitchOffFan;
 import etape2.equipments.fan.mil.events.SwitchOnFan;
+import fr.sorbonne_u.components.cyphy.utils.tests.AbstractTestScenarioBasedAtomicModel;
+import fr.sorbonne_u.components.cyphy.utils.tests.TestScenarioWithSimulation;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 import fr.sorbonne_u.devs_simulation.models.annotations.ModelExternalEvents;
 import fr.sorbonne_u.devs_simulation.models.interfaces.ModelI;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
-import tests_utils.AbstractTestScenarioBasedAtomicModel;
-import tests_utils.TestScenario;
 
 // -----------------------------------------------------------------------------
 /**
@@ -185,7 +185,7 @@ public class FanUnitTesterModel extends AbstractTestScenarioBasedAtomicModel {
 		assert simParams != null : new MissingRunParameterException("simParams != null");
 		assert simParams.containsKey(testScenarioName) : new MissingRunParameterException(testScenarioName);
 
-		this.setTestScenario((TestScenario) simParams.get(testScenarioName));
+		this.setTestScenario((TestScenarioWithSimulation) simParams.get(testScenarioName));
 	}
 }
 // -----------------------------------------------------------------------------

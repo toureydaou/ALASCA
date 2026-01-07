@@ -2,10 +2,11 @@ package etape1.equipements.coffee_machine.ports;
 
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineInternalControlCI;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineInternalControlI;
+import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractInboundPort;
 import fr.sorbonne_u.exceptions.PreconditionException;
-import physical_data.Measure;
+
 
 public class CoffeeMachineInternalInboundPort extends AbstractInboundPort implements CoffeeMachineInternalControlCI {
 

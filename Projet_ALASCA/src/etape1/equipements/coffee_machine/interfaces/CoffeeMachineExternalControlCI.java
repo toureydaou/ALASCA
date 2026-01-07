@@ -1,8 +1,8 @@
 package etape1.equipements.coffee_machine.interfaces;
 
+import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.components.interfaces.RequiredCI;
-import physical_data.Measure;
 
 public interface CoffeeMachineExternalControlCI extends CoffeeMachineExternalControlI, OfferedCI, RequiredCI {
 	public Measure<Double> getTemperature() throws Exception;

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import etape1.equipements.coffee_machine.Constants;
+import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineMode;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
 import etape2.GlobalReportI;
 import etape2.equipments.coffeemachine.mil.events.DoNotHeat;
@@ -40,7 +41,7 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 @ModelExternalEvents(imported = { SwitchOnCoffeeMachine.class, SwitchOffCoffeeMachine.class, MakeCoffee.class,
 		DoNotHeat.class })
 @ModelImportedVariable(name = "currentWaterLevel", type = Double.class)
-public class CoffeeMachineTemperatureModel extends AtomicHIOA {
+public class CoffeeMachineTemperatureModel extends AtomicHIOA implements CoffeeMachineOperationI {
 
 	// -------------------------------------------------------------------------
 	// Constantes et Variables
@@ -336,5 +337,33 @@ public class CoffeeMachineTemperatureModel extends AtomicHIOA {
 	@Override
 	public SimulationReportI getFinalReport() {
 		return new CoffeeMachineTemperatureReport(this.getURI(), this.meanTemperature);
+	}
+
+	@Override
+	public void setMode(CoffeeMachineMode m) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public CoffeeMachineMode getMode() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setStateMode(CoffeeMachineState on, CoffeeMachineMode normal) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setCurrentHeatingPower(double newPower, Time t) {
+		// Not used in temperature model - heating power is imported
+	}
+
+	@Override
+	public void setCurrentWaterLevel(double newLevel, Time t) {
+		// Not used in temperature model - water level is imported
 	}
 }

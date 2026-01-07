@@ -2,7 +2,7 @@ package etape2.equipments.coffeemachine.mil.events;
 
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
 import etape2.equipments.coffeemachine.mil.CoffeeMachineElectricityModel;
-import etape2.equipments.coffeemachine.mil.CoffeeMachineTemperatureModel;
+import etape2.equipments.coffeemachine.mil.CoffeeMachineOperationI;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
@@ -137,25 +137,25 @@ public class MakeCoffee extends Event implements CoffeeMachineEventI {
 	 */
 	@Override
 	public void executeOn(AtomicModelI model) {
-		assert model instanceof CoffeeMachineElectricityModel || model instanceof CoffeeMachineTemperatureModel
+		assert model instanceof CoffeeMachineOperationI
 				: new NeoSim4JavaException("Precondition violation: model instanceof "
-						+ "CoffeeMachineElectricityModel || " + "model instanceof CoffeeMachineTemperatureModel");
+						+ "CoffeeMachineOperationI");
 
+		CoffeeMachineOperationI coffeeMachine = (CoffeeMachineOperationI) model;
+
+		// Check water level only for electricity models
 		if (model instanceof CoffeeMachineElectricityModel) {
-			CoffeeMachineElectricityModel coffeeMachine = (CoffeeMachineElectricityModel) model;
 			assert coffeeMachine.getState() == CoffeeMachineState.ON
-					&& coffeeMachine.getCurrentWaterLevel().getValue() > 0.1
+					&& ((CoffeeMachineElectricityModel)model).getCurrentWaterLevel().getValue() > 0.1
 					: new NeoSim4JavaException("model not in the right state, should be "
-							+ "CoffeeMachineElectricityModel.State.ON but is " + coffeeMachine.getState());
-			coffeeMachine.setState(CoffeeMachineState.HEATING, this.getTimeOfOccurrence());
-
+							+ "CoffeeMachineState.ON but is " + coffeeMachine.getState());
 		} else {
-			CoffeeMachineTemperatureModel coffeeMachine = (CoffeeMachineTemperatureModel) model;
 			assert coffeeMachine.getState() == CoffeeMachineState.ON
 					: new NeoSim4JavaException("model not in the right state, should be "
-							+ "CoffeeMachineTemperatureModel.State.ON but is " + coffeeMachine.getState());
-			coffeeMachine.setState(CoffeeMachineState.HEATING);
+							+ "CoffeeMachineState.ON but is " + coffeeMachine.getState());
 		}
+
+		coffeeMachine.setState(CoffeeMachineState.HEATING);
 	}
 }
 // -----------------------------------------------------------------------------

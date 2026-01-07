@@ -1,5 +1,10 @@
 package etape2.equipments.coffeemachine.mil.events;
 
+import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineMode;
+import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
+import etape2.equipments.coffeemachine.mil.CoffeeMachineOperationI;
+import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -36,11 +41,6 @@ import fr.sorbonne_u.devs_simulation.models.events.Event;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;
 import fr.sorbonne_u.devs_simulation.models.interfaces.AtomicModelI;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
-import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineMode;
-import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
-import etape2.equipments.coffeemachine.mil.CoffeeMachineElectricityModel;
-import etape2.equipments.coffeemachine.mil.CoffeeMachineTemperatureModel;
-import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 
 // -----------------------------------------------------------------------------
 /**
@@ -124,31 +124,18 @@ implements	CoffeeMachineEventI
 	@Override
 	public void			executeOn(AtomicModelI model)
 	{
-		assert	model instanceof CoffeeMachineElectricityModel ||
-									model instanceof CoffeeMachineTemperatureModel :
+		assert	model instanceof CoffeeMachineOperationI :
 				new NeoSim4JavaException(
 						"Precondition violation: model instanceof "
-						+ "CoffeeMachineElectricityModel || "
-						+ "model instanceof CoffeeMachineTemperatureModel");
+						+ "CoffeeMachineOperationI");
 
-		if (model instanceof CoffeeMachineElectricityModel) {
-			CoffeeMachineElectricityModel coffeeMachine = (CoffeeMachineElectricityModel)model;
-			assert	coffeeMachine.getState() == CoffeeMachineState.HEATING:
-					new NeoSim4JavaException(
-							"model not in the right state, should be "
-							+ "CoffeeMachineElectricityModel.State.HEATING but is "
-							+ coffeeMachine.getState());
-			coffeeMachine.setState(CoffeeMachineState.ON, this.getTimeOfOccurrence());
-			coffeeMachine.setStateMode(CoffeeMachineState.ON, CoffeeMachineMode.NORMAL);
-		} else {
-			CoffeeMachineTemperatureModel coffeeMachine = (CoffeeMachineTemperatureModel)model;
-			assert	coffeeMachine.getState() == CoffeeMachineState.HEATING:
-					new NeoSim4JavaException(
-							"model not in the right state, should be "
-							+ "CoffeeMachineTemperatureModel.State.HEATING but is "
-							+ coffeeMachine.getState());
-			coffeeMachine.setState(CoffeeMachineState.ON);
-		}
+		CoffeeMachineOperationI coffeeMachine = (CoffeeMachineOperationI)model;
+		assert	coffeeMachine.getState() == CoffeeMachineState.HEATING:
+				new NeoSim4JavaException(
+						"model not in the right state, should be "
+						+ "CoffeeMachineState.HEATING but is "
+						+ coffeeMachine.getState());
+		coffeeMachine.setState(CoffeeMachineState.ON);
 	}
 }
 // -----------------------------------------------------------------------------

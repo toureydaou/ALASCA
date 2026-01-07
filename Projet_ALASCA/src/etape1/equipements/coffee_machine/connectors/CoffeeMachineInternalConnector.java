@@ -1,8 +1,9 @@
 package etape1.equipements.coffee_machine.connectors;
 
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineInternalControlCI;
+import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.connectors.AbstractConnector;
-import physical_data.Measure;
+
 
 public class CoffeeMachineInternalConnector extends AbstractConnector implements CoffeeMachineInternalControlCI {
 	

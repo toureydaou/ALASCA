@@ -1,45 +1,55 @@
 package etape1.equipements.laundry.interfaces;
 
-
-
+import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.components.interfaces.RequiredCI;
 
-public interface LaundryUserCI extends  OfferedCI, RequiredCI, LaundryUserI {
-	
+// -----------------------------------------------------------------------------
+/**
+ * The component interface <code>LaundryUserCI</code> defines the user-level
+ * services as a BCM4Java component interface.
+ *
+ * <p><strong>Description</strong></p>
+ *
+ * <p>
+ * This interface is used to declare ports (offered and required) for the
+ * user services of the laundry machine.
+ * </p>
+ *
+ * <p>Created on : 2026-01-08</p>
+ *
+ * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ */
+public interface LaundryUserCI extends LaundryUserI, OfferedCI, RequiredCI {
 
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#turnOn()
-	 */
 	@Override
 	public void			turnOn() throws Exception;
 
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#turnOff()
-	 */
 	@Override
 	public void			turnOff() throws Exception;
 
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#setHigh()
-	 */
 	@Override
-	public void			setDryMode() throws Exception;
-
-	/**
-	 * @see etape1.equipements.laundry.interfaces.LaundryImplementationI.equipments.Fan.FanImplementationI#setLow()
-	 */
-	@Override
-	public void	 setWashMode() throws Exception;
-	
-	@Override
-	public void setLaundryWashModeWhite() throws Exception;
-	
-	@Override
-	public void setLaundryWashModeColor() throws Exception;
-
-
+	public void			startWash() throws Exception;
 
 	@Override
-	public void setTemperature(WashTemperatures temp) throws Exception;
+	public void			cancelWash() throws Exception;
+
+	@Override
+	public void			setWhiteMode() throws Exception;
+
+	@Override
+	public void			setColorMode() throws Exception;
+
+	@Override
+	public void			setDelicateMode() throws Exception;
+
+	@Override
+	public void			setIntensiveMode() throws Exception;
+
+	@Override
+	public void			setWashTemperature(Measure<Double>  temp) throws Exception;
+
+	@Override
+	public void			setSpinSpeed(SpinSpeed speed) throws Exception;
 }
+// -----------------------------------------------------------------------------

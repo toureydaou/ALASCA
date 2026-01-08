@@ -8,6 +8,8 @@ import etape1.equipements.coffee_machine.CoffeeMachineUnitTester;
 import etape1.equipements.fan.Fan;
 import etape1.equipements.fan.FanTester;
 import etape1.equipements.hem.HEM;
+import etape1.equipements.laundry.Laundry;
+import etape1.equipements.laundry.LaundryUnitTester;
 import etape1.equipments.meter.ElectricMeter;
 import fr.sorbonne_u.components.AbstractComponent;
 
@@ -206,6 +208,12 @@ public class CVMIntegrationTest extends AbstractCVM {
 		FanTester.VERBOSE = true;
 		FanTester.X_RELATIVE_POSITION = 2;
 		FanTester.Y_RELATIVE_POSITION = 2;
+		LaundryUnitTester.VERBOSE = true;
+		LaundryUnitTester.X_RELATIVE_POSITION = 2;
+		LaundryUnitTester.Y_RELATIVE_POSITION = 3;
+		Laundry.VERBOSE = true;
+		Laundry.X_RELATIVE_POSITION = 3;
+		Laundry.Y_RELATIVE_POSITION = 0;
 
 		assert CVMIntegrationTest.implementationInvariants(this)
 				: new InvariantException("CVMIntegrationTest.glassBoxInvariants(this)");
@@ -226,25 +234,21 @@ public class CVMIntegrationTest extends AbstractCVM {
 				CLOCK_URI,
 				// start time in Unix epoch time
 				TimeUnit.MILLISECONDS.toNanos(unixEpochStartTimeInMillis), START_INSTANT, ACCELERATION_FACTOR });
-		
-		AbstractComponent.createComponent(
-				ElectricMeter.class.getCanonicalName(),
-				new Object[]{});
 
-		AbstractComponent.createComponent(CoffeeMachine.class.getCanonicalName(), new Object[] {true});
+		AbstractComponent.createComponent(ElectricMeter.class.getCanonicalName(), new Object[] {});
+
+		AbstractComponent.createComponent(CoffeeMachine.class.getCanonicalName(), new Object[] { true });
 
 		AbstractComponent.createComponent(CoffeeMachineUnitTester.class.getCanonicalName(), new Object[] { false });
-		
-		
-		AbstractComponent.createComponent(
-				Fan.class.getCanonicalName(),
-				new Object[]{});
 
-		AbstractComponent.createComponent(
-					FanTester.class.getCanonicalName(),
-					new Object[]{true});
-		
-	
+		AbstractComponent.createComponent(Laundry.class.getCanonicalName(), new Object[] { true });
+
+		AbstractComponent.createComponent(LaundryUnitTester.class.getCanonicalName(), new Object[] { false });
+
+		AbstractComponent.createComponent(Fan.class.getCanonicalName(), new Object[] {});
+
+		AbstractComponent.createComponent(FanTester.class.getCanonicalName(), new Object[] { true });
+
 		AbstractComponent.createComponent(HEM.class.getCanonicalName(), new Object[] { true });
 
 		super.deploy();
@@ -254,7 +258,7 @@ public class CVMIntegrationTest extends AbstractCVM {
 		BCMException.VERBOSE = true;
 		try {
 			CVMIntegrationTest cvm = new CVMIntegrationTest();
-			cvm.startStandardLifeCycle(60000L);
+			cvm.startStandardLifeCycle(90000L);
 			Thread.sleep(10000L);
 			System.exit(0);
 		} catch (Throwable e) {

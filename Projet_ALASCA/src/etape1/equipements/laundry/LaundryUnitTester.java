@@ -4,55 +4,20 @@ import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 import etape1.CVMIntegrationTest;
-import etape1.equipements.laundry.connections.connectors.LaundryExternalControlConnector;
-import etape1.equipements.laundry.connections.connectors.LaundryUserConnector;
-import etape1.equipements.laundry.connections.ports.LaundryExternalControlOutboundPort;
-import etape1.equipements.laundry.connections.ports.LaundryUserOutboundPort;
-import etape1.equipements.laundry.interfaces.LaundryExternalControlCI;
-import etape1.equipements.laundry.interfaces.LaundryImplementationI.LaundryMode;
+import etape1.equipements.laundry.connectors.LaundryUserConnector;
+import etape1.equipements.laundry.interfaces.LaundryExternalControlJava4CI;
 import etape1.equipements.laundry.interfaces.LaundryImplementationI.LaundryState;
+import etape1.equipements.laundry.interfaces.LaundryImplementationI.LaundryWashMode;
+import etape1.equipements.laundry.interfaces.LaundryImplementationI.SpinSpeed;
 import etape1.equipements.laundry.interfaces.LaundryUserCI;
-
-// Copyright Jacques Malenfant, Sorbonne Universite.
-// Jacques.Malenfant@lip6.fr
-//
-// This software is a computer program whose purpose is to provide a basic
-// household management systems as an example of a cyber-physical system.
-//
-// This software is governed by the CeCILL-C license under French law and
-// abiding by the rules of distribution of free software.  You can use,
-// modify and/ or redistribute the software under the terms of the
-// CeCILL-C license as circulated by CEA, CNRS and INRIA at the following
-// URL "http://www.cecill.info".
-//
-// As a counterpart to the access to the source code and  rights to copy,
-// modify and redistribute granted by the license, users are provided only
-// with a limited warranty  and the software's author,  the holder of the
-// economic rights,  and the successive licensors  have only  limited
-// liability. 
-//
-// In this respect, the user's attention is drawn to the risks associated
-// with loading,  using,  modifying and/or developing or reproducing the
-// software by the user in light of its specific status of free software,
-// that may mean  that it is complicated to manipulate,  and  that  also
-// therefore means  that it is reserved for developers  and  experienced
-// professionals having in-depth computer knowledge. Users are therefore
-// encouraged to load and test the software's suitability as regards their
-// requirements in conditions enabling the security of their systems and/or 
-// data to be ensured and,  more generally, to use and operate it in the 
-// same conditions as regards security. 
-//
-// The fact that you are presently reading this means that you have had
-// knowledge of the CeCILL-C license and that you accept its terms.
-
+import etape1.equipements.laundry.ports.LaundryUserOutboundPort;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
-import fr.sorbonne_u.exceptions.AssertionChecking;
-import fr.sorbonne_u.exceptions.ImplementationInvariantException;
-import fr.sorbonne_u.exceptions.InvariantException;
-import fr.sorbonne_u.exceptions.PreconditionException;
 import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
 import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
@@ -60,68 +25,35 @@ import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 import tests_utils.TestsStatistics;
 
-// -----------------------------------------------------------------------------
-/**
- * The class <code>LaundryUnitTester</code> implements a component performing
- * unit tests for the class <code>Laundry</code> as a BCM component.
- *
- * <p>
- * <strong>Description</strong>
- * </p>
- * 
- * <p>
- * <strong>Implementation Invariants</strong>
- * </p>
- * 
- * <pre>
- * invariant	{@code
- * LaundryUserInboundPortURI != null && !LaundryUserInboundPortURI.isEmpty()
- * }
- * invariant	{@code
- * LaundryInternalControlInboundPortURI != null && !LaundryInternalControlInboundPortURI.isEmpty()
- * }
- * invariant	{@code
- * LaundryExternalControlInboundPortURI != null && !LaundryExternalControlInboundPortURI.isEmpty()
- * }
- * </pre>
- * 
- * <p>
- * <strong>Invariants</strong>
- * </p>
- * 
- * <pre>
- * invariant	{@code
- * X_RELATIVE_POSITION >= 0
- * }
- * invariant	{@code
- * Y_RELATIVE_POSITION >= 0
- * }
- * </pre>
- * 
- * <p>
- * Created on : 2021-09-13
- * </p>
- * 
- * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
- */
-@RequiredInterfaces(required = { LaundryUserCI.class,
-		// LaundryInternalControlCI.class,
-		LaundryExternalControlCI.class, ClocksServerCI.class })
+@RequiredInterfaces(required = { LaundryUserCI.class, ClocksServerCI.class })
+@OfferedInterfaces(offered = { LaundryExternalControlJava4CI.class })
 public class LaundryUnitTester extends AbstractComponent {
+
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
+
+	/** URI of the laundry port for external control. */
+	public static final String EXTERNAL_CONTROL_INBOUND_PORT_URI = "LAUNDRY-TEST-EXTERNAL-CONTROL-INBOUND-PORT-URI";
 
 	/**
 	 * in clock-driven scenario, the delay from the start instant at which the
 	 * Laundry is switched on.
 	 */
-	public static final int SWITCH_ON_DELAY = 2;
+	public static final int SWITCH_ON_DELAY = 4;
 	/**
 	 * in clock-driven scenario, the delay from the start instant at which the
 	 * Laundry is switched off.
 	 */
-	public static final int SWITCH_OFF_DELAY = 9;
+	public static final int SWITCH_OFF_DELAY = 65;
+
+	public static final int START_WASH_WHITE_MODE_DELAY = 25;
+	
+	public static final int START_WASH_COLOR_MODE_DELAY = 35;
+
+	public static final int START_WASH_INTENSIVE_MODE_DELAY = 45;
+	
+	public static final int START_WASH_DELICATE_MODE_DELAY = 55;
 
 	/** when true, methods trace their actions. */
 	public static boolean VERBOSE = false;
@@ -136,93 +68,13 @@ public class LaundryUnitTester extends AbstractComponent {
 	 */
 	protected final boolean isUnitTest;
 	/** URI of the user component interface inbound port. */
-	protected String LaundryUserInboundPortURI;
-	/** URI of the internal control component interface inbound port. */
-	protected String LaundryInternalControlInboundPortURI;
-	/** URI of the external control component interface inbound port. */
-	protected String LaundryExternalControlInboundPortURI;
+	protected String laundryUserInboundPortURI;
 
-	/** user component interface inbound port. */
-	protected LaundryUserOutboundPort hop;
-	/** internal control component interface inbound port. */
-	// protected LaundryInternalControlOutboundPort hicop;
-	/** external control component interface inbound port. */
-	protected LaundryExternalControlOutboundPort hecop;
+	/** user component interface outbound port. */
+	protected LaundryUserOutboundPort luop;
 
 	/** collector of test statistics. */
 	protected TestsStatistics statistics;
-
-	// -------------------------------------------------------------------------
-	// Invariants
-	// -------------------------------------------------------------------------
-
-	/**
-	 * return true if the implementation invariants are observed, false otherwise.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * ht != null
-	 * }
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 *
-	 * @param ht instance to be tested.
-	 * @return true if the implementation invariants are observed, false otherwise.
-	 */
-	protected static boolean implementationInvariants(LaundryUnitTester ht) {
-		assert ht != null : new PreconditionException("ht != null");
-
-		boolean ret = true;
-		ret &= AssertionChecking.checkImplementationInvariant(
-				ht.LaundryUserInboundPortURI != null && !ht.LaundryUserInboundPortURI.isEmpty(),
-				LaundryUnitTester.class, ht,
-				"ht.LaundryUserInboundPortURI != null && " + "!ht.LaundryUserInboundPortURI.isEmpty()");
-
-		/*
-		 * ret &= AssertionChecking.checkImplementationInvariant(
-		 * ht.LaundryExternalControlInboundPortURI != null &&
-		 * !ht.LaundryExternalControlInboundPortURI.isEmpty(), LaundryUnitTester.class,
-		 * ht, "ht.LaundryExternalControlInboundPortURI != null &&" +
-		 * "!ht.LaundryExternalControlInboundPortURI.isEmpty()");
-		 */
-		return ret;
-	}
-
-	/**
-	 * return true if the invariants is observed, false otherwise.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * ht != null
-	 * }
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 *
-	 * @param ht instance to be tested.
-	 * @return true if the invariants are observed, false otherwise.
-	 */
-	protected static boolean invariants(LaundryUnitTester ht) {
-		assert ht != null : new PreconditionException("ht != null");
-
-		boolean ret = true;
-		ret &= AssertionChecking.checkInvariant(X_RELATIVE_POSITION >= 0, LaundryUnitTester.class, ht,
-				"X_RELATIVE_POSITION >= 0");
-		ret &= AssertionChecking.checkInvariant(Y_RELATIVE_POSITION >= 0, LaundryUnitTester.class, ht,
-				"Y_RELATIVE_POSITION >= 0");
-		return ret;
-	}
 
 	// -------------------------------------------------------------------------
 	// Constructors
@@ -230,11 +82,11 @@ public class LaundryUnitTester extends AbstractComponent {
 
 	/**
 	 * create a Laundry test component.
-	 * 
+	 *
 	 * <p>
 	 * <strong>Contract</strong>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * pre	{@code
 	 * true
@@ -248,26 +100,21 @@ public class LaundryUnitTester extends AbstractComponent {
 	 *                   executes integration tests actions.
 	 * @throws Exception <i>to do</i>.
 	 */
+
 	protected LaundryUnitTester(boolean isUnitTest) throws Exception {
-		this(isUnitTest, Laundry.USER_INBOUND_PORT_URI, Laundry.EXTERNAL_CONTROL_INBOUND_PORT_URI);
+		this(isUnitTest, Laundry.USER_INBOUND_PORT_URI);
 	}
 
 	/**
 	 * create a Laundry test component.
-	 * 
+	 *
 	 * <p>
 	 * <strong>Contract</strong>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * pre	{@code
 	 * LaundryUserInboundPortURI != null && !LaundryUserInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * LaundryInternalControlInboundPortURI != null && !LaundryInternalControlInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * LaundryExternalControlInboundPortURI != null && !LaundryExternalControlInboundPortURI.isEmpty()
 	 * }
 	 * post	{@code
 	 * true
@@ -278,37 +125,26 @@ public class LaundryUnitTester extends AbstractComponent {
 	 *                                             perform unit tests, otherwise it
 	 *                                             executes integration tests
 	 *                                             actions.
-	 * @param LaundryUserInboundPortURI            URI of the user component
+	 * @param laundryUserInboundPortURI            URI of the user component
 	 *                                             interface inbound port.
-	 * @param LaundryInternalControlInboundPortURI URI of the internal control
-	 *                                             component interface inbound port.
-	 * @param LaundryExternalControlInboundPortURI URI of the external control
-	 *                                             component interface inbound port.
 	 * @throws Exception <i>to do</i>.
 	 */
-	protected LaundryUnitTester(boolean isUnitTest, String LaundryUserInboundPortURI,
-			String LaundryExternalControlInboundPortURI) throws Exception {
+	protected LaundryUnitTester(boolean isUnitTest, String laundryUserInboundPortURI) throws Exception {
 		super(1, 1);
 		this.isUnitTest = isUnitTest;
-		this.initialise(LaundryUserInboundPortURI, LaundryExternalControlInboundPortURI);
+		this.initialise(laundryUserInboundPortURI);
 	}
 
 	/**
 	 * create a Laundry test component.
-	 * 
+	 *
 	 * <p>
 	 * <strong>Contract</strong>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * pre	{@code
 	 * LaundryUserInboundPortURI != null && !LaundryUserInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * LaundryInternalControlInboundPortURI != null && !LaundryInternalControlInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * LaundryExternalControlInboundPortURI != null && !LaundryExternalControlInboundPortURI.isEmpty()
 	 * }
 	 * post	{@code
 	 * true
@@ -321,60 +157,43 @@ public class LaundryUnitTester extends AbstractComponent {
 	 *                                             actions.
 	 * @param reflectionInboundPortURI             URI of the reflection inbound
 	 *                                             port of the component.
-	 * @param LaundryUserInboundPortURI            URI of the user component
+	 * @param laundryUserInboundPortURI            URI of the user component
 	 *                                             interface inbound port.
-	 * @param LaundryInternalControlInboundPortURI URI of the internal control
-	 *                                             component interface inbound port.
-	 * @param LaundryExternalControlInboundPortURI URI of the external control
-	 *                                             component interface inbound port.
 	 * @throws Exception <i>to do</i>.
 	 */
-	protected LaundryUnitTester(boolean isUnitTest, String reflectionInboundPortURI, String LaundryUserInboundPortURI,
-			String LaundryExternalControlInboundPortURI) throws Exception {
+	protected LaundryUnitTester(boolean isUnitTest, String reflectionInboundPortURI,
+			String laundryUserInboundPortURI)
+			throws Exception {
 		super(reflectionInboundPortURI, 1, 1);
 		this.isUnitTest = isUnitTest;
-		this.initialise(LaundryUserInboundPortURI, LaundryExternalControlInboundPortURI);
+		this.initialise(laundryUserInboundPortURI);
 	}
 
 	/**
 	 * initialise a Laundry test component.
-	 * 
+	 *
 	 * <p>
 	 * <strong>Contract</strong>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * pre	{@code
 	 * LaundryUserInboundPortURI != null && !LaundryUserInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * LaundryInternalControlInboundPortURI != null && !LaundryInternalControlInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * LaundryExternalControlInboundPortURI != null && !LaundryExternalControlInboundPortURI.isEmpty()
 	 * }
 	 * post	{@code
 	 * true
 	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param LaundryUserInboundPortURI            URI of the user component
+	 * @param laundryUserInboundPortURI            URI of the user component
 	 *                                             interface inbound port.
-	 * @param LaundryInternalControlInboundPortURI URI of the internal control
-	 *                                             component interface inbound port.
-	 * @param LaundryExternalControlInboundPortURI URI of the external control
-	 *                                             component interface inbound port.
 	 * @throws Exception <i>to do</i>.
 	 */
-	protected void initialise(String LaundryUserInboundPortURI, String LaundryExternalControlInboundPortURI)
+	protected void initialise(String laundryUserInboundPortURI)
 			throws Exception {
-		this.LaundryUserInboundPortURI = LaundryUserInboundPortURI;
-		this.hop = new LaundryUserOutboundPort(this);
-		this.hop.publishPort();
-
-		this.LaundryExternalControlInboundPortURI = LaundryExternalControlInboundPortURI;
-		this.hecop = new LaundryExternalControlOutboundPort(this);
-		this.hecop.publishPort();
+		this.laundryUserInboundPortURI = laundryUserInboundPortURI;
+		this.luop = new LaundryUserOutboundPort(this);
+		this.luop.publishPort();
 
 		if (VERBOSE) {
 			this.tracer.get().setTitle("Laundry tester component");
@@ -383,10 +202,6 @@ public class LaundryUnitTester extends AbstractComponent {
 		}
 
 		this.statistics = new TestsStatistics();
-
-		assert LaundryUnitTester.implementationInvariants(this)
-				: new ImplementationInvariantException("LaundryTester.implementationInvariants(this)");
-		assert LaundryUnitTester.invariants(this) : new InvariantException("LaundryTester.invariants(this)");
 	}
 
 	// -------------------------------------------------------------------------
@@ -395,30 +210,30 @@ public class LaundryUnitTester extends AbstractComponent {
 
 	/**
 	 * test getting the state of the Laundry.
-	 * 
+	 *
 	 * <p>
 	 * <strong>Description</strong>
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * Gherkin specification
 	 * </p>
 	 * <p>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * Feature: getting the state of the Laundry
 	 *   Scenario: getting the state of the Laundry when off
 	 *     Given the Laundry is initialised
 	 *     And the Laundry has not been used yet
 	 *     When I test the state of the Laundry
-	 *     Then the state of the Laundry is off
+	 *     Then the state of the Laundry is OFF
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * <strong>Contract</strong>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * pre	{@code
 	 * true
@@ -436,14 +251,14 @@ public class LaundryUnitTester extends AbstractComponent {
 		this.logMessage("    And the Laundry has not been used yet");
 		try {
 			this.logMessage("    When I test the state of the Laundry");
-			this.hop.turnOn();
-			if (this.hop.getState() == LaundryState.ON) {
-				this.logMessage("    Then the state of the Laundry is off");
+			if (this.luop.getState() == LaundryState.OFF) {
+				this.logMessage("    Then the state of the Laundry is OFF");
 			} else {
-				this.logMessage("     but was: on");
+				this.logMessage("     but was: " + this.luop.getState());
 				this.statistics.incorrectResult();
 			}
 		} catch (Throwable e) {
+			System.out.println(e.fillInStackTrace());
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
 		}
@@ -453,30 +268,30 @@ public class LaundryUnitTester extends AbstractComponent {
 
 	/**
 	 * test getting the state of the Laundry.
-	 * 
+	 *
 	 * <p>
 	 * <strong>Description</strong>
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * Gherkin specification
 	 * </p>
 	 * <p>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * Feature: getting the state of the Laundry
-	 *   Scenario: getting the state of the Laundry when off
+	 *   Scenario: getting the state of the Laundry when on
 	 *     Given the Laundry is initialised
-	 *     And the Laundry has not been used yet
+	 *     And the Laundry has been used
 	 *     When I test the state of the Laundry
-	 *     Then the state of the Laundry is off
+	 *     Then the state of the Laundry is ON
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * <strong>Contract</strong>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * pre	{@code
 	 * true
@@ -487,20 +302,22 @@ public class LaundryUnitTester extends AbstractComponent {
 	 * </pre>
 	 *
 	 */
-	protected void testDryMode() {
+	protected void testOn() {
 		this.logMessage("Feature: getting the state of the Laundry");
-		this.logMessage("  Scenario: getting the mode of the Laundry when it is wash");
+		this.logMessage("  Scenario: getting the state of the Laundry when on");
 		this.logMessage("    Given the Laundry is initialised");
-		this.logMessage("    And the Laundry has not been used yet");
+		this.logMessage("    And the Laundry has been used ");
 		try {
+			this.logMessage("    When I turn on the Laundry");
+			this.luop.turnOn();
 			this.logMessage("    When I test the state of the Laundry");
-			this.hop.setDryMode();
-			if (this.hop.getLaundryMode() == LaundryMode.DRY) {
-				this.logMessage("    Then the mode of the Laundry is dry");
+			if (this.luop.getState() == LaundryState.ON) {
+				this.logMessage("    Then the state of the Laundry is ON");
 			} else {
-				this.logMessage("     but was: wash");
+				this.logMessage("     but was: " + this.luop.getState());
 				this.statistics.incorrectResult();
 			}
+			this.luop.turnOff();
 		} catch (Throwable e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
@@ -510,36 +327,30 @@ public class LaundryUnitTester extends AbstractComponent {
 	}
 
 	/**
-	 * test switching on and off the Laundry.
-	 * 
+	 * test switching on and off the laundry.
+	 *
 	 * <p>
 	 * <strong>Description</strong>
 	 * </p>
-	 * 
-	 * <p>
-	 * Gherkin specification
-	 * </p>
-	 * <p>
-	 * </p>
-	 * 
+	 *
 	 * <pre>
-	 * Feature: switching on and off the Laundry
-	 *   Scenario: switching on the Laundry when off
-	 *     Given the Laundry is initialised
-	 *     And the Laundry has not been used yet
-	 *     When I switch on the Laundry
-	 *     Then the state of the Laundry is on
-	 *   Scenario: switching off the Laundry when on
-	 *     Given the Laundry is initialised
-	 *     And the Laundry is on
-	 *     When I switch off the Laundry
-	 *     Then the state of the Laundry is off
+	 * Feature: turning on and off the laundry
+	 *   Scenario: turning on the laundry when off
+	 *     Given the laundry is initialised
+	 *     And the laundry has not been used yet
+	 *     When I turn on the laundry
+	 *     Then the state of the laundry is ON
+	 *   Scenario: turning off the laundry when on
+	 *     Given the laundry is initialised
+	 *     And the laundry is on
+	 *     When I turn off the laundry
+	 *     Then the state of the laundry is OFF
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * <strong>Contract</strong>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * pre	{@code
 	 * true
@@ -550,43 +361,288 @@ public class LaundryUnitTester extends AbstractComponent {
 	 * </pre>
 	 *
 	 */
-	protected void testSwitchOnSwitchOff() {
-		this.logMessage("Feature: switching on and off the Laundry");
+	protected void testTurnOnTurnOff() {
+		this.logMessage("Feature: turning on and off the laundry");
 
-		this.logMessage("  Scenario: switching on the Laundry when off");
-		this.logMessage("    Given the Laundry is initialised");
-		this.logMessage("    And the Laundry has not been used yet");
-
+		this.logMessage("  Scenario: turning on the laundry when off");
+		this.logMessage("    Given the laundry is initialised");
+		this.logMessage("    And the laundry has not been used yet");
+		LaundryState result;
 		try {
-			this.logMessage("    When I switch on the Laundry");
-
-			this.hop.turnOn();
-			if (this.hop.getState() == LaundryState.ON) {
-				this.logMessage("    Then the state of the Laundry is on");
+			this.logMessage("    When I turn on the laundry");
+			this.luop.turnOn();
+			result = this.luop.getState();
+			if (result == LaundryState.ON) {
+				this.logMessage("    Then the state of the laundry is ON");
 			} else {
-				this.logMessage("     but was: off");
+				this.logMessage("     but was: " + result);
 				this.statistics.incorrectResult();
 			}
-		} catch (Throwable e) {
+		} catch (Exception e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
 		}
 
 		this.statistics.updateStatistics();
 
-		this.logMessage("  Scenario: switching off the Laundry when on");
-		this.logMessage("    Given the Laundry is initialised");
-		this.logMessage("    And the Laundry is on");
+		this.logMessage("  Scenario: turning off the laundry when on");
+		this.logMessage("    Given the laundry is initialised");
+		this.logMessage("    And the laundry is on");
 		try {
-			this.logMessage("    When I switch off the Laundry");
-			this.hop.turnOff();
-			if (this.hop.getState() == LaundryState.OFF) {
-				this.logMessage("    Then the state of the Laundry is off");
+			this.logMessage("    When I turn off the laundry");
+			this.luop.turnOff();
+			result = this.luop.getState();
+			if (result == LaundryState.OFF) {
+				this.logMessage("    Then the state of the laundry is OFF");
 			} else {
-				this.logMessage("     but was: on");
+				this.logMessage("     but was: " + result);
 				this.statistics.incorrectResult();
 			}
-		} catch (Throwable e) {
+		} catch (Exception e) {
+			this.statistics.incorrectResult();
+			this.logMessage("     but the exception " + e + " has been raised");
+		}
+
+		this.statistics.updateStatistics();
+	}
+
+	/**
+	 * test starting a wash in WHITE mode.
+	 *
+	 * <p>
+	 * <strong>Description</strong>
+	 * </p>
+	 *
+	 * <p>
+	 * Gherkin specification
+	 * </p>
+	 * <p>
+	 * </p>
+	 *
+	 * <pre>
+	 * Feature: start a wash in WHITE mode
+	 *   Scenario: starting a wash in WHITE mode
+	 *     Given the Laundry is initialised
+	 *     And the WHITE mode is set
+	 *     When I start a wash
+	 *     Then the mode of the Laundry is WHITE
+	 *     And the Laundry is running
+	 * </pre>
+	 *
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 *
+	 * <pre>
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 */
+
+	protected void testStartWashInWhiteMode() {
+		this.logMessage("Feature: start a wash in WHITE mode");
+		this.logMessage("	Given the Laundry is initialised");
+		this.logMessage("	And the WHITE mode is set");
+		this.logMessage("	When I start a wash");
+		this.logMessage("	Then the mode of the Laundry is WHITE");
+		this.logMessage("	And the Laundry is running");
+		try {
+
+			this.logMessage("    When I turn on the laundry");
+			this.luop.turnOn();
+			if (this.luop.getState() == LaundryState.ON) {
+				this.logMessage("    Then the state of the laundry is ON");
+			} else {
+				this.logMessage("     but was: " + this.luop.getState());
+				this.statistics.incorrectResult();
+			}
+
+			this.logMessage("    When I set the laundry to WHITE mode");
+			this.luop.setWhiteMode();
+			if (this.luop.getWashMode() == LaundryWashMode.WHITE) {
+				this.logMessage("    Then the mode of the laundry is WHITE");
+			} else {
+				this.logMessage(" but was " + this.luop.getWashMode());
+				this.statistics.incorrectResult();
+			}
+
+			this.logMessage("    When I start a wash");
+			this.luop.startWash();
+			if (this.luop.isRunning()) {
+				this.logMessage("    Then the laundry is running");
+			} else {
+				this.logMessage(" but was not running");
+				this.statistics.incorrectResult();
+			}
+
+			this.logMessage("    When I cancel the wash");
+			this.luop.cancelWash();
+
+			this.luop.turnOff();
+		} catch (Exception e) {
+			this.statistics.incorrectResult();
+			this.logMessage("     but the exception " + e + " has been raised");
+		}
+		this.statistics.updateStatistics();
+
+	}
+
+	/**
+	 * test starting a wash in INTENSIVE mode.
+	 *
+	 * <p>
+	 * <strong>Description</strong>
+	 * </p>
+	 *
+	 * <p>
+	 * Gherkin specification
+	 * </p>
+	 * <p>
+	 * </p>
+	 *
+	 * <pre>
+	 * Feature: start a wash in INTENSIVE mode
+	 *   Scenario: starting a wash in INTENSIVE mode
+	 *     Given the Laundry is initialised
+	 *     And the INTENSIVE mode is set
+	 *     When I start a wash
+	 *     Then the mode of the Laundry is INTENSIVE
+	 *     And the Laundry is running
+	 * </pre>
+	 *
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 *
+	 * <pre>
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 */
+	protected void testStartWashInIntensiveMode() {
+		this.logMessage("Feature: start a wash in INTENSIVE mode");
+		this.logMessage("	Given the Laundry is initialised");
+		this.logMessage("	And the INTENSIVE mode is set");
+		this.logMessage("	When I start a wash");
+		this.logMessage("	Then the mode of the Laundry is INTENSIVE");
+		this.logMessage("	And the Laundry is running");
+		try {
+
+			this.logMessage("    When I turn on the laundry");
+			this.luop.turnOn();
+			if (this.luop.getState() == LaundryState.ON) {
+				this.logMessage("    Then the state of the laundry is ON");
+			} else {
+				this.logMessage("     but was: " + this.luop.getState());
+				this.statistics.incorrectResult();
+			}
+
+			this.logMessage("    When I set the laundry to INTENSIVE mode");
+			this.luop.setIntensiveMode();
+			if (this.luop.getWashMode() == LaundryWashMode.INTENSIVE) {
+				this.logMessage("    Then the mode of the laundry is INTENSIVE");
+			} else {
+				this.logMessage(" but was " + this.luop.getWashMode());
+				this.statistics.incorrectResult();
+			}
+
+			this.logMessage("    When I start a wash");
+			this.luop.startWash();
+			if (this.luop.isRunning()) {
+				this.logMessage("    Then the laundry is running");
+			} else {
+				this.logMessage(" but was not running");
+				this.statistics.incorrectResult();
+			}
+
+			this.logMessage("    When I cancel the wash");
+			this.luop.cancelWash();
+
+			this.luop.turnOff();
+
+		} catch (Exception e) {
+			this.statistics.incorrectResult();
+			this.logMessage("     but the exception " + e + " has been raised");
+		}
+		this.statistics.updateStatistics();
+
+	}
+
+	/**
+	 * test setting wash temperature and spin speed.
+	 *
+	 * <p>
+	 * <strong>Description</strong>
+	 * </p>
+	 *
+	 * <pre>
+	 * Feature: setting wash temperature and spin speed
+	 *   Scenario: setting wash temperature to 60 degrees
+	 *     Given the laundry is on
+	 *     When I set the wash temperature to 60 degrees
+	 *     Then the wash temperature is 60 degrees
+	 *   Scenario: setting spin speed to 1200 RPM
+	 *     Given the laundry is on
+	 *     When I set the spin speed to 1200 RPM
+	 *     Then the spin speed is 1200 RPM
+	 * </pre>
+	 *
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 *
+	 * <pre>
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 */
+	protected void testSetTemperatureAndSpinSpeed() {
+		this.logMessage("Feature: setting wash temperature and spin speed");
+
+		this.logMessage("  Scenario: setting wash temperature to 60 degrees");
+		this.logMessage("    Given the laundry is on");
+		try {
+			this.luop.turnOn();
+			this.logMessage("    When I set the wash temperature to 60 degrees");
+			Measure<Double> temp60 = new Measure<Double>(60.0, MeasurementUnit.CELSIUS);
+			this.luop.setWashTemperature(temp60);
+			Measure<Double> currentTemp = this.luop.getWashTemperature();
+			if (currentTemp != null && currentTemp.getData() == 60.0) {
+				this.logMessage("    Then the wash temperature is 60 degrees");
+			} else {
+				this.logMessage("     but was: " + (currentTemp != null ? currentTemp.getData() : "null"));
+				this.statistics.incorrectResult();
+			}
+
+			this.logMessage("  Scenario: setting spin speed to 1200 RPM");
+			this.logMessage("    Given the laundry is on");
+			this.logMessage("    When I set the spin speed to 1200 RPM");
+			this.luop.setSpinSpeed(SpinSpeed.RPM_1200);
+			SpinSpeed currentSpeed = this.luop.getSpinSpeed();
+			if (currentSpeed == SpinSpeed.RPM_1200) {
+				this.logMessage("    Then the spin speed is 1200 RPM");
+			} else {
+				this.logMessage("     but was: " + currentSpeed);
+				this.statistics.incorrectResult();
+			}
+
+			this.luop.turnOff();
+		} catch (Exception e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
 		}
@@ -595,14 +651,15 @@ public class LaundryUnitTester extends AbstractComponent {
 	}
 
 	protected void runAllUnitTests() {
-		this.testSwitchOnSwitchOff();
 		this.testOff();
-		this.testDryMode();
-		// this.testTargetTemperature();
-		// this.testCurrentTemperature();
-		// this.testPowerLevel();
+		this.testOn();
+		this.testTurnOnTurnOff();
+		this.testStartWashInWhiteMode();
+		this.testStartWashInIntensiveMode();
+		this.testSetTemperatureAndSpinSpeed();
 
 		this.statistics.statisticsReport(this);
+
 	}
 
 	// -------------------------------------------------------------------------
@@ -617,32 +674,22 @@ public class LaundryUnitTester extends AbstractComponent {
 		super.start();
 
 		try {
-			this.doPortConnection(this.hop.getPortURI(), this.LaundryUserInboundPortURI,
+			this.doPortConnection(this.luop.getPortURI(), this.laundryUserInboundPortURI,
 					LaundryUserConnector.class.getCanonicalName());
-			/*
-			 * this.doPortConnection(this.hicop.getPortURI(),
-			 * LaundryInternalControlInboundPortURI,
-			 * LaundryInternalControlConnector.class.getCanonicalName());
-			 */
-
-			this.doPortConnection(this.hecop.getPortURI(), LaundryExternalControlInboundPortURI,
-					LaundryExternalControlConnector.class.getCanonicalName());
 
 		} catch (Throwable e) {
 			throw new ComponentStartException(e);
 		}
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.AbstractComponent#execute()
-	 */
-	@Override
 	public synchronized void execute() throws Exception {
 		if (this.isUnitTest) {
 			this.runAllUnitTests();
 		} else {
+			System.out.println("Lancement script test intégration (LaundryTest)");
 			ClocksServerOutboundPort clocksServerOutboundPort = new ClocksServerOutboundPort(this);
 			clocksServerOutboundPort.publishPort();
+
 			this.doPortConnection(clocksServerOutboundPort.getPortURI(), ClocksServer.STANDARD_INBOUNDPORT_URI,
 					ClocksServerConnector.class.getCanonicalName());
 			this.traceMessage("Laundry tester gets the clock.\n");
@@ -652,13 +699,22 @@ public class LaundryUnitTester extends AbstractComponent {
 			clocksServerOutboundPort = null;
 
 			Instant startInstant = ac.getStartInstant();
-			Instant LaundrySwitchOn = startInstant.plusSeconds(SWITCH_ON_DELAY);
-			Instant LaundrySwitchOff = startInstant.plusSeconds(SWITCH_OFF_DELAY);
+			Instant laundrySwitchOn = startInstant.plusSeconds(SWITCH_ON_DELAY);
+			Instant laundrySwitchOff = startInstant.plusSeconds(SWITCH_OFF_DELAY);
+			Instant laundryStartWashWhiteMode = startInstant.plusSeconds(START_WASH_WHITE_MODE_DELAY);
+			Instant laundryStartWashColorMode = startInstant.plusSeconds(START_WASH_COLOR_MODE_DELAY);
+			Instant laundryStartWashIntensiveMode = startInstant.plusSeconds(START_WASH_INTENSIVE_MODE_DELAY);
+			Instant laundryStartWashDelicateMode = startInstant.plusSeconds(START_WASH_DELICATE_MODE_DELAY);
+			
 			this.traceMessage("Laundry tester waits until start.\n");
 			ac.waitUntilStart();
 			this.traceMessage("Laundry tester schedules switch on and off.\n");
-			long delayToSwitchOn = ac.nanoDelayUntilInstant(LaundrySwitchOn);
-			long delayToSwitchOff = ac.nanoDelayUntilInstant(LaundrySwitchOff);
+			long delayToSwitchOn = ac.nanoDelayUntilInstant(laundrySwitchOn);
+			long delayToSwitchOff = ac.nanoDelayUntilInstant(laundrySwitchOff);
+			long delayToStartWashWhiteMode = ac.nanoDelayUntilInstant(laundryStartWashWhiteMode);
+			long delayToStartWashColorMode = ac.nanoDelayUntilInstant(laundryStartWashColorMode);
+			long delayToStartWashIntensiveMode = ac.nanoDelayUntilInstant(laundryStartWashIntensiveMode);
+			long delayToStartWashDelicateMode = ac.nanoDelayUntilInstant(laundryStartWashDelicateMode);
 
 			// This is to avoid mixing the 'this' of the task object with the 'this'
 			// representing the component object in the code of the next methods run
@@ -670,22 +726,91 @@ public class LaundryUnitTester extends AbstractComponent {
 				public void run() {
 					try {
 						o.traceMessage("Laundry switches on.\n");
-						hop.turnOn();
+						luop.turnOn();
 					} catch (Throwable e) {
 						e.printStackTrace();
 					}
 				}
 			}, delayToSwitchOn, TimeUnit.NANOSECONDS);
+			
+			
 
-			// to be completed with a more covering scenario
+
+			this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
+				@Override
+				public void run() {
+					try {
+						o.traceMessage("Laundry starts wash in WHITE mode.\n");
+						luop.setWhiteMode();
+						luop.setWashTemperature(new Measure<Double>(60.0, MeasurementUnit.CELSIUS));
+						luop.setSpinSpeed(SpinSpeed.RPM_1000);
+						luop.startWash();
+					} catch (Throwable e) {
+						e.printStackTrace();
+					}
+				}
+				
+			}, delayToStartWashWhiteMode, TimeUnit.NANOSECONDS);
+			
+			this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
+				@Override
+				public void run() {
+					try {
+						o.traceMessage("Laundry starts wash in COLOR mode.\n");
+						luop.cancelWash();
+						luop.setColorMode();
+						luop.setWashTemperature(new Measure<Double>(30.0, MeasurementUnit.CELSIUS));
+						luop.setSpinSpeed(SpinSpeed.RPM_800);
+						luop.startWash();
+					} catch (Throwable e) {
+						e.printStackTrace();
+					}
+				}
+			}, delayToStartWashColorMode, TimeUnit.NANOSECONDS);
+
+
+			this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
+				@Override
+				public void run() {
+					try {
+						o.traceMessage("Laundry cancels current wash and starts wash in INTENSIVE mode.\n");
+						luop.cancelWash();
+						luop.setIntensiveMode();
+						luop.setWashTemperature(new Measure<Double>(90.0, MeasurementUnit.CELSIUS));
+						luop.setSpinSpeed(SpinSpeed.RPM_1400);
+						luop.startWash();
+					} catch (Throwable e) {
+						e.printStackTrace();
+					}
+				}
+			}, delayToStartWashIntensiveMode, TimeUnit.NANOSECONDS);
+			
+			this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
+				@Override
+				public void run() {
+					try {
+						o.traceMessage("Laundry cancels current wash and starts wash in DELICATE mode.\n");
+						luop.cancelWash();
+						luop.setDelicateMode();
+						luop.setWashTemperature(new Measure<Double>(40.0, MeasurementUnit.CELSIUS));
+						luop.setSpinSpeed(SpinSpeed.RPM_600);
+						luop.startWash();
+					} catch (Throwable e) {
+						e.printStackTrace();
+					}
+				}
+			}, delayToStartWashDelicateMode, TimeUnit.NANOSECONDS);
+
+
 
 			// schedule the switch off Laundry
 			this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
 				@Override
 				public void run() {
 					try {
-						o.traceMessage("Laundry switches off.\n");
-						hop.turnOff();
+						o.traceMessage("Laundry cancels wash and switches off.\n");
+						luop.cancelWash();
+						luop.turnOff();
 					} catch (Throwable e) {
 						e.printStackTrace();
 					}
@@ -699,8 +824,7 @@ public class LaundryUnitTester extends AbstractComponent {
 	 */
 	@Override
 	public synchronized void finalise() throws Exception {
-		this.doPortDisconnection(this.hop.getPortURI());
-		this.doPortDisconnection(this.hecop.getPortURI());
+		this.doPortDisconnection(this.luop.getPortURI());
 		super.finalise();
 	}
 
@@ -710,13 +834,11 @@ public class LaundryUnitTester extends AbstractComponent {
 	@Override
 	public synchronized void shutdown() throws ComponentShutdownException {
 		try {
-			this.hop.unpublishPort();
-			// this.hicop.unpublishPort();
-			this.hecop.unpublishPort();
+			this.luop.unpublishPort();
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
 		}
 		super.shutdown();
 	}
+
 }
-// -----------------------------------------------------------------------------

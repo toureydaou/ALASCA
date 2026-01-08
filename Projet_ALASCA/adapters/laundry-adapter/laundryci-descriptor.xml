@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<control-adapter
+    xmlns="http://www.sorbonne-universite.fr/alasca/control-adapter"
+    uid="LM10000"
+    offered="etape1.equipements.laundry.interfaces.LaundryExternalControlJava4CI">
+
+
+  <consumption nominal="2000" min="0" max="2500"/>
+
+
+  <required>java.lang.Math</required>
+  <required>fr.sorbonne_u.exceptions.PreconditionException</required>
+  <required>fr.sorbonne_u.components.connectors.AbstractConnector</required>
+  <required>etape1.equipements.laundry.interfaces.LaundryExternalControlJava4CI</required>
+  <required>etape1.bases.AdjustableCI</required>
+
+
+  <instance-var  modifiers= "protected static" type="int" name="MIN_MODE" static-init="1"/>
+   <instance-var  modifiers= "protected static" type="int" name="MAX_MODE" static-init="4"/>
+   <instance-var  modifiers= "protected static" type="double" name="MAX_ADMISSIBLE_DELTA" static-init="10.0"/>
+   <instance-var  modifiers= "protected static" type="double" name="TARGET_TEMPERATURE" static-init="90.0"/>
+   <instance-var  modifiers= "protected" type="int" name="currentMode" static-init="1"/>
+   <instance-var  modifiers= "protected" type="boolean" name="isSuspended" static-init="false"/>
+
+
+	<internal  modifiers= "protected" name="computePowerLevel" type="double">
+        <parameter type="int" name="mode"/>
+        <thrown>java.lang.Exception</thrown>
+        <body>
+            if (mode == 1) {
+				return 500.0;
+			} else if (mode == 2) {
+				return 1000.0;
+			} else if (mode == 3) {
+				return 1500.0;
+			} else if (mode == 4) {
+				return 2500.0;
+			} else  {
+				return 500.0;
+			}
+        </body>
+    </internal>
+
+    <internal  modifiers= "protected" name="setPowerLevel" type="void">
+        <parameter type="double" name="newPowerLevel"/>
+        <thrown>java.lang.Exception</thrown>
+        <body equipmentRef="laundry">
+            double maxPowerLevel = laundry.getMaxPowerLevelJava4();
+            if (newPowerLevel &gt; maxPowerLevel) newPowerLevel = maxPowerLevel;
+        </body>
+    </internal>
+
+    <internal  modifiers= "protected" name="computeAndSetNewPowerLevel" type="void">
+        <parameter type="int" name="newMode"/>
+        <thrown>java.lang.Exception</thrown>
+        <body equipmentRef="laundry">
+            double newPowerLevel = computePowerLevel(newMode);
+            setPowerLevel(newPowerLevel);
+        </body>
+    </internal>
+
+    <!-- ========================================================= -->
+    <!-- Operations (AdjustableCI interface)                       -->
+    <!-- ========================================================= -->
+
+
+        <maxMode>
+            <body>return MAX_MODE;</body>
+        </maxMode>
+
+        <upMode>
+            <body equipmentRef="laundry">
+                if (currentMode &lt; MAX_MODE) {
+                    currentMode++;
+                    laundry.setWashModeJava4(currentMode);
+                    computeAndSetNewPowerLevel(currentMode);
+                    return true;
+                }
+                return false;
+            </body>
+        </upMode>
+
+        <downMode>
+            <body equipmentRef="laundry">
+                if (currentMode &gt; MIN_MODE) {
+                    currentMode--;
+                    laundry.setWashModeJava4(currentMode);
+                    computeAndSetNewPowerLevel(currentMode);
+                    return true;
+                }
+                return false;
+            </body>
+        </downMode>
+
+        <setMode>
+            <parameter  name="modeIndex"/>
+            <body equipmentRef="laundry">
+                if (modeIndex &gt;= MIN_MODE &amp;&amp; modeIndex &lt;= MAX_MODE) {
+                    currentMode = modeIndex;
+                    laundry.setWashModeJava4(currentMode);
+                    computeAndSetNewPowerLevel(currentMode);
+                    return true;
+                }
+                return false;
+            </body>
+        </setMode>
+
+        <currentMode>
+            <body>return currentMode;</body>
+        </currentMode>
+
+        <getModeConsumption>
+            <parameter name="modeIndex"/>
+            <body>
+                return computePowerLevel(modeIndex);
+            </body>
+        </getModeConsumption>
+
+        <suspended>
+            <body>return isSuspended;</body>
+        </suspended>
+
+        <suspend>
+            <body equipmentRef="laundry">
+                laundry.suspend();
+                isSuspended = true;
+                return isSuspended;
+            </body>
+        </suspend>
+
+        <resume>
+            <body equipmentRef="laundry">
+                laundry.resume();
+                computeAndSetNewPowerLevel(currentMode);
+                isSuspended = false;
+                return true;
+            </body>
+        </resume>
+
+        <emergency>
+            <body equipmentRef="laundry">
+                int stateCode = laundry.getStateJava4();
+                // State codes: 0=OFF, 1=ON, 2=WASHING, 3=RINSING, 4=SPINNING, 5=DRYING
+                // Emergency if machine is running and in an active cycle
+                if (stateCode &gt;= 2 &amp;&amp; stateCode &lt;= 5) {
+                    int tempCode = laundry.getWashTemperatureJava4();
+                    // Temperature codes: 0=30°C, 1=40°C, 2=50°C, 3=60°C, 4=70°C, 5=80°C, 6=90°C
+                    // Target is 90°C (code 6), emergency if significantly exceeded
+                    if (tempCode &gt;= 6)
+                        return 1.0;
+                }
+                return 0.0;
+            </body>
+        </emergency>
+
+
+
+</control-adapter>

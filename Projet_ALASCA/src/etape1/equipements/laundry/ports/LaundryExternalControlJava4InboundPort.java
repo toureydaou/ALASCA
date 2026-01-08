@@ -1,7 +1,10 @@
-package etape1.equipements.laundry.connections.ports;
+package etape1.equipements.laundry.ports;
 
 import etape1.equipements.laundry.interfaces.LaundryExternalControlJava4CI;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.components.ComponentI;
+
 
 public class LaundryExternalControlJava4InboundPort extends LaundryExternalControlInboundPort
 		implements LaundryExternalControlJava4CI {
@@ -9,8 +12,6 @@ public class LaundryExternalControlJava4InboundPort extends LaundryExternalContr
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
-
-	
 
 	private static final long serialVersionUID = 1L;
 
@@ -41,7 +42,7 @@ public class LaundryExternalControlJava4InboundPort extends LaundryExternalContr
 	 * @throws Exception <i>to do</i>.
 	 */
 	public LaundryExternalControlJava4InboundPort(ComponentI owner) throws Exception {
-		super(LaundryExternalControlJava4CI.class, owner);
+		super(owner);
 	}
 
 	/**
@@ -74,26 +75,51 @@ public class LaundryExternalControlJava4InboundPort extends LaundryExternalContr
 		super(uri, LaundryExternalControlJava4CI.class, owner);
 	}
 
+
 	@Override
-	public void turnOnJava4() throws Exception {
-		this.turnOn();
+	public void setWashModeJava4(int mode) throws Exception {
+		this.setMode(mode);
+	}
+
+	@Override
+	public int getStateJava4() throws Exception {
+		return this.getState().ordinal();
+	}
+
+	@Override
+	public int getWashModeJava4() throws Exception {
+		return this.getState().ordinal();
+	}
+
+	@Override
+	public double getWashTemperatureJava4() throws Exception {
+		return this.getCurrentWashTemperature().getData();
+	}
+
+	@Override
+	public int getSpinSpeedJava4() throws Exception {
+		return this.getSpinSpeed().ordinal();
+	}
+
+
+	@Override
+	public double getCurrentPowerJava4() throws Exception {
+		return this.getCurrentPowerLevel().getData();
+	}
+
+
+	@Override
+	public double getMaxPowerLevelJava4() throws Exception {
 		
+		return this.getMaxPowerLevel().getData();
 	}
 
 	@Override
-	public void turnOffJava4() throws Exception {
-		this.turnOff();
+	public void setCurrentPowerJava4(double power) throws Exception {
 		
+		 this.setCurrentPowerLevel(new Measure<Double>(power, MeasurementUnit.WATTS));
 	}
 
-	@Override
-	public LaundryState getStateJava4() throws Exception {
-		return this.getState();
-	}
 
-	@Override
-	public LaundryMode getLaundryModeJava4() throws Exception {
-		return this.getLaundryMode();
-	}
 
 }

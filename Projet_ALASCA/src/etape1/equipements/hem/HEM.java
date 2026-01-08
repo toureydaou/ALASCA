@@ -11,7 +11,6 @@ import etape1.bases.generator.ConnectorGenerator;
 import etape1.bases.parser.ConnectorAdapterInfo;
 import etape1.bases.parser.ConnectorAdapterParserXML;
 import etape1.equipements.coffee_machine.CoffeeMachine;
-import etape1.equipements.hem.connections.CoffeeMachineConnector;
 import etape1.equipements.hem.ports.AdjustableOutboundPort;
 import etape1.equipements.registration.ports.RegistrationI;
 import etape1.equipements.registration.ports.RegistrationInboundPort;
@@ -116,7 +115,8 @@ import tests_utils.TestsStatistics;
  * 
  * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-@RequiredInterfaces(required = { ClocksServerCI.class, AdjustableCI.class, RegistrationCI.class, ElectricMeterCI.class })
+@RequiredInterfaces(required = { ClocksServerCI.class, AdjustableCI.class, RegistrationCI.class,
+		ElectricMeterCI.class })
 @OfferedInterfaces(offered = { RegistrationCI.class })
 public class HEM extends AbstractComponent implements RegistrationI {
 	// -------------------------------------------------------------------------
@@ -132,16 +132,19 @@ public class HEM extends AbstractComponent implements RegistrationI {
 
 	// HEM registration URI for equipements
 	public static final String REGISTRATION_COFFEE_INBOUND_PORT_URI = "HEM-REGISTRATION-COFFEE-INBOUND-PORT-URI";
+	public static final String REGISTRATION_LAUNDRY_INBOUND_PORT_URI = "HEM-REGISTRATION-LAUNDRY-INBOUND-PORT-URI";
 
-	// HashMap to register equipements URI
+	// HashMap to register equipements URI and connector class names
+	private HashMap<String, String> equipementsRegitered;
 
-	private HashMap<String, Boolean> equipementsRegitered;
+	// HashMap to store the outbound port for each registered equipment
+	private HashMap<String, AdjustableOutboundPort> equipmentPorts;
 
 	/** port to connect to the electric meter. */
-	
+
 	protected ElectricMeterOutboundPort meterop;
-	 
-	 /** port to connect to the batteries. */
+
+	/** port to connect to the batteries. */
 	/*
 	 * protected BatteriesOutboundPort batteriesop;
 	 *//** port to connect to the solar panel. */
@@ -155,11 +158,12 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	 * itself as an adjustable appliance.
 	 */
 	protected boolean isPreFirstStep;
-	/** port to connect to the coffee machine when managed in a customised way. */
-	protected AdjustableOutboundPort coffeeop;
 
 	// Registration port for coffee machine
 	protected RegistrationInboundPort rcip;
+
+	// Registration port for laundry
+	protected RegistrationInboundPort rlip;
 
 	/**
 	 * when true, this implementation of the HEM performs the tests that are planned
@@ -169,14 +173,12 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	/** accelerated clock used for the tests. */
 	protected AcceleratedClock ac;
 
-	private static final String COFFEE_MACHINE_CONNECTOR_NAME = "CoffeeMachineGeneratedConnector";
-	
-	public static final int HEM_DELAY = 5;
+	public static final int COFFEE_MACHINE_TEST_DELAY = 5;
+	public static final int LAUNDRY_TEST_DELAY = 15;
 
-	
-	/** collector of test statistics.										*/
-	protected TestsStatistics				statistics;
-	
+	/** collector of test statistics. */
+	protected TestsStatistics statistics;
+
 	// -------------------------------------------------------------------------
 	// Invariants
 	// -------------------------------------------------------------------------
@@ -291,6 +293,9 @@ public class HEM extends AbstractComponent implements RegistrationI {
 		try {
 			this.rcip = new RegistrationInboundPort(REGISTRATION_COFFEE_INBOUND_PORT_URI, this);
 			this.rcip.publishPort();
+
+			this.rlip = new RegistrationInboundPort(REGISTRATION_LAUNDRY_INBOUND_PORT_URI, this);
+			this.rlip.publishPort();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -302,7 +307,8 @@ public class HEM extends AbstractComponent implements RegistrationI {
 		// and manage the heater in a customised way.
 		this.isPreFirstStep = false;
 
-		this.equipementsRegitered = new HashMap<String, Boolean>();
+		this.equipementsRegitered = new HashMap<String, String>();
+		this.equipmentPorts = new HashMap<String, AdjustableOutboundPort>();
 
 		if (VERBOSE) {
 			this.tracer.get().setTitle("Home Energy Manager component");
@@ -327,27 +333,13 @@ public class HEM extends AbstractComponent implements RegistrationI {
 		super.start();
 
 		try {
-			this.coffeeop = new AdjustableOutboundPort(this);
-			this.coffeeop.publishPort();
-			
+
 			this.meterop = new ElectricMeterOutboundPort(this);
 			this.meterop.publishPort();
-			this.doPortConnection(
-					this.meterop.getPortURI(),
-					ElectricMeter.ELECTRIC_METER_INBOUND_PORT_URI,
+			this.doPortConnection(this.meterop.getPortURI(), ElectricMeter.ELECTRIC_METER_INBOUND_PORT_URI,
 					ElectricMeterConnector.class.getCanonicalName());
 		} catch (Throwable e) {
 			throw new ComponentStartException(e);
-		}
-
-		if (this.isPreFirstStep) {
-			try {
-				this.doPortConnection(this.coffeeop.getPortURI(), CoffeeMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						CoffeeMachineConnector.class.getCanonicalName());
-			} catch (Throwable e) {
-				throw new ComponentStartException(e);
-			}
-
 		}
 
 	}
@@ -380,6 +372,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 			} else {
 				System.out.println("Schedule test");
 				this.scheduleTestCoffee();
+				this.scheduleTestLaundry();
 			}
 		}
 	}
@@ -391,8 +384,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	public synchronized void finalise() throws Exception {
 
 		this.doPortDisconnection(this.meterop.getPortURI());
-		if (this.coffeeop.connected())
-			this.doPortDisconnection(this.coffeeop.getPortURI());
+		
 
 		super.finalise();
 	}
@@ -404,12 +396,13 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	public synchronized void shutdown() throws ComponentShutdownException {
 		try {
 			this.meterop.unpublishPort();
-			if (this.isPreFirstStep) {
-				this.coffeeop.unpublishPort();
-			} else {
-				this.coffeeop.unpublishPort();
-				this.rcip.unpublishPort();
+
+			for (AdjustableOutboundPort port : this.equipmentPorts.values()) {
+				port.unpublishPort();
 			}
+			this.rcip.unpublishPort();
+			this.rlip.unpublishPort();
+
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
 		}
@@ -419,9 +412,8 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	// -------------------------------------------------------------------------
 	// Internal methods
 	// -------------------------------------------------------------------------
-	
-	protected void		testMeter() throws Exception
-	{
+
+	protected void testMeter() throws Exception {
 		ElectricMeterUnitTester.runAllTests(this, this.meterop, this.statistics);
 	}
 
@@ -434,36 +426,56 @@ public class HEM extends AbstractComponent implements RegistrationI {
 
 	public boolean register(String uid, String controlPortURI, String xmlControlAdapter) throws Exception {
 
-		this.logMessage("Registering equipement");
+		this.logMessage("Registering equipment: " + uid);
 		if (this.registered(uid))
 			return false;
 
-		
+		// Create a new outbound port for this equipment
+		AdjustableOutboundPort equipmentPort = new AdjustableOutboundPort(this);
+		equipmentPort.publishPort();
+
+		// Parse the XML descriptor and generate the connector
 		ConnectorAdapterInfo infos = ConnectorAdapterParserXML.parse(xmlControlAdapter);
-		Class<?> coffeeConnectorGenerated = ConnectorGenerator.generate(infos, COFFEE_MACHINE_CONNECTOR_NAME);
+		Class<?> connectorGenerated = ConnectorGenerator.generate(infos, uid);
 
-		System.out.println("Connecteur généré (HEM)");
+		this.logMessage("Connector generated for " + uid + ": " + connectorGenerated.getCanonicalName());
 
-		this.doPortConnection(this.coffeeop.getPortURI(), CoffeeMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-				coffeeConnectorGenerated.getCanonicalName());
+		// Connect the equipment using the generated connector
+		this.doPortConnection(equipmentPort.getPortURI(), controlPortURI, connectorGenerated.getCanonicalName());
 
-		this.traceMessage("Coffee Machine connected !");
-		this.equipementsRegitered.put(uid, true);
+		// Store the connector class name and the port for this equipment
+		this.equipementsRegitered.put(uid, connectorGenerated.getCanonicalName());
+		this.equipmentPorts.put(uid, equipmentPort);
 
-
-
-		// TODO : Register the equipement
-		// Create dynamicly the connector
-		// connect the client with the hem
-		// register the client in the hem hashtable
+		this.logMessage("Equipment " + uid + " registered successfully");
 
 		return true;
 	}
 
 	public void unregister(String uid) throws Exception {
-		this.logMessage("Unegistering equipement");
-		this.doPortDisconnection(this.coffeeop.getPortURI());
+		this.logMessage("Unregistering equipment: " + uid);
+
+		if (!this.registered(uid)) {
+			this.logMessage("Equipment " + uid + " is not registered");
+			return;
+		}
+
+		// Get the port for this equipment
+		AdjustableOutboundPort equipmentPort = this.equipmentPorts.get(uid);
+
+		if (equipmentPort != null) {
+			// Disconnect and unpublish the port
+			if (equipmentPort.connected()) {
+				this.doPortDisconnection(equipmentPort.getPortURI());
+			}
+			equipmentPort.unpublishPort();
+		}
+
+		// Remove from the maps
 		this.equipementsRegitered.remove(uid);
+		this.equipmentPorts.remove(uid);
+
+		this.logMessage("Equipment " + uid + " unregistered successfully");
 	}
 
 	/**
@@ -573,7 +585,6 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	 * TestsStatistics()); }
 	 */
 
-	
 	/**
 	 * Test the coffee machine.
 	 *
@@ -646,8 +657,12 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	 * </p>
 	 *
 	 * <pre>
-	 * pre  {@code true}  // no precondition.
-	 * post {@code true}  // no postcondition.
+	 * pre  {@code
+	 * true
+	 * }  // no precondition.
+	 * post {@code
+	 * true
+	 * }  // no postcondition.
 	 * </pre>
 	 *
 	 * @throws Exception <i>to do</i>.
@@ -656,162 +671,410 @@ public class HEM extends AbstractComponent implements RegistrationI {
 		this.logMessage("Coffee tests start.");
 		this.statistics = new TestsStatistics();
 		try {
-			
-			
+			// Get the coffee machine port from the registered equipment
+			AdjustableOutboundPort coffeePort = this.equipmentPorts.get(CoffeeMachine.COFFEE_MACHINE_CONNECTOR_NAME);
+
+			if (coffeePort == null) {
+				this.logMessage("ERROR: Coffee machine not registered in equipmentPorts!");
+				this.logMessage("Available equipment UIDs: " + this.equipmentPorts.keySet());
+				return;
+			}
+
 			this.logMessage("\n*** Testing coffee machine adjustable modes ***\n");
 
-		    // ---------------------------------------------------------------------
-		    // Scenario: Getting the maximum mode index
-		    // ---------------------------------------------------------------------
-		    this.logMessage("Testing maxMode():");
-		    int maxMode = this.coffeeop.maxMode();
-		    this.logMessage("  - maxMode() returned: " + maxMode);
+			// ---------------------------------------------------------------------
+			// Scenario: Getting the maximum mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("Testing maxMode():");
+			int maxMode = coffeePort.maxMode();
+			this.logMessage("  - maxMode() returned: " + maxMode);
 
-		    if (maxMode <= 0) {
-		        this.logMessage("  -> Incorrect: maximum mode should be > 0.");
-		        this.statistics.incorrectResult();
-		    }
-		    this.statistics.updateStatistics();
+			if (maxMode <= 0) {
+				this.logMessage("  -> Incorrect: maximum mode should be > 0.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Getting the current mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting currentMode():");
+			int currentMode = coffeePort.currentMode();
+			this.logMessage("  - currentMode() returned: " + currentMode);
+
+			if (currentMode < 0 || currentMode > maxMode) {
+				this.logMessage("  -> Incorrect: current mode is out of valid range.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Increasing the mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting upMode():");
+			if (currentMode == maxMode) {
+				this.logMessage("  - Already at maximum mode, cannot increase.");
+				this.statistics.updateStatistics();
+			} else {
+				boolean upSuccess = coffeePort.upMode();
+				int newMode = coffeePort.currentMode();
+				this.logMessage("  - upMode() returned: " + upSuccess);
+				this.logMessage("  - New mode is: " + newMode);
+
+				if (!upSuccess) {
+					this.logMessage("  -> Incorrect: upMode() should return true when current < max.");
+					this.statistics.incorrectResult();
+				}
+				if (newMode != currentMode + 1) {
+					this.logMessage("  -> Incorrect: new mode should be previous mode + 1.");
+					this.statistics.incorrectResult();
+				}
+				this.statistics.updateStatistics();
+
+				currentMode = newMode; // update for next tests
+			}
+
+			// ---------------------------------------------------------------------
+			// Scenario: Decreasing the mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting downMode():");
+			if (currentMode == 0) {
+				this.logMessage("  - Already at minimum mode, cannot decrease.");
+				this.statistics.updateStatistics();
+			} else {
+				boolean downSuccess = coffeePort.downMode();
+				int newMode = coffeePort.currentMode();
+				this.logMessage("  - downMode() returned: " + downSuccess);
+				this.logMessage("  - New mode is: " + newMode);
+
+				if (!downSuccess) {
+					this.logMessage("  -> Incorrect: downMode() should return true when current > 0.");
+					this.statistics.incorrectResult();
+				}
+				if (newMode != currentMode - 1) {
+					this.logMessage("  -> Incorrect: new mode should be previous mode - 1.");
+					this.statistics.incorrectResult();
+				}
+				this.statistics.updateStatistics();
+
+				currentMode = newMode;
+			}
+
+			// ---------------------------------------------------------------------
+			// Scenario: Getting consumption of the maximum mode
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting getModeConsumption():");
+			double maxConsumption = coffeePort.getModeConsumption(maxMode);
+			this.logMessage("  - getModeConsumption(" + maxMode + ") returned: " + maxConsumption);
+
+			if (maxConsumption <= 0) {
+				this.logMessage("  -> Incorrect: consumption for max mode must be > 0.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Suspending
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting suspend():");
+			boolean suspendSuccess = coffeePort.suspend();
+			this.logMessage("  - suspend() returned: " + suspendSuccess);
+
+			if (!suspendSuccess) {
+				this.logMessage("  -> Incorrect: suspend() should return true.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Calling upMode() while suspended
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting upMode() while suspended (should fail):");
+			try {
+				coffeePort.upMode();
+				this.logMessage("  -> Incorrect: upMode() should throw an exception while suspended.");
+				this.statistics.incorrectResult();
+			} catch (AssertionError | Exception e) {
+				this.logMessage("  - Correct: upMode() threw an exception as expected.");
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Calling currentMode() while suspended
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting currentMode() while suspended (should fail):");
+			try {
+				coffeePort.currentMode();
+				this.logMessage("  -> Incorrect: currentMode() should throw an exception while suspended.");
+				this.statistics.incorrectResult();
+			} catch (AssertionError | Exception e) {
+				this.logMessage("  - Correct: currentMode() threw an exception as expected.");
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Resuming
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting resume():");
+			boolean resumeSuccess = coffeePort.resume();
+			this.logMessage("  - resume() returned: " + resumeSuccess);
+
+			if (!resumeSuccess) {
+				this.logMessage("  -> Incorrect: resume() should return true.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
 			
+			this.statistics.statisticsReport(this);
+
+			this.logMessage("\n*** Coffee machine tests completed ***\n");
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Test the laundry machine.
+	 *
+	 * <p>
+	 * <strong>Gherkin specification</strong>
+	 * </p>
+	 *
+	 * <pre>
+	 * Feature: adjustable appliance mode management for laundry
+	 *   Scenario: getting the maximum mode index
+	 *     Given the laundry has just been turned on
+	 *     When I call maxMode()
+	 *     Then the result is its maximum mode index
+	 *
+	 *   Scenario: getting the current mode index
+	 *     Given the laundry has just been turned on
+	 *     When I call currentMode()
+	 *     Then the current mode is within the valid range
+	 *
+	 *   Scenario: increasing the mode index
+	 *     Given the laundry is turned on
+	 *     And the current mode index is strictly less than the maximum mode index
+	 *     When I call upMode()
+	 *     Then the method returns true
+	 *     And the current mode becomes the previous mode plus one
+	 *
+	 *   Scenario: decreasing the mode index
+	 *     Given the laundry is turned on
+	 *     And the current mode index is strictly greater than 0
+	 *     When I call downMode()
+	 *     Then the method returns true
+	 *     And the current mode becomes the previous mode minus one
+	 *
+	 * Feature: getting the power consumption given a mode
+	 *   Scenario: getting the power consumption of the maximum mode
+	 *     Given the laundry is turned on
+	 *     When I get the power consumption of the maximum mode
+	 *     Then the result is strictly greater than 0
+	 *
+	 * Feature: suspending and resuming
+	 *   Scenario: suspending
+	 *     Given the laundry is turned on
+	 *     And it is not suspended yet
+	 *     When I call suspend()
+	 *     Then the method returns true
+	 *     And the laundry becomes suspended
+	 *
+	 *   Scenario: calling upMode while suspended
+	 *     Given the laundry is turned on
+	 *     And it is suspended
+	 *     When I call upMode()
+	 *     Then a precondition exception is thrown
+	 *
+	 *   Scenario: calling currentMode while suspended
+	 *     Given the laundry is turned on
+	 *     And it is suspended
+	 *     When I call currentMode()
+	 *     Then a precondition exception is thrown
+	 *
+	 *   Scenario: resuming
+	 *     Given the laundry is turned on
+	 *     And it is suspended
+	 *     When I call resume()
+	 *     Then the method returns true
+	 *     And the laundry is no longer suspended
+	 * </pre>
+	 *
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 *
+	 * <pre>
+	 * pre  {@code true}  // no precondition.
+	 * post {@code true}  // no postcondition.
+	 * </pre>
+	 *
+	 * @throws Exception <i>to do</i>.
+	 */
+	protected void testLaundry() throws Exception {
+		this.logMessage("Laundry tests start.");
+		this.statistics = new TestsStatistics();
+		try {
+			// Get the laundry port from the registered equipment
+			AdjustableOutboundPort laundryPort = this.equipmentPorts.get("LaundryGeneratedConnector");
+
+			if (laundryPort == null) {
+				this.logMessage("ERROR: Laundry not registered in equipmentPorts!");
+				this.logMessage("Available equipment UIDs: " + this.equipmentPorts.keySet());
+				return;
+			}
+
+			this.logMessage("\n*** Testing laundry adjustable modes ***\n");
+
+			// ---------------------------------------------------------------------
+			// Scenario: Getting the maximum mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("Testing maxMode():");
+			int maxMode = laundryPort.maxMode();
+			this.logMessage("  - maxMode() returned: " + maxMode);
+
+			if (maxMode <= 0) {
+				this.logMessage("  -> Incorrect: maximum mode should be > 0.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Getting the current mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting currentMode():");
+			int currentMode = laundryPort.currentMode();
+			this.logMessage("  - currentMode() returned: " + currentMode);
+
+			if (currentMode < 0 || currentMode > maxMode) {
+				this.logMessage("  -> Incorrect: current mode is out of valid range.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Increasing the mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting upMode():");
+			if (currentMode == maxMode) {
+				this.logMessage("  - Already at maximum mode, cannot increase.");
+				this.statistics.updateStatistics();
+			} else {
+				boolean upSuccess = laundryPort.upMode();
+				int newMode = laundryPort.currentMode();
+				this.logMessage("  - upMode() returned: " + upSuccess);
+				this.logMessage("  - New mode is: " + newMode);
+
+				if (!upSuccess) {
+					this.logMessage("  -> Incorrect: upMode() should return true when current < max.");
+					this.statistics.incorrectResult();
+				}
+				if (newMode != currentMode + 1) {
+					this.logMessage("  -> Incorrect: new mode should be previous mode + 1.");
+					this.statistics.incorrectResult();
+				}
+				this.statistics.updateStatistics();
+
+				currentMode = newMode; // update for next tests
+			}
+
+			// ---------------------------------------------------------------------
+			// Scenario: Decreasing the mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting downMode():");
+			if (currentMode == 0) {
+				this.logMessage("  - Already at minimum mode, cannot decrease.");
+				this.statistics.updateStatistics();
+			} else {
+				boolean downSuccess = laundryPort.downMode();
+				int newMode = laundryPort.currentMode();
+				this.logMessage("  - downMode() returned: " + downSuccess);
+				this.logMessage("  - New mode is: " + newMode);
+
+				if (!downSuccess) {
+					this.logMessage("  -> Incorrect: downMode() should return true when current > 0.");
+					this.statistics.incorrectResult();
+				}
+				if (newMode != currentMode - 1) {
+					this.logMessage("  -> Incorrect: new mode should be previous mode - 1.");
+					this.statistics.incorrectResult();
+				}
+				this.statistics.updateStatistics();
+
+				currentMode = newMode;
+			}
+
+			// ---------------------------------------------------------------------
+			// Scenario: Getting consumption of the maximum mode
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting getModeConsumption():");
+			double maxConsumption = laundryPort.getModeConsumption(maxMode);
+			this.logMessage("  - getModeConsumption(" + maxMode + ") returned: " + maxConsumption);
+
+			if (maxConsumption <= 0) {
+				this.logMessage("  -> Incorrect: consumption for max mode must be > 0.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Suspending
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting suspend():");
+			boolean suspendSuccess = laundryPort.suspend();
+			this.logMessage("  - suspend() returned: " + suspendSuccess);
+
+			if (!suspendSuccess) {
+				this.logMessage("  -> Incorrect: suspend() should return true.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Calling upMode() while suspended
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting upMode() while suspended (should fail):");
+			try {
+				laundryPort.upMode();
+				this.logMessage("  -> Incorrect: upMode() should throw an exception while suspended.");
+				this.statistics.incorrectResult();
+			} catch (AssertionError | Exception e) {
+				this.logMessage("  - Correct: upMode() threw an exception as expected.");
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Calling currentMode() while suspended
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting currentMode() while suspended (should fail):");
+			try {
+				laundryPort.currentMode();
+				this.logMessage("  -> Incorrect: currentMode() should throw an exception while suspended.");
+				this.statistics.incorrectResult();
+			} catch (AssertionError | Exception e) {
+				this.logMessage("  - Correct: currentMode() threw an exception as expected.");
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Resuming
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting resume():");
+			boolean resumeSuccess = laundryPort.resume();
+			this.logMessage("  - resume() returned: " + resumeSuccess);
+
+			if (!resumeSuccess) {
+				this.logMessage("  -> Incorrect: resume() should return true.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
 			
-		    // ---------------------------------------------------------------------
-		    // Scenario: Getting the current mode index
-		    // ---------------------------------------------------------------------
-		    this.logMessage("\nTesting currentMode():");
-		    int currentMode = this.coffeeop.currentMode();
-		    this.logMessage("  - currentMode() returned: " + currentMode);
+			this.statistics.statisticsReport(this);
 
-		    if (currentMode < 0 || currentMode > maxMode) {
-		        this.logMessage("  -> Incorrect: current mode is out of valid range.");
-		        this.statistics.incorrectResult();
-		    }
-		    this.statistics.updateStatistics();
-		    
+			this.logMessage("\n*** Laundry tests completed ***\n");
 			
-		    // ---------------------------------------------------------------------
-		    // Scenario: Increasing the mode index
-		    // ---------------------------------------------------------------------
-		    this.logMessage("\nTesting upMode():");
-		    if (currentMode == maxMode) {
-		        this.logMessage("  - Already at maximum mode, cannot increase.");
-		        this.statistics.updateStatistics();
-		    } else {
-		        boolean upSuccess = this.coffeeop.upMode();
-		        int newMode = this.coffeeop.currentMode();
-		        this.logMessage("  - upMode() returned: " + upSuccess);
-		        this.logMessage("  - New mode is: " + newMode);
 
-		        if (!upSuccess) {
-		            this.logMessage("  -> Incorrect: upMode() should return true when current < max.");
-		            this.statistics.incorrectResult();
-		        }
-		        if (newMode != currentMode + 1) {
-		            this.logMessage("  -> Incorrect: new mode should be previous mode + 1.");
-		            this.statistics.incorrectResult();
-		        }
-		        this.statistics.updateStatistics();
-
-		        currentMode = newMode; // update for next tests
-		    }
-			
-		    // ---------------------------------------------------------------------
-		    // Scenario: Decreasing the mode index
-		    // ---------------------------------------------------------------------
-		    this.logMessage("\nTesting downMode():");
-		    if (currentMode == 0) {
-		        this.logMessage("  - Already at minimum mode, cannot decrease.");
-		        this.statistics.updateStatistics();
-		    } else {
-		        boolean downSuccess = this.coffeeop.downMode();
-		        int newMode = this.coffeeop.currentMode();
-		        this.logMessage("  - downMode() returned: " + downSuccess);
-		        this.logMessage("  - New mode is: " + newMode);
-
-		        if (!downSuccess) {
-		            this.logMessage("  -> Incorrect: downMode() should return true when current > 0.");
-		            this.statistics.incorrectResult();
-		        }
-		        if (newMode != currentMode - 1) {
-		            this.logMessage("  -> Incorrect: new mode should be previous mode - 1.");
-		            this.statistics.incorrectResult();
-		        }
-		        this.statistics.updateStatistics();
-
-		        currentMode = newMode;
-		    }
-		    
-		    // ---------------------------------------------------------------------
-		    // Scenario: Getting consumption of the maximum mode
-		    // ---------------------------------------------------------------------
-		    this.logMessage("\nTesting getModeConsumption():");
-		    double maxConsumption = this.coffeeop.getModeConsumption(maxMode);
-		    this.logMessage("  - getModeConsumption(" + maxMode + ") returned: " + maxConsumption);
-
-		    if (maxConsumption <= 0) {
-		        this.logMessage("  -> Incorrect: consumption for max mode must be > 0.");
-		        this.statistics.incorrectResult();
-		    }
-		    this.statistics.updateStatistics();
-			
-		    
-		    // ---------------------------------------------------------------------
-		    // Scenario: Suspending
-		    // ---------------------------------------------------------------------
-		    this.logMessage("\nTesting suspend():");
-		    boolean suspendSuccess = this.coffeeop.suspend();
-		    this.logMessage("  - suspend() returned: " + suspendSuccess);
-
-		    if (!suspendSuccess) {
-		        this.logMessage("  -> Incorrect: suspend() should return true.");
-		        this.statistics.incorrectResult();
-		    }
-		    this.statistics.updateStatistics();
-			
-		    
-		    // ---------------------------------------------------------------------
-		    // Scenario: Calling upMode() while suspended
-		    // ---------------------------------------------------------------------
-		    this.logMessage("\nTesting upMode() while suspended (should fail):");
-		    try {
-		        this.coffeeop.upMode();
-		        this.logMessage("  -> Incorrect: upMode() should throw an exception while suspended.");
-		        this.statistics.incorrectResult();
-		    } catch (AssertionError | Exception e) {
-		        this.logMessage("  - Correct: upMode() threw an exception as expected.");
-		    }
-		    this.statistics.updateStatistics();
-		    
-		    
-		    // ---------------------------------------------------------------------
-		    // Scenario: Calling currentMode() while suspended
-		    // ---------------------------------------------------------------------
-		    this.logMessage("\nTesting currentMode() while suspended (should fail):");
-		    try {
-		        this.coffeeop.currentMode();
-		        this.logMessage("  -> Incorrect: currentMode() should throw an exception while suspended.");
-		        this.statistics.incorrectResult();
-		    } catch (AssertionError | Exception e) {
-		        this.logMessage("  - Correct: currentMode() threw an exception as expected.");
-		    }
-		    this.statistics.updateStatistics();
-		    
-		    
-		    // ---------------------------------------------------------------------
-		    // Scenario: Resuming
-		    // ---------------------------------------------------------------------
-		    this.logMessage("\nTesting resume():");
-		    boolean resumeSuccess = this.coffeeop.resume();
-		    this.logMessage("  - resume() returned: " + resumeSuccess);
-
-		    if (!resumeSuccess) {
-		        this.logMessage("  -> Incorrect: resume() should return true.");
-		        this.statistics.incorrectResult();
-		    }
-		    this.statistics.updateStatistics();
-
-
-		    this.logMessage("\n*** Coffee machine tests completed ***\n");
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -820,11 +1083,11 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	/**
 	 * test the {@code Laundry} component, in cooperation with the
 	 * {@code HeaterTester} component.
-	 * 
+	 *
 	 * <p>
 	 * <strong>Contract</strong>
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * pre	{@code
 	 * true
@@ -837,8 +1100,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	 */
 	protected void scheduleTestCoffee() {
 
-		Instant coffeeTestStart = this.ac.getStartInstant()
-				.plusSeconds(HEM_DELAY);
+		Instant coffeeTestStart = this.ac.getStartInstant().plusSeconds(COFFEE_MACHINE_TEST_DELAY);
 		this.traceMessage("HEM schedules the coffee machine test.\n");
 		long delay = this.ac.nanoDelayUntilInstant(coffeeTestStart);
 		this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
@@ -847,6 +1109,42 @@ public class HEM extends AbstractComponent implements RegistrationI {
 			public void run() {
 				try {
 					testCoffeeMachine();
+				} catch (Throwable e) {
+					throw new BCMRuntimeException(e);
+				}
+			}
+		}, delay, TimeUnit.NANOSECONDS);
+
+	}
+
+	/**
+	 * schedule the test of the laundry machine.
+	 *
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 *
+	 * <pre>
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 */
+	protected void scheduleTestLaundry() {
+
+		Instant laundryTestStart = this.ac.getStartInstant().plusSeconds(LAUNDRY_TEST_DELAY);
+		this.traceMessage("HEM schedules the laundry test.\n");
+		long delay = this.ac.nanoDelayUntilInstant(laundryTestStart);
+		this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
+
+			@Override
+			public void run() {
+				try {
+					testLaundry();
 				} catch (Throwable e) {
 					throw new BCMRuntimeException(e);
 				}

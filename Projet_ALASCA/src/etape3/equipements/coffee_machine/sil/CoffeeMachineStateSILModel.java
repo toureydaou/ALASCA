@@ -105,6 +105,7 @@ import fr.sorbonne_u.exceptions.AssertionChecking;
 		 						 SetNormalModeCoffeeMachine.class,
 		 						 SetSuspendedModeCoffeeMachine.class,
 		 						 DoNotHeat.class,
+		 						 Heat.class,
 		 						 MakeCoffee.class,
 		 						 ServeCoffee.class,
 		 						 FillWaterCoffeeMachine.class},

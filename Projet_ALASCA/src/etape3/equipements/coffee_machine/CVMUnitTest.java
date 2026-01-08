@@ -80,9 +80,9 @@ public class CVMUnitTest extends AbstractCVM {
 	/** the execution mode for the coffee machine component, to select among
 	 *  the values of the enumeration {@code ExecutionMode}.				*/
 	public static ExecutionMode COFFEE_MACHINE_EXECUTION_MODE =
-//									ExecutionMode.STANDARD;
-//											ExecutionMode.UNIT_TEST;
-											ExecutionMode.UNIT_TEST_WITH_SIL_SIMULATION;
+//			ExecutionMode.STANDARD;
+										ExecutionMode.UNIT_TEST;
+//											ExecutionMode.UNIT_TEST_WITH_SIL_SIMULATION;
 
 	/** the execution mode for the coffee machine tester component, to select
 	 *  among the values of the enumeration {@code ExecutionMode}.			*/
@@ -123,6 +123,8 @@ public class CVMUnitTest extends AbstractCVM {
 	@Override
 	public void deploy() throws Exception {
 		if (COFFEE_MACHINE_EXECUTION_MODE.isStandard()) {
+			
+			System.out.println("Mode Standard Unit Test");
 
 			// Nota: the coffee machine controller cannot run in standard mode as the
 			// coffee machine does not have the required physical sensors
@@ -140,6 +142,8 @@ public class CVMUnitTest extends AbstractCVM {
 						});
 
 		} else if (COFFEE_MACHINE_EXECUTION_MODE.isTestWithoutSimulation()) {
+			
+			System.out.println("Mode Without Simulation");
 
 			// Nota: the coffee machine controller cannot run in test without simulation
 			// mode as the coffee machine does not have the required physical sensors
@@ -186,6 +190,8 @@ public class CVMUnitTest extends AbstractCVM {
 		} else {
 			assert COFFEE_MACHINE_EXECUTION_MODE.isSimulationTest();
 
+			System.out.println("Mode Simulation");
+			
 			long current = System.currentTimeMillis();
 			// start time of the components in Unix epoch time in milliseconds.
 			long unixEpochStartTimeInMillis = current + DELAY_TO_START;

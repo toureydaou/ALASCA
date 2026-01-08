@@ -165,4 +165,13 @@ public class CoffeeMachineUserInboundPort extends AbstractInboundPort implements
 		
 	}
 
+	@Override
+	public void serveCoffee() throws Exception {
+		this.getOwner().handleRequest(o -> {
+			((CoffeeMachineUserI) o).serveCoffee();
+			return null;
+		});
+		
+	}
+
 }

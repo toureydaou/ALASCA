@@ -17,4 +17,6 @@ public interface CoffeeMachineUserI extends CoffeeMachineImplementationI {
 	public void setEcoMode() throws Exception;
 	
 	public void setNormalMode() throws Exception;
+
+	void serveCoffee() throws Exception;
 }

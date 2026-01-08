@@ -56,28 +56,6 @@ public class CoffeeMachineExternalControlConnector extends AbstractConnector imp
 		((CoffeeMachineExternalControlJava4CI) this.offering).setModeJava4(mode);
 	}
 
-	@Override
-	public void setSuspendMode() throws Exception {
-		((CoffeeMachineExternalControlJava4CI) this.offering).setSuspendMode();
-	}
-
-	@Override
-	public void setEcoMode() throws Exception {
-		((CoffeeMachineExternalControlJava4CI) this.offering).setEcoMode();
-	}
-
-	@Override
-	public void setNormalMode() throws Exception {
-		((CoffeeMachineExternalControlJava4CI) this.offering).setNormalMode();
-	}
-
-	@Override
-	public void setMaxMode() throws Exception {
-		((CoffeeMachineExternalControlJava4CI) this.offering).setMaxMode();
-	}
-
-	@Override
-	public CoffeeMachineMode getMode() throws Exception {
-		return ((CoffeeMachineExternalControlJava4CI) this.offering).getMode();
-	}
+	
+	
 }

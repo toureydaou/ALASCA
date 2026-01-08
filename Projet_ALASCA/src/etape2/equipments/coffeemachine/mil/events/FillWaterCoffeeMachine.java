@@ -233,7 +233,7 @@ implements	CoffeeMachineEventI
 
 		CoffeeMachineOperationI coffeeMachine = (CoffeeMachineOperationI) model;
 		assert coffeeMachine.getState() != CoffeeMachineState.HEATING
-				: new NeoSim4JavaException("model not in the right state, should be " + "CoffeeMachineState.HEATING but is "
+				: new NeoSim4JavaException("model not in the right state, should not be " + "CoffeeMachineState.HEATING but is "
 						+ coffeeMachine.getState());
 		coffeeMachine.setCurrentWaterLevel(this.waterValue.getWater(), this.getTimeOfOccurrence());
 	}

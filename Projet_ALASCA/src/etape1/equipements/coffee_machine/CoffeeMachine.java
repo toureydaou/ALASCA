@@ -689,4 +689,10 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 		
 	}
 
+	@Override
+	public void serveCoffee() throws Exception {
+		this.currentWaterLevel = new Measure<Double>(this.currentWaterLevel.getData() - CUP_OF_CAFE_CAPACITY.getData(), LITERS);
+		
+	}
+
 }

@@ -38,7 +38,7 @@ public class CVMUnitTest extends AbstractCVM {
 		BCMException.VERBOSE = true;
 		try {
 			CVMUnitTest cvm = new CVMUnitTest();
-			cvm.startStandardLifeCycle(20000L);
+			cvm.startStandardLifeCycle(30000L);
 			Thread.sleep(20000L);
 			System.exit(0);
 		} catch (Throwable e) {

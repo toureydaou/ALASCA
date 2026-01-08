@@ -88,7 +88,7 @@ extends		AbstractCVM
 	{
 		AbstractComponent.createComponent(
 					Laundry.class.getCanonicalName(),
-					new Object[]{});
+					new Object[]{false});
 
 		AbstractComponent.createComponent(
 				LaundryUnitTester.class.getCanonicalName(),

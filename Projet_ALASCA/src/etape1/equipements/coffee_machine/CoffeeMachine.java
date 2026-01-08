@@ -1,7 +1,5 @@
 package etape1.equipements.coffee_machine;
 
-import java.util.UUID;
-
 import etape1.bases.RegistrationCI;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlI;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlJava4CI;
@@ -112,6 +110,9 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 	public static int X_RELATIVE_POSITION = 0;
 	/** when tracing, y coordinate of the window relative position. */
 	public static int Y_RELATIVE_POSITION = 0;
+	
+
+	public static final String COFFEE_MACHINE_CONNECTOR_NAME = "CoffeeMachineGeneratedConnector";
 
 	/**
 	 * create a hair dryer component.
@@ -229,7 +230,7 @@ public class CoffeeMachine extends AbstractComponent implements CoffeeMachineInt
 		this.currentPowerLevel = LOW_POWER_IN_WATTS;
 		this.currentTemperature = CoffeeMachine.MIN_TEMPARATURE;
 		this.currentWaterLevel = INITIAL_WATER_LEVEL;
-		this.uid = UUID.randomUUID().toString();
+		this.uid = COFFEE_MACHINE_CONNECTOR_NAME;
 
 		if (VERBOSE) {
 			this.tracer.get().setTitle("Coffee Machine component");

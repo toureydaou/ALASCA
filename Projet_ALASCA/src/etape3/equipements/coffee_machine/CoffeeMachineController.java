@@ -143,7 +143,7 @@ implements	CoffeeMachinePushImplementationI
 	/** the standard hysteresis used by the controller for temperature.		*/
 	public static final double	STANDARD_TEMPERATURE_HYSTERESIS = 2.0;
 	/** standard control period in seconds.									*/
-	public static final double	STANDARD_CONTROL_PERIOD = 30.0;
+	public static final double	STANDARD_CONTROL_PERIOD = 60.0;
 	/** target temperature for the water in °C.								*/
 	public static final double	TARGET_TEMPERATURE = Constants.MAX_TEMPARATURE;
 	/** minimum water level in liters to allow heating/making coffee.		*/
@@ -740,70 +740,66 @@ implements	CoffeeMachinePushImplementationI
 		double currentTemp = temperature.getMeasure().getData();
 		double currentWater = waterLevel.getMeasure().getData();
 
-		// Check water level first
-		if (currentWater < MIN_WATER_LEVEL) {
-			// Not enough water, stop heating if heating
-			if (priorState == CoffeeMachineState.HEATING) {
-				this.actuatorOutboundPort.stopHeating();
-				this.currentState = CoffeeMachineState.ON;
-				if (VERBOSE) {
-					this.traceMessage("stop heating: insufficient water ("
-							+ currentWater + "L < " + MIN_WATER_LEVEL + "L) at "
-							+ temperature.getTimestamp() + ".\n");
-				}
-			}
-			return;
-		}
+		// SAFETY CONTROL MODE
+		// The controller does NOT start heating automatically.
+		// Heating is started by user actions (makeExpresso event).
+		// The controller ONLY stops heating when:
+		// 1. Maximum temperature is reached
+		// 2. Water level is too low
 
-		// Temperature control with hysteresis
-		if (currentTemp < TARGET_TEMPERATURE - this.temperatureHysteresis) {
-			// Temperature is too low, start heating
-			if (CoffeeMachineState.HEATING != priorState) {
-				// actuate
-				this.actuatorOutboundPort.startHeating();
-				// update state
-				this.currentState = CoffeeMachineState.HEATING;
+		if (VERBOSE) {
+			this.traceMessage("monitoring: state=" + priorState
+					+ ", temp=" + currentTemp + "°C"
+					+ ", water=" + currentWater + "L"
+					+ " at " + temperature.getTimestamp() + ".\n");
+		}
+		
+		// Safety control: stop heating if conditions are not met
+		if (priorState == CoffeeMachineState.HEATING) {
+			boolean shouldStopHeating = false;
+			String reason = "";
+
+			// Check water level
+			if (currentWater < MIN_WATER_LEVEL) {
+				shouldStopHeating = true;
+				reason = "insufficient water (" + currentWater + "L < " + MIN_WATER_LEVEL + "L)";
+			}
+			// Check maximum temperature
+			// Stop slightly before boiling point to account for reaction delay
+			// and prevent overshoot due to discrete time steps
+			else if (currentTemp >= TARGET_TEMPERATURE - 2.0) {
+				shouldStopHeating = true;
+				reason = "target temperature approached (" + currentTemp + "°C >= " + (TARGET_TEMPERATURE - 2.0) + "°C)";
+			}
+
+			if (shouldStopHeating) {
+				
+				// Stop heating
+				this.actuatorOutboundPort.stopHeating();
+				// Update state
+				synchronized (this.stateLock) {
+					this.currentState = CoffeeMachineState.ON;
+				}
 				if (VERBOSE) {
-					this.traceMessage("start heating: " + currentTemp + "°C < "
-							+ TARGET_TEMPERATURE + "°C - " + this.temperatureHysteresis
-							+ "°C at " + temperature.getTimestamp() + ".\n");
+					this.traceMessage("stop heating: " + reason
+							+ " at " + temperature.getTimestamp() + ".\n");
 				}
 			} else {
-				if (DEBUG) {
+				// Still heating, just monitoring
+				if (VERBOSE) {
 					this.traceMessage("still heating: " + currentTemp + "°C < "
 							+ TARGET_TEMPERATURE + "°C at "
 							+ temperature.getTimestamp() + ".\n");
 				}
-			}
-		} else if (currentTemp > TARGET_TEMPERATURE + this.temperatureHysteresis) {
-			// Temperature is high enough, stop heating
-			if (CoffeeMachineState.HEATING == priorState) {
-				// actuate
-				this.actuatorOutboundPort.stopHeating();
-				// update state
-				this.currentState = CoffeeMachineState.ON;
-				if (VERBOSE) {
-					this.traceMessage("stop heating: " + currentTemp + "°C > "
-							+ TARGET_TEMPERATURE + "°C + " + this.temperatureHysteresis
-							+ "°C at " + temperature.getTimestamp() + ".\n");
-				}
-			} else {
-				if (DEBUG) {
-					this.traceMessage("still not heating: " + currentTemp + "°C > "
-							+ TARGET_TEMPERATURE + "°C at "
-							+ temperature.getTimestamp() + ".\n");
+				// Update state tracking
+				synchronized (this.stateLock) {
+					this.currentState = state.getMeasure().getData();
 				}
 			}
 		} else {
-			// Temperature is in the acceptable range (within hysteresis)
-			if (DEBUG) {
-				if (CoffeeMachineState.HEATING == priorState) {
-					this.traceMessage("still heating (in range): " + currentTemp
-							+ "°C at " + temperature.getTimestamp() + ".\n");
-				} else {
-					this.traceMessage("still not heating (in range): " + currentTemp
-							+ "°C at " + temperature.getTimestamp() + ".\n");
-				}
+			// Not heating, just update state tracking
+			synchronized (this.stateLock) {
+				this.currentState = state.getMeasure().getData();
 			}
 		}
 	}
@@ -838,21 +834,34 @@ implements	CoffeeMachinePushImplementationI
 							"executes a new pull control step on " + sensorData + "\n");
 				}
 
-				this.oneControlStep(sensorData.getState(),
-									sensorData.getMode(),
-									sensorData.getTemperature(),
-									sensorData.getWaterLevel(),
-									priorState);
+				try {
+					this.oneControlStep(sensorData.getState(),
+										sensorData.getMode(),
+										sensorData.getTemperature(),
+										sensorData.getWaterLevel(),
+										priorState);
+				} catch (Exception e) {
+					this.traceMessage("ERROR in oneControlStep: " + e.getClass().getName()
+							+ ": " + e.getMessage() + "\n");
+					e.printStackTrace();
+				}
 
 				// schedule the next execution of the loop only if the
 				// current execution is standard or if it is a real time
 				// simulation with code execution i.e., SIL or HIL
 				// otherwise, perform only one call to pull sensors to
 				// test the functionality
+				if (VERBOSE) {
+					this.traceMessage("scheduling next pull in " + this.actualControlPeriod
+							+ " ns\n");
+				}
 				this.scheduleTask(
 						o -> ((CoffeeMachineController)o).pullControlLoop(),
 						this.actualControlPeriod,
 						TimeUnit.NANOSECONDS);
+				if (VERBOSE) {
+					this.traceMessage("next pull scheduled successfully\n");
+				}
 			} else {
 				// when the coffee machine is OFF, exit the control loop
 				if (VERBOSE) {

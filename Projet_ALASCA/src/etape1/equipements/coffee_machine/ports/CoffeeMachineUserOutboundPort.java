@@ -135,4 +135,10 @@ public class CoffeeMachineUserOutboundPort extends AbstractOutboundPort implemen
 		
 	}
 
+	@Override
+	public void serveCoffee() throws Exception {
+		((CoffeeMachineUserCI) this.getConnector()).serveCoffee();
+		
+	}
+
 }

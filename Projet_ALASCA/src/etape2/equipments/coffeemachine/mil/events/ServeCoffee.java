@@ -4,6 +4,7 @@ import etape1.equipements.coffee_machine.CoffeeMachine;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
 import etape2.equipments.coffeemachine.mil.CoffeeMachineElectricityModel;
 import etape2.equipments.coffeemachine.mil.CoffeeMachineOperationI;
+import etape3.equipements.coffee_machine.sil.CoffeeMachineElectricitySILModel;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
@@ -139,21 +140,33 @@ public class ServeCoffee extends Event implements CoffeeMachineEventI {
 	@Override
 	public void executeOn(AtomicModelI model) {
 		assert model instanceof CoffeeMachineOperationI
-				: new NeoSim4JavaException("Precondition violation: model instanceof "
-						+ "CoffeeMachineOperationI");
+				: new NeoSim4JavaException("Precondition violation: model instanceof " + "CoffeeMachineOperationI");
 
 		CoffeeMachineOperationI coffeeMachine = (CoffeeMachineOperationI) model;
 
-		// Water level operations only for electricity models
+		// Water level operations only for electricity models (MIL or SIL)
 		if (model instanceof CoffeeMachineElectricityModel) {
+			// MIL model
 			CoffeeMachineElectricityModel elecModel = (CoffeeMachineElectricityModel) model;
 			assert coffeeMachine.getState() == CoffeeMachineState.ON
 					&& elecModel.getCurrentWaterLevel().getValue() > 0.1
 					: new NeoSim4JavaException("model not in the right state, should be "
 							+ "CoffeeMachineState.ON but is " + coffeeMachine.getState());
-			double newWaterLevel = elecModel.getCurrentWaterLevel().getValue() - CoffeeMachine.CUP_OF_CAFE_CAPACITY.getData();
+			double newWaterLevel = elecModel.getCurrentWaterLevel().getValue()
+					- CoffeeMachine.CUP_OF_CAFE_CAPACITY.getData();
+			coffeeMachine.setCurrentWaterLevel(newWaterLevel, timeOfOccurrence);
+		} else if (model instanceof CoffeeMachineElectricitySILModel) {
+			// SIL electricity model
+			CoffeeMachineElectricitySILModel cmeSILm = (CoffeeMachineElectricitySILModel) model;
+			assert coffeeMachine.getState() == CoffeeMachineState.ON
+					&& cmeSILm.getCurrentWaterLevel().getValue() > CoffeeMachine.CUP_OF_CAFE_CAPACITY.getData()
+					: new NeoSim4JavaException("model not in the right state, should be "
+							+ "CoffeeMachineState.ON but is " + coffeeMachine.getState());
+			double newWaterLevel = cmeSILm.getCurrentWaterLevel().getValue()
+					- CoffeeMachine.CUP_OF_CAFE_CAPACITY.getData();
 			coffeeMachine.setCurrentWaterLevel(newWaterLevel, timeOfOccurrence);
 		}
+		// else: it's the State model, just update state without touching water level
 
 		coffeeMachine.setState(CoffeeMachineState.ON);
 	}

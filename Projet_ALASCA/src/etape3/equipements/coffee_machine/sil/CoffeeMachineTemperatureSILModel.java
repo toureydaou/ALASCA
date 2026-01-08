@@ -147,7 +147,7 @@ implements	SIL_CoffeeMachineOperationI
 	protected static double		AMBIENT_TEMPERATURE = 20.0;
 
 	/** evaluation step for the differential equation (in hours).			*/
-	protected static double		STEP = 60.0/3600.0;
+	protected static double		STEP = 60.0/3600.0;  // 1 minute = 1/60 hour
 
 	/** current state of the coffee machine (similar to electricity model).*/
 	protected CoffeeMachineState	currentState = CoffeeMachineState.ON;
@@ -334,7 +334,7 @@ implements	SIL_CoffeeMachineOperationI
 	 * </pre>
 	 *
 	 * @param currentTemp	the current temperature.
-	 * @return				the derivative (variation in °C per second).
+	 * @return				the derivative (variation in °C per hour).
 	 */
 	protected double	computeDerivatives(Double currentTemp)
 	{
@@ -353,8 +353,25 @@ implements	SIL_CoffeeMachineOperationI
 			double power = this.currentHeatingPower.getValue(); // In Watts (Joules/sec)
 
 			// Formula: P = m * Cp * (dT/dt) => dT/dt = P / (m * Cp)
+			// This gives °C/s, so multiply by 3600 to convert to °C/h (deltaT is in hours)
 			heatingContribution =
-					power / (waterMass * WATER_SPECIFIC_HEAT_CAPACITY);
+					power / (waterMass * WATER_SPECIFIC_HEAT_CAPACITY) * 60.0;
+
+			// Physical limit: reduce heating power as we approach boiling point
+			// to prevent overshoot due to discrete time steps
+			if (currentTemp > 95.0) {
+				// Gradual reduction from 95°C to 100°C
+				// At 95°C: factor = 1.0 (full power)
+				// At 97.5°C: factor = 0.5 (half power)
+				// At 100°C: factor = 0.0 (no heating)
+				double reductionFactor = Math.max(0.0, (100.0 - currentTemp) / 5.0);
+				heatingContribution *= reductionFactor;
+			}
+
+			// Hard limit: no heating above 100°C
+			if (currentTemp >= 100.0) {
+				heatingContribution = 0.0;
+			}
 		}
 
 		// Cooling contribution (loss to environment)
@@ -376,18 +393,32 @@ implements	SIL_CoffeeMachineOperationI
 	 * post	{@code true}	// no postcondition.
 	 * </pre>
 	 *
-	 * @param deltaT	time delta in hours.
+	 * @param deltaT	time delta in hours (from simulation).
 	 * @return			the new temperature.
 	 */
 	protected double	computeNewTemperature(double deltaT)
 	{
 		Time t = this.currentWaterTemperature.getTime();
 		double oldTemp = this.currentWaterTemperature.evaluateAt(t);
-		double derivative = this.currentWaterTemperature.getFirstDerivative();
+		double newTemp;
 
-		// T(t+dt) = T(t) + T'(t) * dt
-		// deltaT is in hours, derivative is in °C per hour
-		double newTemp = oldTemp + derivative * deltaT * 3600.0;
+		if (deltaT > 0.0001) { // TEMPERATURE_UPDATE_TOLERANCE
+			// T(t+dt) = T(t) + T'(t) * dt
+			// deltaT is in hours, derivative is in °C per hour
+			double derivative = this.currentWaterTemperature.getFirstDerivative();
+			newTemp = oldTemp + derivative * deltaT;
+		} else {
+			newTemp = oldTemp;
+		}
+
+		// Physical limit: water cannot exceed boiling point at atmospheric pressure
+		// Hard cap at 100°C (boiling point of water)
+		if (newTemp > 100.0) {
+			newTemp = 100.0;
+		}
+
+		// accumulate the temperature*time to compute the mean temperature
+		this.temperatureAcc += ((oldTemp + newTemp) / 2.0) * deltaT;
 
 		return newTemp;
 	}
@@ -599,15 +630,13 @@ implements	SIL_CoffeeMachineOperationI
 		super.userDefinedInternalTransition(elapsedTime);
 
 		// recompute the current temperature
+		// Note: accumulation for mean temperature is now done inside computeNewTemperature()
 		double newTemp = this.computeNewTemperature(elapsedTime.getSimulatedDuration());
 		// compute the derivative
 		double newDerivative = this.computeDerivatives(newTemp);
 		// set the new temperature value and derivative
 		Time t = this.getCurrentStateTime();
 		this.currentWaterTemperature.setNewValue(newTemp, newDerivative, t);
-
-		// accumulate the temperature values for the final report.
-		this.temperatureAcc += newTemp;
 
 		if (VERBOSE) {
 			StringBuffer sb = new StringBuffer();
@@ -657,16 +686,25 @@ implements	SIL_CoffeeMachineOperationI
 			this.logMessage(sb.toString());
 		}
 
-		// execute the event on this model, causing the appropriate
-		// transition.
+		// First, update the temperature (i.e., the value of the continuous
+		// variable) until the current time.
+		// Note: accumulation for mean temperature is done inside computeNewTemperature()
+		double newTemp = this.computeNewTemperature(elapsedTime.getSimulatedDuration());
+
+		// Then, execute the event on this model, causing the appropriate
+		// transition (e.g., state change).
 		ce.executeOn(this);
 
-		// accumulate the temperature values for the final report.
-		if (elapsedTime.greaterThan(Duration.zero(this.getSimulatedTimeUnit()))) {
-			this.temperatureAcc +=
-					this.currentWaterTemperature.getValue() *
-						elapsedTime.getSimulatedDuration() /
-												this.integrationStep.getSimulatedDuration();
+		// Next, compute the new derivative based on the new state
+		double newDerivative = this.computeDerivatives(newTemp);
+
+		// Finally, set the new temperature value and derivative
+		if (elapsedTime.getSimulatedDuration() > 0.0001) { // TEMPERATURE_UPDATE_TOLERANCE
+			this.currentWaterTemperature.setNewValue(
+					newTemp,
+					newDerivative,
+					new Time(this.getCurrentStateTime().getSimulatedTime(),
+							 this.getSimulatedTimeUnit()));
 		}
 
 		assert	CoffeeMachineTemperatureSILModel.implementationInvariants(this) :

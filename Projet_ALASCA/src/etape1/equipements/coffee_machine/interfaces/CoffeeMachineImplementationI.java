@@ -17,4 +17,6 @@ public interface CoffeeMachineImplementationI {
 	public CoffeeMachineMode getMode() throws Exception;
 
 	
+
+	
 }

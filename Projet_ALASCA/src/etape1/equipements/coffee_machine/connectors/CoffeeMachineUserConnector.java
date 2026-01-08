@@ -69,4 +69,9 @@ public class CoffeeMachineUserConnector extends AbstractConnector implements Cof
 
 	}
 
+	@Override
+	public void serveCoffee() throws Exception {
+		((CoffeeMachineUserCI) this.offering).serveCoffee();
+	}
+
 }

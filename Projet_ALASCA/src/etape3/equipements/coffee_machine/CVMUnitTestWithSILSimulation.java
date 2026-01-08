@@ -53,7 +53,7 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 	 *  creation of the application simulator if simulation is used). It
 	 *  could need to be revised if the computer on which the application
 	 *  is run is less powerful.											*/
-	public static long DELAY_TO_START = 10000L;
+	public static long DELAY_TO_START = 5000L;
 	/** duration of the sleep at the end of the execution before exiting
 	 *  the JVM.															*/
 	public static long END_SLEEP_DURATION = 1000000L;
@@ -64,7 +64,7 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 	 *  relevant.															*/
 	public static Time SIMULATION_START_TIME = new Time(0.0, SIMULATION_TIME_UNIT);
 	/** duration  of the simulation, in simulated time.						*/
-	public static Duration SIMULATION_DURATION = new Duration(6.0, SIMULATION_TIME_UNIT);
+	public static Duration SIMULATION_DURATION = new Duration(12.0, SIMULATION_TIME_UNIT);
 	/** for real time simulations, the acceleration factor applied to the
 	 *  the simulated time to get the execution time of the simulations. 	*/
 	public static double ACCELERATION_FACTOR = 3600.0;
@@ -95,7 +95,7 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 	 *  the components in the test scenarios.								*/
 	public static String CLOCK_URI = "coffee-machine-test-clock";
 	/** start instant in test scenarios, as a string to be parsed.			*/
-	public static String START_INSTANT = "2026-10-08T00:00:00.00Z";
+	public static String START_INSTANT = "2026-10-08T06:00:00.00Z";
 
 	// -------------------------------------------------------------------------
 	// Constructors
@@ -185,6 +185,8 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 
 		} else {
 			assert COFFEE_MACHINE_EXECUTION_MODE.isSimulationTest();
+			
+			System.out.println("Mode Simulation");
 
 			long current = System.currentTimeMillis();
 			// start time of the components in Unix epoch time in milliseconds.
@@ -299,12 +301,12 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 
 		Instant switchOnInstant = startInstant.plusSeconds(300);
 		Instant fillWaterInstant = startInstant.plusSeconds(600);
-		Instant setEcoModeInstant = startInstant.plusSeconds(3900);
-		Instant setNormalModeInstant = startInstant.plusSeconds(7500);
-		Instant setMaxModeInstant = startInstant.plusSeconds(11100);
-		Instant startHeatingInstant = startInstant.plusSeconds(14700);
-		Instant makeExpressoInstant = startInstant.plusSeconds(18300);
-		Instant stopHeatingInstant = startInstant.plusSeconds(20100);
+		Instant setEcoModeInstant = startInstant.plusSeconds(1200);
+		Instant setNormalModeInstant = startInstant.plusSeconds(1500);
+		Instant setMaxModeInstant = startInstant.plusSeconds(1800);
+		Instant makeExpressoInstant = startInstant.plusSeconds(2700);
+		Instant serveFirstCoffee = startInstant.plusSeconds(8700);
+		Instant serveSecondCoffee = startInstant.plusSeconds(9000);
 		Instant switchOffInstant = startInstant.plusSeconds(d - 300);
 
 		return new TestScenario(
@@ -370,17 +372,6 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 				new TestStep(
 					CLOCK_URI,
 					CoffeeMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					startHeatingInstant,
-					owner ->  {
-						try {
-							((CoffeeMachineTesterCyPhy)owner).getCmInternalOP().startHeating();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e);
-						}
-					}),
-				new TestStep(
-					CLOCK_URI,
-					CoffeeMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 					makeExpressoInstant,
 					owner ->  {
 						try {
@@ -392,14 +383,25 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 				new TestStep(
 					CLOCK_URI,
 					CoffeeMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					stopHeatingInstant,
+					serveFirstCoffee,
 					owner ->  {
 						try {
-							((CoffeeMachineTesterCyPhy)owner).getCmInternalOP().stopHeating();
+							((CoffeeMachineTesterCyPhy)owner).getCmUserOP().serveCoffee();
 						} catch (Exception e) {
 							throw new BCMRuntimeException(e);
 						}
 					}),
+				new TestStep(
+						CLOCK_URI,
+						CoffeeMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+						serveSecondCoffee,
+						owner ->  {
+							try {
+								((CoffeeMachineTesterCyPhy)owner).getCmUserOP().serveCoffee();
+							} catch (Exception e) {
+								throw new BCMRuntimeException(e);
+							}
+						}),
 				new TestStep(
 					CLOCK_URI,
 					CoffeeMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -445,7 +447,10 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 
 		Instant switchOnInstant = startInstant.plusSeconds(300);
 		Instant fillWaterInstant = startInstant.plusSeconds(600);
-		Instant makeExpressoInstant = startInstant.plusSeconds(d/2);
+		Instant setMaxModeInstant = startInstant.plusSeconds(900);
+		Instant makeExpressoInstant = startInstant.plusSeconds(1200);
+		Instant serveFirstCoffee = startInstant.plusSeconds(18000);
+		Instant serveSecondCoffee = startInstant.plusSeconds(18300);
 		Instant switchOffInstant = startInstant.plusSeconds(d - 300);
 
 		return new TestScenarioWithSimulation(
@@ -479,6 +484,17 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 						}
 					}),
 				new TestStep(
+						CLOCK_URI,
+						CoffeeMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+						setMaxModeInstant,
+						owner ->  {
+							try {
+								((CoffeeMachineTesterCyPhy)owner).getCmUserOP().setMaxMode();
+							} catch (Exception e) {
+								throw new BCMRuntimeException(e);
+							}
+						}),
+				new TestStep(
 					CLOCK_URI,
 					CoffeeMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 					makeExpressoInstant,
@@ -489,6 +505,29 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 							throw new BCMRuntimeException(e);
 						}
 					}),
+				
+				new TestStep(
+						CLOCK_URI,
+						CoffeeMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+						serveFirstCoffee,
+						owner ->  {
+							try {
+								((CoffeeMachineTesterCyPhy)owner).getCmUserOP().serveCoffee();
+							} catch (Exception e) {
+								throw new BCMRuntimeException(e);
+							}
+						}),
+					new TestStep(
+							CLOCK_URI,
+							CoffeeMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+							serveSecondCoffee,
+							owner ->  {
+								try {
+									((CoffeeMachineTesterCyPhy)owner).getCmUserOP().serveCoffee();
+								} catch (Exception e) {
+									throw new BCMRuntimeException(e);
+								}
+							}),
 				new TestStep(
 					CLOCK_URI,
 					CoffeeMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,

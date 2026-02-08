@@ -334,6 +334,12 @@ public class HEMEnergyManager extends HEMCyPhy implements EnergyCoordinator {
 	 * @return equipment type
 	 */
 	private String extractType(String uid) {
+		// Handle "XxxGeneratedConnector" format from XML adapter registration
+		// e.g., "KettleGeneratedConnector" → "Kettle"
+		// e.g., "CoffeeMachineGeneratedConnector" → "CoffeeMachine"
+		if (uid.endsWith("GeneratedConnector")) {
+			return uid.substring(0, uid.length() - "GeneratedConnector".length());
+		}
 		// Try underscore first (new format: CoffeeMachine_1), then dash
 		int sepIndex = uid.lastIndexOf('_');
 		if (sepIndex <= 0) {

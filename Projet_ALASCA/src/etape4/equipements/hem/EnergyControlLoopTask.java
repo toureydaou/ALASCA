@@ -299,29 +299,47 @@ public class EnergyControlLoopTask extends AbstractComponent.AbstractTask {
 			SignalData<Double> consumption = meterop.getCurrentConsumption();
 			SignalData<Double> production = meterop.getCurrentProduction();
 
-			double consumptionAmperes = consumption.getMeasure().getData();
-			double productionAmperes = production.getMeasure().getData();
+			double meterConsumptionAmperes = consumption.getMeasure().getData();
+			double meterProductionAmperes = production.getMeasure().getData();
 
-			// Convert to Watts (220V system)
-			double consumptionWatts = consumptionAmperes * 220.0;
-			double productionWatts = productionAmperes * 220.0;
-
-			// 2. If meter returns 0 (integration test without simulation),
-			//    estimate consumption from registered equipment states
-			//    and estimate production from energy sources
-			if (consumptionAmperes == 0.0 && productionAmperes == 0.0) {
-				consumptionWatts = estimateConsumptionFromEquipment() * 220.0;
-				productionWatts = estimateProductionFromSources() * 220.0;
-				consumptionAmperes = consumptionWatts / 220.0;
-				productionAmperes = productionWatts / 220.0;
+			// 2. Determine consumption:
+			//    - If meter provides non-zero consumption (SIL mode), use it
+			//    - Otherwise estimate from registered equipment states
+			double consumptionWatts;
+			double consumptionAmperes;
+			if (meterConsumptionAmperes > 0.001) {
+				consumptionWatts = meterConsumptionAmperes * 220.0;
+				consumptionAmperes = meterConsumptionAmperes;
+			} else {
+				consumptionAmperes = estimateConsumptionFromEquipment();
+				consumptionWatts = consumptionAmperes * 220.0;
 			}
 
-			// 3. Accumulate energy for final report (Watt-seconds)
+			// 3. Determine production:
+			//    The electric meter does NOT track production in its SIL model
+			//    (no solar/generator/battery models in ElectricMeterCoupledModel).
+			//    Always estimate production from energy sources.
+			double productionWatts;
+			double productionAmperes;
+			if (meterProductionAmperes > 0.001) {
+				productionWatts = meterProductionAmperes * 220.0;
+				productionAmperes = meterProductionAmperes;
+			} else {
+				productionAmperes = estimateProductionFromSources();
+				productionWatts = productionAmperes * 220.0;
+			}
+
+			// 4. Track per-equipment consumption for the final report
+			//    (even in SIL mode where meter provides the totals)
+			trackEquipmentConsumption();
+
+			// 5. Accumulate energy for final report (Watt-seconds)
 			cumulativeConsumptionWs += consumptionWatts * controlPeriodSeconds;
 			cumulativeProductionWs += productionWatts * controlPeriodSeconds;
 
-			// 4. Update shared energy state model (data-centered coordination)
+			// 6. Update shared energy state model (data-centered coordination)
 			energyStateModel.setConsumption(consumptionWatts);
+			energyStateModel.setSolarProduction(productionWatts);
 			if (batteriesAvailable) {
 				try {
 					if (batteriesop != null && batteriesop.connected()) {
@@ -335,7 +353,7 @@ public class EnergyControlLoopTask extends AbstractComponent.AbstractTask {
 				}
 			}
 
-			// 5. Calculate deficit/surplus (positive = deficit, negative = surplus)
+			// 7. Calculate deficit/surplus (positive = deficit, negative = surplus)
 			double balance = consumptionAmperes - productionAmperes;
 
 			if (verbose) {
@@ -346,7 +364,7 @@ public class EnergyControlLoopTask extends AbstractComponent.AbstractTask {
 					batteriesCharging ? "CHARGING" : "IDLE"));
 			}
 
-			// 6. Make decision based on balance
+			// 8. Make decision based on balance
 			if (balance > ACTION_THRESHOLD) {
 				handleDeficit(balance, consumptionAmperes, productionAmperes);
 			} else if (balance < -ACTION_THRESHOLD) {
@@ -477,6 +495,26 @@ public class EnergyControlLoopTask extends AbstractComponent.AbstractTask {
 		}
 
 		return totalAmperes;
+	}
+
+	/**
+	 * Track per-equipment consumption for the final report.
+	 * This runs every iteration regardless of whether the meter or estimation
+	 * is used for the main consumption value.
+	 */
+	private void trackEquipmentConsumption() {
+		List<EquipmentInfo> allEquipment = registry.getAllEquipment();
+		for (EquipmentInfo eq : allEquipment) {
+			try {
+				int mode = eq.port.currentMode();
+				eq.currentMode = mode;
+				double watts = eq.port.getModeConsumption(mode);
+				equipmentConsumptionWs.merge(eq.uid, watts * controlPeriodSeconds, Double::sum);
+				equipmentPeakConsumptionW.merge(eq.uid, watts, Math::max);
+			} catch (Exception e) {
+				// Ignore errors during tracking
+			}
+		}
 	}
 
 	// -------------------------------------------------------------------------

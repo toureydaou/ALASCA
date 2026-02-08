@@ -3,6 +3,7 @@ package etape3.equipements.meter;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,8 +28,17 @@ import etape2.equipments.fan.mil.events.SetLowModeFan;
 import etape2.equipments.fan.mil.events.SetMediumModeFan;
 import etape2.equipments.fan.mil.events.SwitchOffFan;
 import etape2.equipments.fan.mil.events.SwitchOnFan;
+import etape1.equipments.batteries.Batteries;
+import etape1.equipments.generator.Generator;
+import etape1.equipments.solar_panel.SolarPanel;
+import etape2.GlobalSimulationConfigurationI;
+import etape2.equipments.generator.mil.GeneratorSimulationConfiguration;
+import etape2.equipments.solar_panel.mil.SolarPanelSimulationConfigurationI;
+import etape2.equipments.solar_panel.mil.SunIntensityModelI;
+import etape2.equipments.solar_panel.mil.DeterministicSunIntensityModel;
 import etape3.equipements.meter.sil.LocalSimulationArchitectures;
 import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.devs_simulation.models.interfaces.ModelI;
 import fr.sorbonne_u.alasca.physical_data.SignalData;
 import fr.sorbonne_u.alasca.physical_data.TimedMeasure;
 
@@ -896,9 +906,13 @@ implements	ElectricMeterImplementationI
 				// the simulator inside the plug-in is created
 				this.asp.createSimulator();
 				// to prepare for the run, set the run parameters
+				// Provide required parameters for energy source SIL models
+				// inside the electric meter's local coupled model
+				Map<String, Object> extraParams =
+						buildEnergySourceModelParameters();
 				this.asp.setSimulationRunParameters(
 						(TestScenarioWithSimulation) this.testScenario,
-						new HashMap<>());
+						extraParams);
 				break;
 			case UNIT_TEST_WITH_HIL_SIMULATION:
 			case INTEGRATION_TEST_WITH_HIL_SIMULATION:
@@ -915,6 +929,112 @@ implements	ElectricMeterImplementationI
 		assert	ElectricMeterCyPhy.invariants(this) :
 				new ImplementationInvariantException(
 						"ElectricMeterCyPhy.invariants(this)");
+	}
+
+	/**
+	 * Build run parameters required by energy source SIL models (solar panel,
+	 * generator, batteries) that are submodels of the electric meter's local
+	 * coupled model in integration test SIL architectures.
+	 *
+	 * @return map of model parameter name → value
+	 */
+	protected Map<String, Object> buildEnergySourceModelParameters() {
+		Map<String, Object> params = new HashMap<>();
+
+		Instant startInstant = GlobalSimulationConfigurationI.START_INSTANT;
+
+		// --- DeterministicSunIntensityModel parameters ---
+		String sunIntensityURI = DeterministicSunIntensityModel.URI;
+		params.put(
+			ModelI.createRunParameterName(sunIntensityURI,
+				SunIntensityModelI.START_INSTANT_RP_NAME),
+			startInstant);
+		params.put(
+			ModelI.createRunParameterName(sunIntensityURI,
+				SunIntensityModelI.ZONE_ID_RP_NAME),
+			SolarPanelSimulationConfigurationI.ZONE);
+		params.put(
+			ModelI.createRunParameterName(sunIntensityURI,
+				SunIntensityModelI.COMPUTATION_STEP_RP_NAME),
+			0.5);  // computation step in hours
+
+		// --- SolarPanelPowerSILModel parameters ---
+		String solarPowerURI = "SolarPanelPowerSILModel";
+		params.put(
+			ModelI.createRunParameterName(solarPowerURI, "LATITUDE"),
+			SolarPanelSimulationConfigurationI.LATITUDE);
+		params.put(
+			ModelI.createRunParameterName(solarPowerURI, "LONGITUDE"),
+			SolarPanelSimulationConfigurationI.LONGITUDE);
+		params.put(
+			ModelI.createRunParameterName(solarPowerURI, "START_INSTANT"),
+			startInstant);
+		params.put(
+			ModelI.createRunParameterName(solarPowerURI, "ZONE_ID"),
+			SolarPanelSimulationConfigurationI.ZONE);
+		params.put(
+			ModelI.createRunParameterName(solarPowerURI, "MAX_POWER"),
+			(double)(SolarPanelSimulationConfigurationI.NB_SQUARE_METERS
+				* SolarPanel.CAPACITY_PER_SQUARE_METER.getData()));
+		params.put(
+			ModelI.createRunParameterName(solarPowerURI, "COMPUTATION_STEP"),
+			0.25);  // computation step in hours
+
+		// --- BatteriesPowerSILModel parameters ---
+		String batteriesURI = "batteries-power-sil-model";
+		// capacity = parallel_cells * series_groups * capacity_per_unit
+		// = 2 * 2 * 5500 = 22000 Wh
+		double batteriesCapacity = 2.0 * 2.0
+			* Batteries.CAPACITY_PER_UNIT.getData();
+		params.put(
+			ModelI.createRunParameterName(batteriesURI, "CAPACITY"),
+			batteriesCapacity);
+		params.put(
+			ModelI.createRunParameterName(batteriesURI, "INITIAL_LEVEL_RATIO"),
+			0.5);
+		params.put(
+			ModelI.createRunParameterName(batteriesURI, "IN_POWER"),
+			2.0 * Batteries.IN_POWER_PER_CELL.getData());
+		params.put(
+			ModelI.createRunParameterName(batteriesURI, "MAX_OUT_POWER_RP_NAME"),
+			2.0 * Batteries.MAX_OUT_POWER_PER_CELL.getData());
+		params.put(
+			ModelI.createRunParameterName(batteriesURI, "LEVEL_QUANTUM"),
+			300.0);
+
+		// --- GeneratorFuelSILModel parameters ---
+		String genFuelURI = "GeneratorFuelSILModel";
+		params.put(
+			ModelI.createRunParameterName(genFuelURI, "CAPACITY"),
+			GeneratorSimulationConfiguration.TANK_CAPACITY);
+		params.put(
+			ModelI.createRunParameterName(genFuelURI, "INITIAL_LEVEL"),
+			GeneratorSimulationConfiguration.INITIAL_TANK_LEVEL);
+		params.put(
+			ModelI.createRunParameterName(genFuelURI,
+				"MIN_FUEL_CONSUMPTION_RP_NAME"),
+			Generator.MIN_FUEL_CONSUMPTION.getData());
+		params.put(
+			ModelI.createRunParameterName(genFuelURI,
+				"MAX_FUEL_CONSUMPTION_RP_NAME"),
+			Generator.MAX_FUEL_CONSUMPTION.getData());
+		params.put(
+			ModelI.createRunParameterName(genFuelURI,
+				"MAX_OUT_POWER_RP_NAME"),
+			Generator.MAX_POWER.getData());
+		params.put(
+			ModelI.createRunParameterName(genFuelURI, "LEVEL_QUANTUM"),
+			GeneratorSimulationConfiguration.
+				STANDARD_LEVEL_INTEGRATION_QUANTUM);
+
+		// --- GeneratorPowerSILModel parameters ---
+		String genPowerURI = "GeneratorPowerSILModel";
+		params.put(
+			ModelI.createRunParameterName(genPowerURI,
+				"MAX_OUT_POWER_RP_NAME"),
+			Generator.MAX_POWER.getData());
+
+		return params;
 	}
 
 	/**

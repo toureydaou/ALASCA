@@ -1,9 +1,10 @@
 package etape1.equipments.solar_panel;
 
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 import fr.sorbonne_u.exceptions.AssertionChecking;
-import physical_data.Measure;
-import physical_data.MeasurementUnit;
-import physical_data.SignalData;
+
 
 // -----------------------------------------------------------------------------
 /**

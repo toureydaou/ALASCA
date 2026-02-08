@@ -35,6 +35,7 @@ package etape2.equipments.solar_panel.mil;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 import fr.sorbonne_u.devs_simulation.hioa.models.vars.StaticVariableDescriptor;
 import fr.sorbonne_u.devs_simulation.hioa.models.vars.VariableSink;
 import fr.sorbonne_u.devs_simulation.hioa.models.vars.VariableSource;
@@ -77,7 +78,8 @@ extends		CoupledModel
 	// -------------------------------------------------------------------------
 
 	private static final long serialVersionUID = 1L;
-	public static final String		URI = "SolarPanelCoupledModel";
+	public static final String		URI =
+								SolarPanelCoupledModel.class.getSimpleName();
 
 	// -------------------------------------------------------------------------
 	// Constructors

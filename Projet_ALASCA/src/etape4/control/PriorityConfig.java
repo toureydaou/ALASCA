@@ -38,6 +38,9 @@ public class PriorityConfig {
 	/** Fan base priority */
 	public static final int FAN_PRIORITY = 7;
 
+	/** Kettle base priority */
+	public static final int KETTLE_PRIORITY = 5;
+
 	/** Laundry machine base priority (standby/off) */
 	public static final int LAUNDRY_PRIORITY = 4;
 
@@ -56,12 +59,7 @@ public class PriorityConfig {
 	/** Electric meter priority (infrastructure, not suspendable) */
 	public static final int ELECTRIC_METER_PRIORITY = 1;
 
-	// Future equipment priorities
-	public static final int REFRIGERATOR_PRIORITY = 2;
-	public static final int MEDICAL_EQUIPMENT_PRIORITY = 1;
-	public static final int HEATING_COOLING_PRIORITY = 3;
-	public static final int LIGHTING_DECORATIVE_PRIORITY = 9;
-	public static final int ENTERTAINMENT_PRIORITY = 10;
+	
 
 	// -------------------------------------------------------------------------
 	// Methods
@@ -79,6 +77,8 @@ public class PriorityConfig {
 				return COFFEE_MACHINE_PRIORITY;
 			case "Fan":
 				return FAN_PRIORITY;
+			case "Kettle":
+				return KETTLE_PRIORITY;
 			case "LaundryMachine":
 			case "Laundry":
 				return LAUNDRY_PRIORITY;
@@ -90,17 +90,7 @@ public class PriorityConfig {
 				return SOLAR_PANEL_PRIORITY;
 			case "ElectricMeter":
 				return ELECTRIC_METER_PRIORITY;
-			// Future equipment
-			case "Refrigerator":
-				return REFRIGERATOR_PRIORITY;
-			case "MedicalEquipment":
-				return MEDICAL_EQUIPMENT_PRIORITY;
-			case "HeatingCooling":
-				return HEATING_COOLING_PRIORITY;
-			case "Lighting":
-				return LIGHTING_DECORATIVE_PRIORITY;
-			case "Entertainment":
-				return ENTERTAINMENT_PRIORITY;
+			
 			default:
 				// Default to medium priority for unknown equipment
 				return 5;

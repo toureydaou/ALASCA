@@ -1,5 +1,6 @@
 package etape2.equipments.batteries.mil;
 
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //

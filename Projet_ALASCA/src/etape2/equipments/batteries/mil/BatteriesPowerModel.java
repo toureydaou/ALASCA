@@ -1,5 +1,9 @@
 package etape2.equipments.batteries.mil;
 
+
+import java.util.ArrayList;
+import java.util.Map;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -60,19 +64,17 @@ import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.utils.AssertionChecking;
 import fr.sorbonne_u.devs_simulation.utils.Pair;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
-import java.util.ArrayList;
-import java.util.Map;
 
 // -----------------------------------------------------------------------------
 /**
  * The class <code>BatteriesPowerModel</code> implements the simulation model
- * for the batteries.
+ * for the batteries power consumption and production.
  *
  * <p><strong>Description</strong></p>
  * 
  * <p>
- * This simulation model very interesting as it is a typical example of a hybrid
- * system where not only model events (here external) can interrupt the
+ * This simulation model is very interesting as it is a typical example of a
+ * hybrid system where not only model events (here external) can interrupt the
  * continuous evolution of the model but also physical events caused by the
  * evolution of the continuous part of the model itself, namely the evolution
  * of the charge level of the batteries and of the required power from the
@@ -134,7 +136,7 @@ import java.util.Map;
  * </p>
  * <p>
  * Batteries also have to be put in charge at some moment. This simulator
- * assumes that batteries can be either in charge or in use (o produce energy
+ * assumes that batteries can be either in charge or in use (to produce energy
  * but not both at the same time. The charging state is not automatic. The
  * beginning of the charge is triggered by an imported event of type
  * {@code StartCharging} and the end is triggered by an imported event of type
@@ -483,7 +485,8 @@ extends		AtomicHIOA
 				new MissingRunParameterException(quantumLevelName);
 
 		this.maxCapacity = (double) simParams.get(capacityName);
-		this.initialLevel = (double) simParams.get(initialLevelName);
+		this.initialLevel =
+				this.maxCapacity * (double) simParams.get(initialLevelName);
 		this.inputPower = (double) simParams.get(inPowerName);
 		this.maximumOutputPower = (double) simParams.get(maxOutPowerName);
 		this.standardLevelQuantum = (double) simParams.get(quantumLevelName);
@@ -867,6 +870,7 @@ extends		AtomicHIOA
 				if (Math.abs(this.maxCapacity - newLevel) < TOLERANCE) {
 					// the batteries are full, so set the level to the maximum
 					// capacity and go to the state IDLE
+					newLevel = this.maxCapacity;
 					this.currentLevel.setNewValue(this.maxCapacity,
 												  this.getCurrentStateTime());
 					this.currentState = State.IDLE;
@@ -885,6 +889,7 @@ extends		AtomicHIOA
 				if (newLevel < TOLERANCE) {
 					// the batteries are empty, so set the level to 0 and go to
 					// the state IDLE
+					newLevel = 0.0;
 					this.currentLevel.setNewValue(0.0,
 												  this.getCurrentStateTime());
 					this.currentState = State.EMPTY;

@@ -209,7 +209,7 @@ implements	SunStateManagementI
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @see etape2.equipments.solar_panel.mil.SunStateManagementI#setState(etape2.equipments.solar_panel.mil.SunState)
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.SunStateManagementI#setState(fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.SunState)
 	 */
 	@Override
 	public void			setState(SunState s)
@@ -218,7 +218,7 @@ implements	SunStateManagementI
 	}
 
 	/**
-	 * @see etape2.equipments.solar_panel.mil.SunStateManagementI#setCurrent(java.time.ZonedDateTime)
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.SunStateManagementI#setCurrent(java.time.ZonedDateTime)
 	 */
 	@Override
 	public void			setCurrent(ZonedDateTime newCurrent)

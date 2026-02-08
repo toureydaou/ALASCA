@@ -222,6 +222,35 @@ public class KettleTesterCyPhy extends AbstractCyPhyComponent {
 	 * @param testScenario							the test scenario to execute.
 	 * @throws Exception	<i>to do</i>.
 	 */
+	/**
+	 * Constructor with custom reflection URI for multiple instances.
+	 */
+	protected KettleTesterCyPhy(
+		String reflectionInboundPortURI,
+		String kettleUserInboundPortURI,
+		String kettleExternalControlInboundPortURI,
+		ExecutionMode executionMode,
+		TestScenario testScenario
+		) throws Exception {
+		super(reflectionInboundPortURI,
+			  NUMBER_OF_STANDARD_THREADS,
+			  NUMBER_OF_SCHEDULABLE_THREADS,
+			  AssertionChecking.assertTrueAndReturnOrThrow(
+				executionMode != null && !executionMode.isStandard(),
+				executionMode,
+				() -> new PreconditionException(
+								"currentExecutionMode != null && "
+								+ "!currentExecutionMode.isStandard()")),
+			  AssertionChecking.assertTrueAndReturnOrThrow(
+				testScenario != null,
+				testScenario.getClockURI(),
+				() -> new PreconditionException("testScenario != null")),
+			  testScenario);
+
+		this.initialise(kettleUserInboundPortURI,
+						kettleExternalControlInboundPortURI);
+	}
+
 	protected KettleTesterCyPhy(
 		String kettleUserInboundPortURI,
 		String kettleExternalControlInboundPortURI,

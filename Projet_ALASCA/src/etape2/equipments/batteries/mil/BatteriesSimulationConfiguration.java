@@ -1,14 +1,5 @@
 package etape2.equipments.batteries.mil;
 
-import java.util.concurrent.TimeUnit;
-
-import etape1.equipments.batteries.Batteries;
-import etape1.equipments.batteries.BatteriesImplementationI;
-import etape1.equipments.meter.ElectricMeter;
-import etape1.equipments.meter.ElectricMeterImplementationI;
-import fr.sorbonne_u.alasca.physical_data.Measure;
-import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
-import fr.sorbonne_u.exceptions.AssertionChecking;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -43,6 +34,17 @@ import fr.sorbonne_u.exceptions.AssertionChecking;
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
+import java.util.concurrent.TimeUnit;
+
+import etape1.equipments.batteries.Batteries;
+import etape1.equipments.batteries.BatteriesImplementationI;
+import etape1.equipments.meter.ElectricMeter;
+import etape1.equipments.meter.ElectricMeterImplementationI;
+import etape4.equipments.batteries.BatteriesCyPhy;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
+import fr.sorbonne_u.devs_simulation.utils.AssertionChecking;
+
 // -----------------------------------------------------------------------------
 /**
  * The interface <code>BatteriesSimulationConfigurationI</code> defines
@@ -71,7 +73,7 @@ public abstract class	BatteriesSimulationConfiguration
 	// Inner types and classes
 	// -------------------------------------------------------------------------
 
-	public enum			TestScenario
+	public enum			BatteriesTestScenario
 	{
 		/** batteries go up and down, away from their limits.				*/
 		CLASSICAL,
@@ -89,16 +91,31 @@ public abstract class	BatteriesSimulationConfiguration
 	public static final TimeUnit	TIME_UNIT = TimeUnit.HOURS;
 	/** number of batteries cells put in parallel to get a better
 	 *  maximum output power.												*/
-	public static int			NUMBER_OF_PARALLEL_CELLS = 2;
+	public static int				NUMBER_OF_PARALLEL_CELLS = 2;
 	/** number of groups of parallel batteries cells put in series to get
 	 *  a better total capacity.											*/
-	public static int			NUMBER_OF_CELL_GROUPS_IN_SERIES = 2;
-	/** initial charge level of the batteries in
-	 *  {@code MeasurementUnit.WATTS}.										*/
-	public static double		INITIAL_BATTERIES_LEVEL = 11000.0;
+	public static int				NUMBER_OF_CELL_GROUPS_IN_SERIES = 2;
+	/** total power consumed by the batteries when charging.				*/
+	public static Measure<Double>	TOTAL_IN_POWER =
+			new Measure<Double>(
+					NUMBER_OF_PARALLEL_CELLS *
+									Batteries.IN_POWER_PER_CELL.getData(),
+					Batteries.IN_POWER_PER_CELL.getMeasurementUnit());
+	/** nominal capacity of the batteries.									*/
+	public static Measure<Double>	NOMINAL_CAPACITY =
+			new Measure<Double>(
+					NUMBER_OF_PARALLEL_CELLS *
+						NUMBER_OF_CELL_GROUPS_IN_SERIES *
+							BatteriesCyPhy.CAPACITY_PER_UNIT.getData(),
+					BatteriesCyPhy.CAPACITY_PER_UNIT.getMeasurementUnit());
+	/** current capacity of the batteries; for the time being, assume that
+	 *  it is equal to the nominal capacity.								*/
+	public static Measure<Double>	CURRENT_CAPACITY = NOMINAL_CAPACITY;
+	/** initial charge level of the batteries as a ratio in [0.0, 1.0].		*/
+	public static double			INITIAL_BATTERIES_LEVEL_RATIO = 0.5;
 	/** in the QSS integration algorithm, the standard level quantum between
 	 *  successive points computations.										*/
-	public static double		STANDARD_LEVEL_INTEGRATION_QUANTUM = 300.0;
+	public static double			STANDARD_LEVEL_INTEGRATION_QUANTUM = 300.0;
 
 	// -------------------------------------------------------------------------
 	// Invariants

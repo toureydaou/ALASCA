@@ -1,5 +1,7 @@
 package etape2.equipments.solar_panel.mil;
 
+
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -39,15 +41,16 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 import org.shredzone.commons.suncalc.SunTimes;
 
 import etape2.equipments.solar_panel.mil.events.InternalSunRiseAndSetEventI;
 import etape2.equipments.solar_panel.mil.events.InternalSunriseEvent;
 import etape2.equipments.solar_panel.mil.events.InternalSunsetEvent;
-import etape2.equipments.solar_panel.mil.events.SunriseEvent;
-import etape2.equipments.solar_panel.mil.events.SunsetEvent;
 import etape2.equipments.solar_panel.mil.events.SolarPanelEventI.CurrentZonedDateTime;
 import etape2.equipments.solar_panel.mil.events.SolarPanelEventI.Position;
+import etape2.equipments.solar_panel.mil.events.SunriseEvent;
+import etape2.equipments.solar_panel.mil.events.SunsetEvent;
 import fr.sorbonne_u.devs_simulation.es.models.AtomicES_Model;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;

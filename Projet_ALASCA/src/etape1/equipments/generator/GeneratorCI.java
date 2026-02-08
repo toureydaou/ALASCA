@@ -1,6 +1,8 @@
 package etape1.equipments.generator;
 
-import etape1.equipments.generator.Generator.State;
+
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -37,8 +39,6 @@ import etape1.equipments.generator.Generator.State;
 
 import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.components.interfaces.RequiredCI;
-import physical_data.Measure;
-import physical_data.SignalData;
 
 // -----------------------------------------------------------------------------
 /**

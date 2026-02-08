@@ -610,22 +610,32 @@ implements	KettlePushImplementationI
 			synchronized (this.stateLock) {
 				priorState = this.currentState;
 			}
-			if (priorState != KettleState.OFF) {
-				// get the temperature data from the kettle
-				KettleTemperatureSensorData tempData =
-						this.sensorOutboundPort.temperaturePullSensor();
-				double currentTemp = tempData.getTemperature();
+			if (priorState != KettleState.OFF
+					&& !this.sensorOutboundPort.isDestroyed()) {
+				try {
+					// get the temperature data from the kettle
+					KettleTemperatureSensorData tempData =
+							this.sensorOutboundPort.temperaturePullSensor();
+					double currentTemp = tempData.getTemperature();
 
-				if (DEBUG) {
-					this.traceMessage(
-							"pull control step: state=" + priorState
-							+ ", temp=" + String.format("%.2f", currentTemp)
-							+ "C.\n");
+					if (DEBUG) {
+						this.traceMessage(
+								"pull control step: state=" + priorState
+								+ ", temp=" + String.format("%.2f", currentTemp)
+								+ "C.\n");
+					}
+					System.out.println("[KETTLE CTRL] pull step: state="
+							+ priorState + ", temp="
+							+ String.format("%.2f", currentTemp) + "C");
+
+					this.oneControlStep(currentTemp, priorState);
+				} catch (Exception e) {
+					System.out.println("[KETTLE CTRL] ERROR in pull sensor request: "
+							+ e.getMessage());
+					e.printStackTrace();
 				}
 
-				this.oneControlStep(currentTemp, priorState);
-
-				// schedule the next execution of the loop
+				// Always reschedule, even after error
 				this.scheduleTask(
 						o -> ((KettleController)o).pullControlLoop(),
 						this.actualControlPeriod,
@@ -634,9 +644,13 @@ implements	KettlePushImplementationI
 				if (VERBOSE) {
 					this.traceMessage("exit the control.\n");
 				}
+				System.out.println("[KETTLE CTRL] exit control (state="
+						+ priorState + ")");
 			}
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			System.out.println("[KETTLE CTRL] FATAL in pullControlLoop: "
+					+ e.getMessage());
+			e.printStackTrace();
 		}
 	}
 }

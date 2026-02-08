@@ -2,11 +2,12 @@ package etape1.equipments.solar_panel.connections;
 
 import etape1.equipments.solar_panel.SolarPanelCI;
 import etape1.equipments.solar_panel.SolarPanelImplementationI;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractInboundPort;
 import fr.sorbonne_u.exceptions.PreconditionException;
-import physical_data.Measure;
-import physical_data.SignalData;
+
 
 // -----------------------------------------------------------------------------
 /**

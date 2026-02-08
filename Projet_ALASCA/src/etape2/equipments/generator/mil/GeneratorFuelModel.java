@@ -1,5 +1,7 @@
 package etape2.equipments.generator.mil;
 
+
+
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -39,7 +41,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import etape1.equipments.generator.Generator;
-import etape1.equipments.generator.Generator.State;
+import etape1.equipments.generator.GeneratorImplementationI.State;
 import etape2.GlobalSimulationConfigurationI;
 import etape2.equipments.generator.mil.events.GeneratorRequiredPowerChanged;
 import etape2.equipments.generator.mil.events.Refill;
@@ -148,7 +150,7 @@ implements	GeneratorStateManagementI
 	protected static final double	TOLERANCE  = 1.0e-08;
 
 	/** single model URI.													*/
-	public static final String		URI = "generator-fuel-model";
+	public static final String		URI = GeneratorFuelModel.class.getSimpleName();
 
 	/**	name of the run parameter for the capacity of the tank in
 	 *  {@code MeasurementUnit.LITERS}.										*/
@@ -543,7 +545,7 @@ implements	GeneratorStateManagementI
 	}
 
 	/**
-	 * @see etape2.equipments.generator.mil.GeneratorStateManagementI#getGeneratorState()
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.GeneratorStateManagementI#getGeneratorState()
 	 */
 	@Override
 	public State		getGeneratorState()
@@ -552,7 +554,7 @@ implements	GeneratorStateManagementI
 	}
 
 	/**
-	 * @see etape2.equipments.generator.mil.GeneratorStateManagementI#setGeneratorState(etape1.equipments.generator.Generator.State)
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.GeneratorStateManagementI#setGeneratorState(fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI.State)
 	 */
 	@Override
 	public void			setGeneratorState(State newState)
@@ -947,8 +949,9 @@ implements	GeneratorStateManagementI
 										  this.getCurrentStateTime());
 		}
 
-		// as an internal event will be triggered immediately, it must not
-		// change the level that has already been updated
+		// as the transition is computed immediately, it must not change the
+		// level that has already been updated and it will recompute these
+		// values from the new state after executing the event
 		this.currentLevelQuantum = 0.0;
 		this.lastDerivative.setNewValue(0.0, this.getCurrentStateTime());
 
@@ -995,6 +998,5 @@ implements	GeneratorStateManagementI
 
 		super.endSimulation(endTime);
 	}
-
 }
 // -----------------------------------------------------------------------------

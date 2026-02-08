@@ -1,5 +1,11 @@
 package etape2.equipments.solar_panel.mil;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Map;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -38,9 +44,9 @@ import java.util.concurrent.TimeUnit;
 import etape2.equipments.solar_panel.mil.events.InternalSunRiseAndSetEventI;
 import etape2.equipments.solar_panel.mil.events.InternalSunriseEvent;
 import etape2.equipments.solar_panel.mil.events.InternalSunsetEvent;
+import etape2.equipments.solar_panel.mil.events.SolarPanelEventI.CurrentZonedDateTime;
 import etape2.equipments.solar_panel.mil.events.SunriseEvent;
 import etape2.equipments.solar_panel.mil.events.SunsetEvent;
-import etape2.equipments.solar_panel.mil.events.SolarPanelEventI.CurrentZonedDateTime;
 import fr.sorbonne_u.devs_simulation.es.models.AtomicES_Model;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
@@ -51,11 +57,6 @@ import fr.sorbonne_u.devs_simulation.models.time.Duration;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Map;
 
 // -----------------------------------------------------------------------------
 /**
@@ -105,7 +106,7 @@ extends		AtomicES_Model
 
 	private static final long	serialVersionUID = 1L;
 	/** when true, leaves a trace of the execution of the model.			*/
-	public static boolean		VERBOSE = true;
+	public static boolean		VERBOSE = false;
 	/** when true, leaves a debugging trace of the execution of the model.	*/
 	public static boolean		DEBUG = false;
 
@@ -212,12 +213,11 @@ extends		AtomicES_Model
 			TimeUnit simulationTimeUnit = initialTime.getTimeUnit();
 			double delay = d/TimeUnit.SECONDS.convert(1, simulationTimeUnit);
 			Time t = initialTime.add(new Duration(delay, simulationTimeUnit));
-			this.scheduleEvent(
-					new InternalSunsetEvent(
-							t,
-							new CurrentZonedDateTime(
-									ZonedDateTime.ofInstant(sunSetTime,
-															zoneId))));
+			CurrentZonedDateTime czdt =
+					new CurrentZonedDateTime(
+							ZonedDateTime.ofInstant(sunSetTime,
+													this.zoneId));
+			this.scheduleEvent(new InternalSunsetEvent(t, czdt));
 			if (DEBUG) {
 				this.logMessage("initialiseState sunset planned for "
 								+ sunSetTime + " at " + t);

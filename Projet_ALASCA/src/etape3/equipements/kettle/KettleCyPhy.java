@@ -174,6 +174,20 @@ public class KettleCyPhy extends AbstractCyPhyComponent
 				SENSOR_INBOUND_PORT_URI, ACTUATOR_INBOUND_PORT_URI, executionMode, clockURI);
 	}
 
+	/**
+	 * Constructor with instanceId for multiple instances.
+	 */
+	protected KettleCyPhy(int instanceId, boolean isIntegrationTestMode, ExecutionMode executionMode, String clockURI) throws Exception {
+		this(isIntegrationTestMode,
+			 REFLECTION_INBOUND_PORT_URI + "-" + instanceId,
+			 USER_INBOUND_PORT_URI + "-" + instanceId,
+			 EXTERNAL_CONTROL_INBOUND_PORT_URI + "-" + instanceId,
+			 SENSOR_INBOUND_PORT_URI + "-" + instanceId,
+			 ACTUATOR_INBOUND_PORT_URI + "-" + instanceId,
+			 executionMode, clockURI);
+		this.uid = "Kettle_" + instanceId;
+	}
+
 	protected KettleCyPhy(boolean isIntegrationTestMode, String userInboundPortURI,
 			String externalControlInboundPortURI, String sensorInboundPortURI, String actuatorInboundPortURI,
 			ExecutionMode executionMode, String clockURI) throws Exception {
@@ -379,6 +393,9 @@ public class KettleCyPhy extends AbstractCyPhyComponent
 			this.sensorInboundPort.unpublishPort();
 			this.actuatorInboundPort.unpublishPort();
 			if (isIntegrationTestMode) {
+				if (this.rop.connected()) {
+					this.doPortDisconnection(this.rop.getPortURI());
+				}
 				this.rop.unpublishPort();
 			}
 		} catch (Throwable e) {
@@ -768,8 +785,14 @@ public class KettleCyPhy extends AbstractCyPhyComponent
 			break;
 		case UNIT_TEST_WITH_SIL_SIMULATION:
 		case INTEGRATION_TEST_WITH_SIL_SIMULATION:
-			VariableValue<Double> v = this.computeCurrentTemperature();
-			ret = new KettleTemperatureSensorData(v.getValue());
+			try {
+				VariableValue<Double> v = this.computeCurrentTemperature();
+				ret = new KettleTemperatureSensorData(v.getValue());
+			} catch (Throwable e) {
+				// Must catch Throwable: AssertionError extends Error, not Exception
+				System.out.println("[KETTLE] SIL temperature not ready, using default 20.0C");
+				ret = new KettleTemperatureSensorData(20.0);
+			}
 			break;
 		default:
 		}

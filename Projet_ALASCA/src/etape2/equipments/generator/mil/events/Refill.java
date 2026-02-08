@@ -1,6 +1,8 @@
 package etape2.equipments.generator.mil.events;
 
 import etape2.equipments.generator.mil.GeneratorFuelModel;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
@@ -41,8 +43,7 @@ import fr.sorbonne_u.devs_simulation.models.events.EventInformationI;
 import fr.sorbonne_u.devs_simulation.models.interfaces.AtomicModelI;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.utils.AssertionChecking;
-import physical_data.Measure;
-import physical_data.MeasurementUnit;
+
 
 // -----------------------------------------------------------------------------
 /**

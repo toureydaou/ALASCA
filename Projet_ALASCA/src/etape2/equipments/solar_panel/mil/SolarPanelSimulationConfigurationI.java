@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 import etape2.equipments.solar_panel.mil.events.SolarPanelEventI.Position;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
+import fr.sorbonne_u.devs_simulation.utils.AssertionChecking;
 
 // -----------------------------------------------------------------------------
 /**
@@ -83,10 +84,10 @@ public interface		SolarPanelSimulationConfigurationI
 	public static Position			LONGITUDE = new Position(2, 21, 6.0);
 	/** time zone of the solar panel.										*/
 	public static ZoneId			ZONE = ZoneId.of("Europe/Paris");
-	/** Sun azimuth, in degrees, north-based; this is the direction along
-	 *  the horizon, measured from north to east (or example, {@code 0.0}
-	 *  means north, {@code 135.0} means southeast, {@code 270.0} means
-	 *  west.
+	/** Sun azimuth from the solar panel, in degrees, north-based; this is
+	 *  the direction along the horizon, measured from north to east (or
+	 *  example, {@code 0.0} means north, {@code 135.0} means southeast,
+	 *  {@code 270.0} means west.
 	*/
 	public static double			ORIENTATION = 190.0;
 	/** slope of the solar panel.											*/
@@ -127,14 +128,11 @@ public interface		SolarPanelSimulationConfigurationI
 	 */
 	public static boolean	staticInvariants()
 	{
-		
 		boolean ret = true;
-		/*
-		ret &= AssertionChecking.checkStaticInvariant(
-				TIME_UNIT != null,
-				HeaterSimulationConfigurationI.class,
-				"TIME_UNIT != null");
-				*/
+		//ret &= AssertionChecking.checkStaticInvariant(
+				//TIME_UNIT != null,
+				//HeaterSimulationConfigurationI.class,
+				//"TIME_UNIT != null");
 		return ret;
 	}
 

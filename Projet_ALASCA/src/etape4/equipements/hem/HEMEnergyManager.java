@@ -12,6 +12,9 @@ import etape1.equipments.solar_panel.SolarPanelCI;
 import etape3.equipements.hem.HEMCyPhy;
 import etape4.control.EquipmentConstraint;
 import etape4.control.PriorityConfig;
+import etape4.coordination.EnergyCoordinator;
+import etape4.coordination.EnergyStateModel;
+import etape4.coordination.EnergyStateModel.EnergySnapshot;
 import etape4.equipements.hem.EquipmentRegistry.EquipmentInfo;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
@@ -47,7 +50,7 @@ import fr.sorbonne_u.exceptions.InvariantException;
 @RequiredInterfaces(required = { AdjustableCI.class, ElectricMeterCI.class, BatteriesCI.class,
 		SolarPanelCI.class, GeneratorCI.class })
 @OfferedInterfaces(offered = { RegistrationCI.class })
-public class HEMEnergyManager extends HEMCyPhy {
+public class HEMEnergyManager extends HEMCyPhy implements EnergyCoordinator {
 
 	// -------------------------------------------------------------------------
 	// Constants
@@ -65,6 +68,9 @@ public class HEMEnergyManager extends HEMCyPhy {
 
 	/** Equipment registry for tracking all registered equipment */
 	protected EquipmentRegistry equipmentRegistry;
+
+	/** Shared energy state model (data-centered coordination) */
+	protected EnergyStateModel energyStateModel;
 
 	/** Control loop task (scheduled periodically) */
 	protected EnergyControlLoopTask controlTask;
@@ -86,7 +92,9 @@ public class HEMEnergyManager extends HEMCyPhy {
 	 */
 	protected HEMEnergyManager() throws Exception {
 		super();
+		this.connectToEnergySources = true;
 		this.equipmentRegistry = new EquipmentRegistry();
+		this.energyStateModel = new EnergyStateModel();
 		this.controlLoopActive = false;
 
 		assert HEMEnergyManager.implementationInvariants(this)
@@ -103,7 +111,9 @@ public class HEMEnergyManager extends HEMCyPhy {
 	 */
 	protected HEMEnergyManager(ExecutionMode executionMode, TestScenario testScenario) throws Exception {
 		super(executionMode, testScenario);
+		this.connectToEnergySources = true;
 		this.equipmentRegistry = new EquipmentRegistry();
+		this.energyStateModel = new EnergyStateModel();
 		this.controlLoopActive = false;
 
 		assert HEMEnergyManager.implementationInvariants(this)
@@ -166,30 +176,52 @@ public class HEMEnergyManager extends HEMCyPhy {
 		// Calculate control period (adjusted for acceleration if SIL simulation)
 		if (this.executionMode.isSILIntegrationTest()) {
 			// In SIL mode, adjust for acceleration factor
-			// TODO: Get acceleration factor from simulation configuration
-			double accelerationFactor = 3600.0; // Default: 1 hour simulated = 1 second real
+			double accelerationFactor = 360.0;
 			double realSeconds = CONTROL_PERIOD_SECONDS / accelerationFactor;
-			this.controlPeriodNanos = TimeUnit.SECONDS.toNanos((long) realSeconds);
+			// Compute nanos from fractional seconds (avoid truncation to 0)
+			this.controlPeriodNanos =
+				(long)((CONTROL_PERIOD_SECONDS * TimeUnit.SECONDS.toNanos(1))
+						/ accelerationFactor);
+			// Minimum 50ms to avoid scheduler issues
+			if (this.controlPeriodNanos < TimeUnit.MILLISECONDS.toNanos(50)) {
+				this.controlPeriodNanos = TimeUnit.MILLISECONDS.toNanos(50);
+			}
 
 			log(String.format(
 				"Control loop period: %.2fs simulated (%.3fs real, acceleration=%.1fx)",
 				CONTROL_PERIOD_SECONDS, realSeconds, accelerationFactor));
 		} else {
 			// In integration test mode without simulation, use real-time
-			this.controlPeriodNanos = TimeUnit.SECONDS.toNanos((long) CONTROL_PERIOD_SECONDS);
+			// Compute nanos from fractional seconds
+			this.controlPeriodNanos =
+				(long)(CONTROL_PERIOD_SECONDS * TimeUnit.SECONDS.toNanos(1));
 
 			log(String.format(
 				"Control loop period: %.2fs (real-time)",
 				CONTROL_PERIOD_SECONDS));
 		}
 
-		// Create control task
+		// Create control task with access to energy source ports and shared state model
 		this.controlTask = new EnergyControlLoopTask(
 			this,
 			this.meterop,
+			this.generatorop,
+			this.batteriesop,
+			this.solarPanelop,
 			this.equipmentRegistry,
+			this.energyStateModel,
 			CONTROL_LOOP_VERBOSE
 		);
+		this.controlTask.setControlPeriodSeconds(CONTROL_PERIOD_SECONDS);
+
+		// Delay the first effective run until the simulation clock has started.
+		// DELAY_TO_START is typically 8000ms; add 2s margin for initialization.
+		long delayToStartMs = 10000L;
+		this.controlTask.setReadyTimeMs(
+			System.currentTimeMillis() + delayToStartMs);
+		log(String.format(
+			"Control loop will wait %dms for simulation clock to start",
+			delayToStartMs));
 
 		// Schedule task at fixed rate
 		this.scheduleTaskAtFixedRateOnComponent(
@@ -209,9 +241,18 @@ public class HEMEnergyManager extends HEMCyPhy {
 	protected void stopControlLoop() {
 		if (this.controlLoopActive) {
 			log("Stopping control loop");
-			// Task will be automatically cancelled when component shuts down
+			if (this.controlTask != null) {
+				this.controlTask.stop();
+			}
 			this.controlLoopActive = false;
 		}
+	}
+
+	@Override
+	public synchronized void finalise() throws Exception {
+		// Stop control loop BEFORE disconnecting ports
+		this.stopControlLoop();
+		super.finalise();
 	}
 
 	// -------------------------------------------------------------------------
@@ -293,8 +334,136 @@ public class HEMEnergyManager extends HEMCyPhy {
 	 * @return equipment type
 	 */
 	private String extractType(String uid) {
-		int dashIndex = uid.lastIndexOf('-');
-		return dashIndex > 0 ? uid.substring(0, dashIndex) : uid;
+		// Try underscore first (new format: CoffeeMachine_1), then dash
+		int sepIndex = uid.lastIndexOf('_');
+		if (sepIndex <= 0) {
+			sepIndex = uid.lastIndexOf('-');
+		}
+		return sepIndex > 0 ? uid.substring(0, sepIndex) : uid;
+	}
+
+	// -------------------------------------------------------------------------
+	// EnergyCoordinator Implementation
+	// -------------------------------------------------------------------------
+
+	@Override
+	public EnergySnapshot getEnergySnapshot() {
+		return energyStateModel.getSnapshot();
+	}
+
+	@Override
+	public EnergyStateModel getEnergyStateModel() {
+		return energyStateModel;
+	}
+
+	@Override
+	public boolean canTurnOn(double requiredPowerWatts) {
+		EnergySnapshot snapshot = energyStateModel.getSnapshot();
+		double surplusWatts = snapshot.balanceWatts;
+		return surplusWatts > (requiredPowerWatts + 100.0); // Add 100W safety margin
+	}
+
+	@Override
+	public boolean shouldSuspend(String equipmentId) {
+		EnergySnapshot snapshot = energyStateModel.getSnapshot();
+		return snapshot.balanceWatts < 0; // Deficit exists
+	}
+
+	@Override
+	public boolean canResume(String equipmentId, double requiredPowerWatts) {
+		EnergySnapshot snapshot = energyStateModel.getSnapshot();
+		double surplusWatts = snapshot.balanceWatts;
+		return surplusWatts > requiredPowerWatts;
+	}
+
+	@Override
+	public boolean isCriticalDeficit() {
+		EnergySnapshot snapshot = energyStateModel.getSnapshot();
+		return snapshot.balanceAmperes < -2.0; // More than 2A deficit
+	}
+
+	@Override
+	public boolean isSurplus() {
+		EnergySnapshot snapshot = energyStateModel.getSnapshot();
+		return snapshot.balanceWatts > 100.0; // More than 100W surplus
+	}
+
+	@Override
+	public String getRecommendedAction() {
+		EnergySnapshot snapshot = energyStateModel.getSnapshot();
+
+		if (snapshot.balanceWatts > 500.0) {
+			if (snapshot.batteryChargeLevel < getBatteryChargeThreshold()) {
+				return "BATTERY_CHARGE";
+			}
+			return "RESUME";
+		} else if (snapshot.balanceWatts < -500.0) {
+			if (snapshot.batteryChargeLevel > 0.5) {
+				return "BATTERY_DISCHARGE";
+			}
+			if (!snapshot.generatorRunning) {
+				return "GENERATOR_START";
+			}
+			return "SUSPEND";
+		} else if (snapshot.balanceWatts < -100.0) {
+			return "SUSPEND";
+		} else if (snapshot.generatorRunning && snapshot.balanceWatts > 100.0) {
+			return "GENERATOR_STOP";
+		}
+
+		return "NONE";
+	}
+
+	@Override
+	public void notifyConsumptionChange(String equipmentId, double oldConsumptionWatts, double newConsumptionWatts) {
+		// Equipment notifies coordinator of consumption changes
+		// This allows real-time updates to the energy state
+		if (VERBOSE) {
+			log(String.format("[COORDINATOR] Equipment %s consumption: %.0fW -> %.0fW",
+				equipmentId, oldConsumptionWatts, newConsumptionWatts));
+		}
+	}
+
+	@Override
+	public void notifyProductionChange(String sourceId, double productionWatts) {
+		// Energy sources notify coordinator of production changes
+		if ("SOLAR".equals(sourceId)) {
+			energyStateModel.setSolarProduction(productionWatts);
+		} else if ("GENERATOR".equals(sourceId)) {
+			// Generator production is already managed by control loop
+		}
+		if (VERBOSE) {
+			log(String.format("[COORDINATOR] Production source %s: %.0fW", sourceId, productionWatts));
+		}
+	}
+
+	@Override
+	public void notifySuspended(String equipmentId) {
+		if (VERBOSE) {
+			log(String.format("[COORDINATOR] Equipment %s suspended", equipmentId));
+		}
+	}
+
+	@Override
+	public void notifyResumed(String equipmentId) {
+		if (VERBOSE) {
+			log(String.format("[COORDINATOR] Equipment %s resumed", equipmentId));
+		}
+	}
+
+	@Override
+	public double getActionThreshold() {
+		return EnergyControlLoopTask.ACTION_THRESHOLD;
+	}
+
+	@Override
+	public double getGeneratorStartThreshold() {
+		return EnergyControlLoopTask.GENERATOR_START_THRESHOLD;
+	}
+
+	@Override
+	public double getBatteryChargeThreshold() {
+		return EnergyControlLoopTask.BATTERY_CHARGE_THRESHOLD;
 	}
 
 	// -------------------------------------------------------------------------
@@ -307,6 +476,7 @@ public class HEMEnergyManager extends HEMCyPhy {
 		boolean ret = true;
 		ret &= HEMCyPhy.implementationInvariants(hem);
 		ret &= hem.equipmentRegistry != null;
+		ret &= hem.energyStateModel != null;
 		return ret;
 	}
 

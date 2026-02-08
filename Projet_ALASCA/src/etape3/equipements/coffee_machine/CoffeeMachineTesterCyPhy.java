@@ -236,6 +236,37 @@ public class CoffeeMachineTesterCyPhy extends AbstractCyPhyComponent {
 	 * @param coffeeMachineExternalControlInboundPortURI	URI of the external control component interface inbound port.
 	 * @throws Exception										<i>to do</i>.
 	 */
+	/**
+	 * Constructor with custom reflection URI for multiple instances.
+	 */
+	protected CoffeeMachineTesterCyPhy(
+		String reflectionInboundPortURI,
+		String coffeeMachineUserInboundPortURI,
+		String coffeeMachineInternalControlInboundPortURI,
+		String coffeeMachineExternalControlInboundPortURI,
+		ExecutionMode executionMode,
+		TestScenario testScenario
+		) throws Exception {
+		super(reflectionInboundPortURI,
+			  NUMBER_OF_STANDARD_THREADS,
+			  NUMBER_OF_SCHEDULABLE_THREADS,
+			  AssertionChecking.assertTrueAndReturnOrThrow(
+				executionMode != null && !executionMode.isStandard(),
+				executionMode,
+				() -> new PreconditionException(
+								"currentExecutionMode != null && "
+								+ "!currentExecutionMode.isStandard()")),
+			  AssertionChecking.assertTrueAndReturnOrThrow(
+				testScenario != null,
+				testScenario.getClockURI(),
+				() -> new PreconditionException("testScenario != null")),
+			  testScenario);
+
+		this.initialise(coffeeMachineUserInboundPortURI,
+						coffeeMachineInternalControlInboundPortURI,
+						coffeeMachineExternalControlInboundPortURI);
+	}
+
 	protected CoffeeMachineTesterCyPhy(
 		String coffeeMachineUserInboundPortURI,
 		String coffeeMachineInternalControlInboundPortURI,

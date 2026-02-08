@@ -824,18 +824,32 @@ implements	CoffeeMachinePushImplementationI
 			synchronized (this.stateLock) {
 				priorState = this.currentState;
 			}
-			if (priorState != CoffeeMachineState.OFF) {
-				CoffeeMachineCompoundSensorData sensorData =
-						(CoffeeMachineCompoundSensorData)
-										this.sensorOutboundPort.request();
+			if (priorState != CoffeeMachineState.OFF
+					&& !this.sensorOutboundPort.isDestroyed()) {
+				try {
+					CoffeeMachineCompoundSensorData sensorData =
+							(CoffeeMachineCompoundSensorData)
+											this.sensorOutboundPort.request();
 
-				this.oneControlStep(sensorData.getState(),
-									sensorData.getMode(),
-									sensorData.getTemperature(),
-									sensorData.getWaterLevel(),
-									priorState);
+					System.out.println("[COFFEE CTRL] pull step: state="
+							+ priorState + ", temp="
+							+ sensorData.getTemperature().getMeasure().getData()
+							+ "C, water="
+							+ sensorData.getWaterLevel().getMeasure().getData()
+							+ "L");
 
-				// schedule the next execution of the loop
+					this.oneControlStep(sensorData.getState(),
+										sensorData.getMode(),
+										sensorData.getTemperature(),
+										sensorData.getWaterLevel(),
+										priorState);
+				} catch (Exception e) {
+					System.out.println("[COFFEE CTRL] ERROR in pull sensor request: "
+							+ e.getMessage());
+					e.printStackTrace();
+				}
+
+				// Always reschedule, even after error
 				this.scheduleTask(
 						o -> ((CoffeeMachineController)o).pullControlLoop(),
 						this.actualControlPeriod,
@@ -844,7 +858,8 @@ implements	CoffeeMachinePushImplementationI
 				System.out.println("[COFFEE CTRL] exit control (state=OFF)");
 			}
 		} catch (Exception e) {
-			System.out.println("[COFFEE CTRL] ERROR in pullControlLoop: " + e.getMessage());
+			System.out.println("[COFFEE CTRL] FATAL in pullControlLoop: "
+					+ e.getMessage());
 			e.printStackTrace();
 		}
 	}

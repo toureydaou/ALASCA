@@ -17,6 +17,7 @@ import etape2.equipments.fan.mil.events.SwitchOffFan;
 import etape2.equipments.fan.mil.events.SwitchOnFan;
 import etape3.equipements.fan.sil.FanStateSILModel;
 import etape3.equipements.fan.sil.Local_SIL_SimulationArchitectures;
+import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.AbstractPort;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
@@ -52,6 +53,7 @@ import fr.sorbonne_u.components.AbstractPort;
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
+import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.cyphy.AbstractCyPhyComponent;
 import fr.sorbonne_u.components.cyphy.ExecutionMode;
 import fr.sorbonne_u.components.cyphy.annotations.LocalArchitecture;
@@ -70,7 +72,6 @@ import fr.sorbonne_u.devs_simulation.models.annotations.ModelExternalEvents;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.InvariantException;
-import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.exceptions.PostconditionException;
 import fr.sorbonne_u.exceptions.PreconditionException;
 
@@ -554,13 +555,11 @@ implements	FanImplementationI
 				new InvariantException("FanCyPhy.invariants(this)");
 	}
 
-	// Tests without simulation execution
-
 	/**
 	 * create a fan component for test executions without simulation.
-	 * 
+	 *
 	 * <p><strong>Contract</strong></p>
-	 * 
+	 *
 	 * <pre>
 	 * pre	{@code !(this instanceof ComponentInterface)}
 	 * pre	{@code executionMode != null && executionMode.isTestWithoutSimulation()}
@@ -568,7 +567,7 @@ implements	FanImplementationI
 	 * post	{@code getMode() == INITIAL_MODE}
 	 * post	{@code getExecutionMode().equals(executionMode)}
 	 * </pre>
-	 * 
+	 *
 	 * @param executionMode	execution mode for the next run.
 	 * @throws Exception	<i>to do</i>.
 	 */
@@ -1032,10 +1031,6 @@ implements	FanImplementationI
 						"getMode() == FanCyPhy.INITIAL_MODE");
 
 		if (this.getExecutionMode().isSILTest()) {
-			// For SIL simulation, an operation done in the component code
-			// must be reflected in the simulation; to do so, the component
-			// code triggers an external event sent to the FanStateModel
-			// to make it change its state to on.
 			((RTAtomicSimulatorPlugin)this.asp).triggerExternalEvent(
 												FanStateSILModel.URI,
 												t -> new SwitchOnFan(t));
@@ -1065,10 +1060,6 @@ implements	FanImplementationI
 						"getMode() == FanCyPhy.INITIAL_MODE");
 
 		if (this.getExecutionMode().isSILTest()) {
-			// For SIL simulation, an operation done in the component code
-			// must be reflected in the simulation; to do so, the component
-			// code triggers an external event sent to the FanStateModel
-			// to make it change its state to off.
 			((RTAtomicSimulatorPlugin)this.asp).triggerExternalEvent(
 												FanStateSILModel.URI,
 												t -> new SwitchOffFan(t));
@@ -1160,15 +1151,11 @@ implements	FanImplementationI
 				new PostconditionException("getMode() == FanMode.MEDIUM");
 
 		if (this.getExecutionMode().isSILTest()) {
-			// For SIL simulation, an operation done in the component code
-			// must be reflected in the simulation; to do so, the component
-			// code triggers an external event sent to the FanStateModel
-			// to make it change its mode to low.
 			((RTAtomicSimulatorPlugin)this.asp).triggerExternalEvent(
 												FanStateSILModel.URI,
 												t -> new SetMediumModeFan(t));
 		}
-		
+
 	}
 }
 // -----------------------------------------------------------------------------

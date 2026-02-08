@@ -20,8 +20,14 @@ import etape1.equipments.meter.ElectricMeterUnitTester;
 import etape1.equipments.meter.connections.ElectricMeterConnector;
 import etape1.equipments.meter.connections.ElectricMeterOutboundPort;
 import etape1.equipments.solar_panel.SolarPanelCI;
+import etape1.equipments.solar_panel.connections.SolarPanelConnector;
 import etape1.equipments.solar_panel.connections.SolarPanelOutboundPort;
+import etape1.equipments.batteries.connections.BatteriesConnector;
+import etape1.equipments.generator.connections.GeneratorConnector;
 import etape3.equipements.meter.ElectricMeterCyPhy;
+import etape4.equipments.batteries.BatteriesCyPhy;
+import etape4.equipments.generator.GeneratorCyPhy;
+import etape4.equipments.solar_panel.SolarPanelCyPhy;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -167,6 +173,10 @@ public class HEMCyPhy extends AbstractComponent implements RegistrationI {
 	protected SolarPanelOutboundPort solarPanelop;
 	/** port to connect to the generator. */
 	protected GeneratorOutboundPort generatorop;
+
+	/** when true, connect to energy sources (batteries, solar, generator).
+	 *  Set to true only when these components are deployed (etape4). */
+	protected boolean connectToEnergySources = false;
 
 	/**
 	 * when true, manage the heater in a customised way, otherwise let it register
@@ -424,24 +434,28 @@ public class HEMCyPhy extends AbstractComponent implements RegistrationI {
 			this.meterop.publishPort();
 			this.doPortConnection(this.meterop.getPortURI(), ElectricMeterCyPhy.ELECTRIC_METER_INBOUND_PORT_URI,
 					ElectricMeterConnector.class.getCanonicalName());
-//			this.batteriesop = new BatteriesOutboundPort(this);
-//			this.batteriesop.publishPort();
-//			this.doPortConnection(
-//					batteriesop.getPortURI(),
-//					Batteries.STANDARD_INBOUND_PORT_URI,
-//					BatteriesConnector.class.getCanonicalName());
-//			this.solarPanelop = new SolarPanelOutboundPort(this);
-//			this.solarPanelop.publishPort();
-//			this.doPortConnection(
-//					this.solarPanelop.getPortURI(),
-//					SolarPanel.STANDARD_INBOUND_PORT_URI,
-//					SolarPanelConnector.class.getCanonicalName());
-//			this.generatorop = new GeneratorOutboundPort(this);
-//			this.generatorop.publishPort();
-//			this.doPortConnection(
-//					this.generatorop.getPortURI(),
-//					Generator.STANDARD_INBOUND_PORT_URI,
-//					GeneratorConnector.class.getCanonicalName());
+
+			if (this.connectToEnergySources) {
+				this.batteriesop = new BatteriesOutboundPort(this);
+				this.batteriesop.publishPort();
+				this.doPortConnection(
+						batteriesop.getPortURI(),
+						BatteriesCyPhy.STANDARD_INBOUND_PORT_URI,
+						BatteriesConnector.class.getCanonicalName());
+				this.solarPanelop = new SolarPanelOutboundPort(this);
+				this.solarPanelop.publishPort();
+				this.doPortConnection(
+						this.solarPanelop.getPortURI(),
+						SolarPanelCyPhy.STANDARD_INBOUND_PORT_URI,
+						SolarPanelConnector.class.getCanonicalName());
+				this.generatorop = new GeneratorOutboundPort(this);
+				this.generatorop.publishPort();
+				this.doPortConnection(
+						this.generatorop.getPortURI(),
+						GeneratorCyPhy.STANDARD_INBOUND_PORT_URI,
+						GeneratorConnector.class.getCanonicalName());
+			}
+			
 			
 			
 		
@@ -504,10 +518,12 @@ public class HEMCyPhy extends AbstractComponent implements RegistrationI {
 	@Override
 	public synchronized void finalise() throws Exception {
 		this.doPortDisconnection(this.meterop.getPortURI());
-//		this.doPortDisconnection(this.batteriesop.getPortURI());
-//		this.doPortDisconnection(this.solarPanelop.getPortURI());
-//		this.doPortDisconnection(this.generatorop.getPortURI());
-		
+		if (this.connectToEnergySources) {
+			this.doPortDisconnection(this.batteriesop.getPortURI());
+			this.doPortDisconnection(this.solarPanelop.getPortURI());
+			this.doPortDisconnection(this.generatorop.getPortURI());
+		}
+
 		super.finalise();
 	}
 
@@ -518,9 +534,11 @@ public class HEMCyPhy extends AbstractComponent implements RegistrationI {
 	public synchronized void shutdown() throws ComponentShutdownException {
 		try {
 			this.meterop.unpublishPort();
-//			this.batteriesop.unpublishPort();
-//			this.solarPanelop.unpublishPort();
-//			this.generatorop.unpublishPort();
+			if (this.connectToEnergySources) {
+				this.batteriesop.unpublishPort();
+				this.solarPanelop.unpublishPort();
+				this.generatorop.unpublishPort();
+			}
 			
 			for (AdjustableOutboundPort port : this.equipmentPorts.values()) {
 				if (port.connected()) {
@@ -914,9 +932,11 @@ public class HEMCyPhy extends AbstractComponent implements RegistrationI {
 
 	@Override
 	public boolean register(String uid, String controlPortURI, String xmlControlAdapter) throws Exception {
-		this.logMessage("Registering equipment: " + uid);
-		if (this.registered(uid))
+		System.out.println("[HEM] register() called for uid=" + uid + ", controlPort=" + controlPortURI);
+		if (this.registered(uid)) {
+			System.out.println("[HEM] register() uid=" + uid + " already registered, returning false");
 			return false;
+		}
 
 		// Create a new outbound port for this equipment
 		AdjustableOutboundPort equipmentPort = new AdjustableOutboundPort(this);
@@ -924,9 +944,11 @@ public class HEMCyPhy extends AbstractComponent implements RegistrationI {
 
 		// Parse the XML descriptor and generate the connector
 		ConnectorAdapterInfo infos = ConnectorAdapterParserXML.parse(xmlControlAdapter);
-		Class<?> connectorGenerated = ConnectorGenerator.generate(infos, uid);
+		// Sanitize uid for use as Java class name (dashes are invalid)
+		String safeClassName = uid.replaceAll("[^a-zA-Z0-9_]", "_");
+		Class<?> connectorGenerated = ConnectorGenerator.generate(infos, safeClassName);
 
-		this.logMessage("Connector generated for " + uid + ": " + connectorGenerated.getCanonicalName());
+		System.out.println("[HEM] Connector generated for " + uid + ": " + connectorGenerated.getCanonicalName());
 
 		// Connect the equipment using the generated connector
 		this.doPortConnection(equipmentPort.getPortURI(), controlPortURI, connectorGenerated.getCanonicalName());
@@ -935,7 +957,7 @@ public class HEMCyPhy extends AbstractComponent implements RegistrationI {
 		this.equipementsRegitered.put(uid, connectorGenerated.getCanonicalName());
 		this.equipmentPorts.put(uid, equipmentPort);
 
-		this.logMessage("Equipment " + uid + " registered successfully");
+		System.out.println("[HEM] Equipment " + uid + " registered successfully");
 
 		return true;
 	}

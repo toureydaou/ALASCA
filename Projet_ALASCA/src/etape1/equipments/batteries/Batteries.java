@@ -1,6 +1,9 @@
 package etape1.equipments.batteries;
 
 import etape1.equipments.batteries.connections.BatteriesInboundPort;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -44,9 +47,7 @@ import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
 import fr.sorbonne_u.exceptions.PreconditionException;
-import physical_data.Measure;
-import physical_data.MeasurementUnit;
-import physical_data.SignalData;
+
 
 // -----------------------------------------------------------------------------
 /**

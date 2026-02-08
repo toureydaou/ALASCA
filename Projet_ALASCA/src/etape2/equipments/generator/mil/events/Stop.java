@@ -1,5 +1,10 @@
 package etape2.equipments.generator.mil.events;
 
+
+import etape1.equipments.generator.GeneratorImplementationI.State;
+import etape2.equipments.generator.mil.GeneratorStateManagementI;
+import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -36,9 +41,6 @@ package etape2.equipments.generator.mil.events;
 import fr.sorbonne_u.devs_simulation.models.events.Event;
 import fr.sorbonne_u.devs_simulation.models.interfaces.AtomicModelI;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
-import etape1.equipments.generator.Generator.State;
-import etape2.equipments.generator.mil.GeneratorStateManagementI;
-import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 
 // -----------------------------------------------------------------------------
 /**
@@ -108,7 +110,7 @@ extends		Event
 		assert	model instanceof GeneratorStateManagementI :
 				new NeoSim4JavaException(
 						"Precondition violation: model instanceof "
-						+ "GeneratorPowerModel");
+						+ "GeneratorStateManagementI");
 
 		GeneratorStateManagementI m = (GeneratorStateManagementI) model;
 		assert	!State.OFF.equals(m.getGeneratorState()) :

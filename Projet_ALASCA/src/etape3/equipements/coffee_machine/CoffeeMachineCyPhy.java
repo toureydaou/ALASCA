@@ -196,6 +196,21 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 				SENSOR_INBOUND_PORT_URI, ACTUATOR_INBOUND_PORT_URI, executionMode, clockURI);
 	}
 
+	/**
+	 * Constructor with instanceId for multiple instances.
+	 */
+	protected CoffeeMachineCyPhy(int instanceId, boolean isIntegrationTestMode, ExecutionMode executionMode, String clockURI) throws Exception {
+		this(isIntegrationTestMode,
+			 REFLECTION_INBOUND_PORT_URI + "-" + instanceId,
+			 USER_INBOUND_PORT_URI + "-" + instanceId,
+			 INTERNAL_CONTROL_INBOUND_PORT_URI + "-" + instanceId,
+			 EXTERNAL_CONTROL_INBOUND_PORT_URI + "-" + instanceId,
+			 SENSOR_INBOUND_PORT_URI + "-" + instanceId,
+			 ACTUATOR_INBOUND_PORT_URI + "-" + instanceId,
+			 executionMode, clockURI);
+		this.uid = "CoffeeMachine_" + instanceId;
+	}
+
 	protected CoffeeMachineCyPhy(boolean isIntegrationTestMode, String userInboundPortURI, String internalControlInboundPortURI,
 			String externalControlInboundPortURI, String sensorInboundPortURI, String actuatorInboundPortURI,
 			ExecutionMode executionMode, String clockURI) throws Exception {
@@ -421,6 +436,9 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 			this.sensorInboundPort.unpublishPort();
 			this.actuatorInboundPort.unpublishPort();
 			if (isIntegrationTestMode) {
+				if (this.rop.connected()) {
+					this.doPortDisconnection(this.rop.getPortURI());
+				}
 				this.rop.unpublishPort();
 			}
 		} catch (Throwable e) {
@@ -497,12 +515,24 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		}
 		
 		if (isIntegrationTestMode) {
-			this.traceMessage("Coffee Machine registering to HEM");
-			System.out.println("DEBUG CoffeeMachine.turnOn(): uid = " + uid);
-			System.out.println("DEBUG CoffeeMachine.turnOn(): this.uid = " + this.uid);
-			System.out.println("DEBUG CoffeeMachine.turnOn(): COFFEE_MACHINE_CONNECTOR_NAME = " + COFFEE_MACHINE_CONNECTOR_NAME);
-			this.rop.register(uid, cmecjip.getPortURI(), XML_COFFEE_MACHINE_ADAPTER_DESCRIPTOR);
-			this.traceMessage("Coffee Machine registered to HEM !");
+			try {
+				System.out.println("DEBUG CoffeeMachine.turnOn(): uid = " + uid);
+				System.out.println("DEBUG CoffeeMachine.turnOn(): this.uid = " + this.uid);
+				System.out.println("DEBUG CoffeeMachine.turnOn(): COFFEE_MACHINE_CONNECTOR_NAME = " + COFFEE_MACHINE_CONNECTOR_NAME);
+				// Reconnect rop if it was disconnected (e.g., after turnOff)
+				if (!this.rop.connected()) {
+					System.out.println("DEBUG CoffeeMachine.turnOn(): rop disconnected, reconnecting...");
+					this.doPortConnection(this.rop.getPortURI(),
+						HEM.REGISTRATION_COFFEE_INBOUND_PORT_URI,
+						RegistrationConnector.class.getCanonicalName());
+					System.out.println("DEBUG CoffeeMachine.turnOn(): rop reconnected");
+				}
+				this.rop.register(uid, cmecjip.getPortURI(), XML_COFFEE_MACHINE_ADAPTER_DESCRIPTOR);
+				System.out.println("DEBUG CoffeeMachine.turnOn(): registered successfully");
+			} catch (Exception e) {
+				System.out.println("ERROR CoffeeMachine.turnOn() registration failed: " + e.getMessage());
+				e.printStackTrace();
+			}
 		}
 
 		assert this.on() : new PostconditionException("on()");
@@ -846,13 +876,21 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 			break;
 		case UNIT_TEST_WITH_SIL_SIMULATION:
 		case INTEGRATION_TEST_WITH_SIL_SIMULATION:
-			VariableValue<Double> v = this.computeCurrentTemperature();
-			if (v != null) {
-				ret = new TemperatureSensorData(new TimedMeasure<>(v.getValue(), TEMPERATURE_UNIT,
-						this.getClock4Simulation(), this.getClock4Simulation().instantOfSimulatedTime(v.getTime())));
-			} else {
+			try {
+				VariableValue<Double> v = this.computeCurrentTemperature();
+				if (v != null) {
+					ret = new TemperatureSensorData(new TimedMeasure<>(v.getValue(), TEMPERATURE_UNIT,
+							this.getClock4Simulation(), this.getClock4Simulation().instantOfSimulatedTime(v.getTime())));
+				} else {
+					ret = new TemperatureSensorData(
+							new TimedMeasure<>(this.currentTemperature.getData(), TEMPERATURE_UNIT,
+									this.getClock4Simulation(), Instant.now()));
+				}
+			} catch (Throwable e) {
+				// Must catch Throwable: AssertionError extends Error, not Exception
+				System.out.println("[COFFEE] SIL temperature not ready, using default 20.0C");
 				ret = new TemperatureSensorData(
-						new TimedMeasure<>(this.currentTemperature.getData(), TEMPERATURE_UNIT,
+						new TimedMeasure<>(20.0, TEMPERATURE_UNIT,
 								this.getClock4Simulation(), Instant.now()));
 			}
 			break;

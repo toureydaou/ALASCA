@@ -1,5 +1,6 @@
 package etape1.equipments.solar_panel;
 
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -35,8 +36,8 @@ package etape1.equipments.solar_panel;
 
 import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.components.interfaces.RequiredCI;
-import physical_data.Measure;
-import physical_data.SignalData;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 
 // -----------------------------------------------------------------------------
 /**
@@ -65,19 +66,19 @@ extends		OfferedCI,
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @see etape1.equipments.solar_panel.SolarPanelImplementationI#getNumberOfSquareMeters()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.solar_panel.SolarPanelImplementationI#getNumberOfSquareMeters()
 	 */
 	public int				getNumberOfSquareMeters() throws Exception;
 
 	/**
-	 * @see etape1.equipments.solar_panel.SolarPanelImplementationI#getNominalPowerProductionCapacity()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.solar_panel.SolarPanelImplementationI#getNominalPowerProductionCapacity()
 	 */
 	@Override
 	public Measure<Double>	getNominalPowerProductionCapacity()
 	throws Exception;
 
 	/**
-	 * @see etape1.equipments.solar_panel.SolarPanelImplementationI#getCurrentPowerProductionLevel()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.solar_panel.SolarPanelImplementationI#getCurrentPowerProductionLevel()
 	 */
 	@Override
 	public SignalData<Double>	getCurrentPowerProductionLevel()

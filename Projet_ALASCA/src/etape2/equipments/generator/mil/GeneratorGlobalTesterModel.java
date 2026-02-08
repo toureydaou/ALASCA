@@ -1,5 +1,6 @@
 package etape2.equipments.generator.mil;
 
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -41,6 +42,8 @@ import etape2.equipments.generator.mil.events.Start;
 import etape2.equipments.generator.mil.events.Stop;
 import etape2.equipments.generator.mil.events.TankEmpty;
 import etape2.equipments.generator.mil.events.TankNoLongerEmpty;
+import fr.sorbonne_u.components.cyphy.utils.tests.AbstractTestScenarioBasedAtomicModel;
+import fr.sorbonne_u.components.cyphy.utils.tests.TestScenarioWithSimulation;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
 import fr.sorbonne_u.devs_simulation.models.annotations.ModelExternalEvents;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;
@@ -48,8 +51,6 @@ import fr.sorbonne_u.devs_simulation.models.interfaces.ModelI;
 import fr.sorbonne_u.devs_simulation.models.time.Duration;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
-import tests_utils.AbstractTestScenarioBasedAtomicModel;
-import tests_utils.TestScenario;
 
 // -----------------------------------------------------------------------------
 /**
@@ -181,11 +182,21 @@ implements	TankLevelManagementI
 		assert	simParams.containsKey(testScenarioName) :
 				new MissingRunParameterException(testScenarioName);
 
-		this.setTestScenario((TestScenario) simParams.get(testScenarioName));
+		this.setTestScenario((TestScenarioWithSimulation)
+											simParams.get(testScenarioName));
 	}
 
 	/**
-	 * @see etape2.equipments.generator.mil.TankLevelManagementI#signalTankEmpty()
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.TankLevelManagementI#notTankEmpty()
+	 */
+	@Override
+	public boolean		notTankEmpty()
+	{
+		return true;
+	}
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.TankLevelManagementI#signalTankEmpty()
 	 */
 	@Override
 	public void			signalTankEmpty()
@@ -193,7 +204,7 @@ implements	TankLevelManagementI
 	}
 
 	/**
-	 * @see etape2.equipments.generator.mil.TankLevelManagementI#signalTankNoLongerEmpty()
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.TankLevelManagementI#signalTankNoLongerEmpty()
 	 */
 	@Override
 	public void			signalTankNoLongerEmpty()
@@ -201,7 +212,7 @@ implements	TankLevelManagementI
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.tests_utils.AbstractTestScenarioBasedAtomicHIOA#userDefinedInternalTransition(fr.sorbonne_u.devs_simulation.models.time.Duration)
+	 * @see fr.sorbonne_u.components.cyphy.utils.tests.AbstractTestScenarioBasedAtomicModel#userDefinedInternalTransition(fr.sorbonne_u.devs_simulation.models.time.Duration)
 	 */
 	@Override
 	public void			userDefinedInternalTransition(Duration elapsedTime)

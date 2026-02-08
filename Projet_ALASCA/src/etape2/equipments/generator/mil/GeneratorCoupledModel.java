@@ -1,5 +1,6 @@
 package etape2.equipments.generator.mil;
 
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //

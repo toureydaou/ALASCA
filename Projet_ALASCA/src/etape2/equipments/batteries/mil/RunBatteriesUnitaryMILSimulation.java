@@ -1,5 +1,6 @@
 package etape2.equipments.batteries.mil;
 
+
 import java.time.Instant;
 import java.util.ArrayList;
 
@@ -47,6 +48,8 @@ import etape2.equipments.batteries.mil.events.BatteriesEmpty;
 import etape2.equipments.batteries.mil.events.BatteriesRequiredPowerChanged;
 import etape2.equipments.batteries.mil.events.StartCharging;
 import etape2.equipments.batteries.mil.events.StopCharging;
+import fr.sorbonne_u.components.cyphy.utils.tests.SimulationTestStep;
+import fr.sorbonne_u.components.cyphy.utils.tests.TestScenarioWithSimulation;
 import fr.sorbonne_u.devs_simulation.architectures.Architecture;
 import fr.sorbonne_u.devs_simulation.architectures.ArchitectureI;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.AtomicHIOA_Descriptor;
@@ -63,8 +66,7 @@ import fr.sorbonne_u.devs_simulation.models.time.Duration;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.simulators.SimulationEngine;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulatorI;
-import tests_utils.SimulationTestStep;
-import tests_utils.TestScenario;
+import fr.sorbonne_u.exceptions.VerboseException;
 
 // -----------------------------------------------------------------------------
 /**
@@ -267,28 +269,47 @@ public class			RunBatteriesUnitaryMILSimulation
 			SimulationEngine.SIMULATION_STEP_SLEEP_TIME = 0L;
 
 			// run a CLASSICAL test scenario
-			CLASSICAL.setUpSimulator(se);
-			Time startTime = CLASSICAL.getStartTime();
-			Duration d = CLASSICAL.getEndTime().subtract(startTime);
+			TestScenarioWithSimulation classical = classical();
+			Map<String, Object> classicalRunParameters =
+											new HashMap<String, Object>();
+			classical.addToRunParameters(classicalRunParameters);
+			se.setSimulationRunParameters(classicalRunParameters);
+			Time startTime = classical.getStartTime();
+			Duration d = classical.getEndTime().subtract(startTime);
+			System.out.println(classical.beginMessage());
 			se.doStandAloneSimulation(startTime.getSimulatedTime(),
 									  d.getSimulatedDuration());
 			se.getSimulatedModel().finalise();
+			System.out.println(classical.endMessage());
 
 			// run a BATTERIES_EMPTY test scenario
-			BATTERIES_EMPTY.setUpSimulator(se);
-			startTime = BATTERIES_EMPTY.getStartTime();
-			d = BATTERIES_EMPTY.getEndTime().subtract(startTime);
+			TestScenarioWithSimulation batteriesEmpty = batteriesEmpty();
+			Map<String, Object> batteriesEmptyRunParameters =
+											new HashMap<String, Object>();
+			batteriesEmpty.addToRunParameters(batteriesEmptyRunParameters);
+			se.setSimulationRunParameters(batteriesEmptyRunParameters);
+			startTime = batteriesEmpty.getStartTime();
+			d = batteriesEmpty.getEndTime().subtract(startTime);
+			System.out.println(batteriesEmpty.beginMessage());
 			se.doStandAloneSimulation(startTime.getSimulatedTime(),
 									  d.getSimulatedDuration());
 			se.getSimulatedModel().finalise();
+			System.out.println(batteriesEmpty.endMessage());
 
 			// run a BATTERIES_CHARGING test scenario
-			BATTERIES_CHARGING.setUpSimulator(se);
-			startTime = BATTERIES_CHARGING.getStartTime();
-			d = BATTERIES_CHARGING.getEndTime().subtract(startTime);
+			TestScenarioWithSimulation batteriesCharging = batteriesCharging();
+			Map<String, Object> batteriesChargingRunParameters =
+											new HashMap<String, Object>();
+			batteriesCharging.addToRunParameters(batteriesChargingRunParameters);
+			se.setSimulationRunParameters(batteriesChargingRunParameters);
+			startTime = batteriesCharging.getStartTime();
+			d = batteriesCharging.getEndTime().subtract(startTime);
+			System.out.println(batteriesCharging.beginMessage());
 			se.doStandAloneSimulation(startTime.getSimulatedTime(),
 									  d.getSimulatedDuration());
 			se.getSimulatedModel().finalise();
+			System.out.println(batteriesCharging.endMessage());
+
 			System.exit(0);
 		} catch (Throwable e) {
 			throw new RuntimeException(e) ;
@@ -310,9 +331,12 @@ public class			RunBatteriesUnitaryMILSimulation
 	protected static Time		START_TIME =
 									new Time(0.0, TimeUnit.HOURS);
 
-	/** standard test scenario, see Gherkin specification.				 	*/
-	protected static TestScenario	CLASSICAL =
-		new TestScenario(
+	/** standard test scenario, see Gherkin specification.				 	
+	 * @throws VerboseException */
+	protected static TestScenarioWithSimulation	classical()
+	throws VerboseException
+	{
+		return new TestScenarioWithSimulation(
 			"-----------------------------------------------------\n" +
 			"Classical\n\n" +
 			"  Gherkin specification\n\n" +
@@ -329,11 +353,12 @@ public class			RunBatteriesUnitaryMILSimulation
 			"\n-----------------------------------------------------\n" +
 			"End classical\n" +
 			"-----------------------------------------------------",
+			"fake-clock-URI",	// for simulation only test scenario, no clock needed
 			START_INSTANT,
 			END_INSTANT,
+			BatteriesCoupledModel.URI,
 			START_TIME,
-			(se, ts) -> { 
-				HashMap<String, Object> simParams = new HashMap<>();
+			(ts, simParams) -> {
 				simParams.put(
 					ModelI.createRunParameterName(
 						BatteriesPowerModel.URI,
@@ -364,13 +389,13 @@ public class			RunBatteriesUnitaryMILSimulation
 					ModelI.createRunParameterName(
 						BatteriesPowerModel.URI,
 						BatteriesPowerModel.INITIAL_LEVEL_RP_NAME),
-					BatteriesSimulationConfiguration.INITIAL_BATTERIES_LEVEL);
+					BatteriesSimulationConfiguration.
+												INITIAL_BATTERIES_LEVEL_RATIO);
 				simParams.put(
 					ModelI.createRunParameterName(
 						BatteriesUnitTesterModel.URI,
 						BatteriesUnitTesterModel.TEST_SCENARIO_RP_NAME),
 					ts);
-				se.setSimulationRunParameters(simParams);
 			},
 			new SimulationTestStep[]{
 				new SimulationTestStep(
@@ -380,7 +405,7 @@ public class			RunBatteriesUnitaryMILSimulation
 					(m, t) -> {
 						// this indicates a need for power from the batteries
 						((BatteriesUnitTesterModel)m).
-									batteriesRequiredPower.setNewValue(5.0, t);
+											setBatteriesRequiredPower(5.0, t);
 					}),
 				// the notification of the continuous state change must be done
 				// after the modification as the modification of the state is
@@ -405,7 +430,7 @@ public class			RunBatteriesUnitaryMILSimulation
 					(m, t) -> {
 						// this indicates that no more power is needed
 						((BatteriesUnitTesterModel)m).
-									batteriesRequiredPower.setNewValue(0.0, t);
+											setBatteriesRequiredPower(0.0, t);
 					}),
 				// same idea to stop producing
 				new SimulationTestStep(
@@ -437,11 +462,15 @@ public class			RunBatteriesUnitaryMILSimulation
 					(m, t) -> {})
 			}	// end SimulationTestStep[]
 		);	// end TestScenario
+	}
 
 	/** test scenario where the batteries are used until empty,
-	 *  see Gherkin specification.										 	*/
-	protected static TestScenario	BATTERIES_EMPTY =
-		new TestScenario(
+	 *  see Gherkin specification.										 	
+	 * @throws VerboseException */
+	protected static TestScenarioWithSimulation	batteriesEmpty()
+	throws VerboseException
+	{
+		return new TestScenarioWithSimulation(
 			"-----------------------------------------------------\n" +
 			"Batteries empty\n\n" +
 			"  Gherkin specification\n\n" +
@@ -454,11 +483,12 @@ public class			RunBatteriesUnitaryMILSimulation
 			"\n-----------------------------------------------------\n" +
 			"End Batteries empty\n" +
 			"-----------------------------------------------------",
+			"fake-clock-URI",	// for simulation only test scenario, no clock needed
 			START_INSTANT,
 			END_INSTANT,
+			BatteriesCoupledModel.URI,
 			START_TIME,
-			(se, ts) -> { 
-				HashMap<String, Object> simParams = new HashMap<>();
+			(ts, simParams) -> {
 				simParams.put(
 					ModelI.createRunParameterName(
 						BatteriesPowerModel.URI,
@@ -489,13 +519,13 @@ public class			RunBatteriesUnitaryMILSimulation
 					ModelI.createRunParameterName(
 						BatteriesPowerModel.URI,
 						BatteriesPowerModel.INITIAL_LEVEL_RP_NAME),
-					BatteriesSimulationConfiguration.INITIAL_BATTERIES_LEVEL);
+					BatteriesSimulationConfiguration.
+												INITIAL_BATTERIES_LEVEL_RATIO);
 				simParams.put(
 					ModelI.createRunParameterName(
 						BatteriesUnitTesterModel.URI,
 						BatteriesUnitTesterModel.TEST_SCENARIO_RP_NAME),
 					ts);
-				se.setSimulationRunParameters(simParams);
 			},
 			new SimulationTestStep[]{
 				new SimulationTestStep(
@@ -504,7 +534,7 @@ public class			RunBatteriesUnitaryMILSimulation
 					(m, t) -> { return null; },
 					(m, t) -> {
 						((BatteriesUnitTesterModel)m).
-									batteriesRequiredPower.setNewValue(25.0, t);
+											setBatteriesRequiredPower(25.0, t);
 					}),
 				new SimulationTestStep(
 					BatteriesUnitTesterModel.URI,
@@ -517,12 +547,14 @@ public class			RunBatteriesUnitaryMILSimulation
 					(m, t) -> {})
 			}	// end SimulationTestStep[]
 		);	// end TestScenario
-
+	}
 
 	/** test scenario where the empty is charged until full,
-	 *  see Gherkin specification.										 	*/
-	protected static TestScenario	BATTERIES_CHARGING =
-		new TestScenario(
+	 *  see Gherkin specification.										 	
+	 * @throws VerboseException */
+	protected static TestScenarioWithSimulation	batteriesCharging() throws VerboseException
+	{
+		return new TestScenarioWithSimulation(
 			"-----------------------------------------------------\n" +
 			"Batteries full\n\n" +
 			"  Gherkin specification\n\n" +
@@ -535,11 +567,12 @@ public class			RunBatteriesUnitaryMILSimulation
 			"\n-----------------------------------------------------\n" +
 			"End Batteries full\n" +
 			"-----------------------------------------------------",
+			"fake-clock-URI",	// for simulation only test scenario, no clock needed
 			START_INSTANT,
 			END_INSTANT,
+			BatteriesCoupledModel.URI,
 			START_TIME,
-			(se, ts) -> { 
-				HashMap<String, Object> simParams = new HashMap<>();
+			(ts, simParams) -> {
 				simParams.put(
 					ModelI.createRunParameterName(
 						BatteriesPowerModel.URI,
@@ -570,13 +603,13 @@ public class			RunBatteriesUnitaryMILSimulation
 					ModelI.createRunParameterName(
 						BatteriesPowerModel.URI,
 						BatteriesPowerModel.INITIAL_LEVEL_RP_NAME),
-					BatteriesSimulationConfiguration.INITIAL_BATTERIES_LEVEL);
+					BatteriesSimulationConfiguration.
+												INITIAL_BATTERIES_LEVEL_RATIO);
 				simParams.put(
 					ModelI.createRunParameterName(
 						BatteriesUnitTesterModel.URI,
 						BatteriesUnitTesterModel.TEST_SCENARIO_RP_NAME),
 					ts);
-				se.setSimulationRunParameters(simParams);
 			},
 			new SimulationTestStep[]{
 				new SimulationTestStep(
@@ -590,5 +623,6 @@ public class			RunBatteriesUnitaryMILSimulation
 					(m, t) -> {}),
 			}	// end SimulationTestStep[]
 		);	// end TestScenario
+	}
 }
 // -----------------------------------------------------------------------------

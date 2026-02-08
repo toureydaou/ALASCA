@@ -1,6 +1,9 @@
 package etape1.equipments.solar_panel;
 
+
 import etape1.equipments.solar_panel.connections.SolarPanelInboundPort;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -45,8 +48,6 @@ import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
 import fr.sorbonne_u.exceptions.PreconditionException;
 import fr.sorbonne_u.utils.URIGenerator;
-import physical_data.Measure;
-import physical_data.SignalData;
 
 // -----------------------------------------------------------------------------
 /**
@@ -292,8 +293,16 @@ implements	SolarPanelImplementationI
 		this.inboundPort.publishPort();
 
 		// Postconditions checking
-		assert getNominalPowerProductionCapacity().equals(new Measure<Double>(nbOfSquareMeters * CAPACITY_PER_SQUARE_METER.getData(),CAPACITY_PER_SQUARE_METER.getMeasurementUnit())) :
-							new PostconditionException("");
+		assert	getNominalPowerProductionCapacity().equals(
+					new Measure<Double>(nbOfSquareMeters *
+											CAPACITY_PER_SQUARE_METER.getData(),
+										CAPACITY_PER_SQUARE_METER.
+														getMeasurementUnit())) :
+				new PostconditionException(
+						"getNominalPowerProductionCapacity().equals("
+						+ "new Measure<Double>(nbOfSquareMeters * "
+						+ "CAPACITY_PER_SQUARE_METER.getData(), "
+						+ "CAPACITY_PER_SQUARE_METER.getMeasurementUnit()))");
 
 		if (VERBOSE) {
 			this.tracer.get().setTitle("Solar Panel component");
@@ -333,7 +342,7 @@ implements	SolarPanelImplementationI
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @see etape1.equipments.solar_panel.SolarPanelImplementationI#getNumberOfSquareMeters()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.solar_panel.SolarPanelImplementationI#getNumberOfSquareMeters()
 	 */
 	@Override
 	public int			getNumberOfSquareMeters() throws Exception
@@ -342,7 +351,7 @@ implements	SolarPanelImplementationI
 	}
 
 	/**
-	 * @see etape1.equipments.solar_panel.SolarPanelImplementationI#getNominalPowerProductionCapacity()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.solar_panel.SolarPanelImplementationI#getNominalPowerProductionCapacity()
 	 */
 	@Override
 	public Measure<Double>	getNominalPowerProductionCapacity() throws Exception
@@ -364,7 +373,7 @@ implements	SolarPanelImplementationI
 	}
 
 	/**
-	 * @see etape1.equipments.solar_panel.SolarPanelImplementationI#getCurrentPowerProductionLevel()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.solar_panel.SolarPanelImplementationI#getCurrentPowerProductionLevel()
 	 */
 	@Override
 	public SignalData<Double> getCurrentPowerProductionLevel() throws Exception

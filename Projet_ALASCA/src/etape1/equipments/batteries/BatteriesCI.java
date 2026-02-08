@@ -1,5 +1,8 @@
 package etape1.equipments.batteries;
 
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -35,8 +38,6 @@ package etape1.equipments.batteries;
 
 import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.components.interfaces.RequiredCI;
-import physical_data.Measure;
-import physical_data.SignalData;
 
 // -----------------------------------------------------------------------------
 /**

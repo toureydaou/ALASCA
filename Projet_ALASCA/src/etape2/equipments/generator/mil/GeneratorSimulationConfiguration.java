@@ -47,7 +47,6 @@ import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.devs_simulation.utils.AssertionChecking;
 
-
 // -----------------------------------------------------------------------------
 /**
  * The interface <code>GeneratorSimulationConfiguration</code> defines

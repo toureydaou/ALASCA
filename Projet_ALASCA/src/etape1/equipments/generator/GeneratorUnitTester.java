@@ -1,8 +1,12 @@
 package etape1.equipments.generator;
 
-import etape1.equipments.generator.Generator.State;
+
+import etape1.equipments.generator.GeneratorImplementationI.State;
 import etape1.equipments.generator.connections.GeneratorConnector;
 import etape1.equipments.generator.connections.GeneratorOutboundPort;
+import etape2.equipments.generator.mil.GeneratorSimulationConfiguration;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -42,10 +46,8 @@ import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.BCMException;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
+import fr.sorbonne_u.components.utils.tests.TestsStatistics;
 import fr.sorbonne_u.exceptions.PreconditionException;
-import physical_data.Measure;
-import physical_data.SignalData;
-import tests_utils.TestsStatistics;
 
 // -----------------------------------------------------------------------------
 /**
@@ -434,9 +436,9 @@ extends		AbstractComponent
 		SignalData<Double> sResult = null;
 		try {
 			sResult = outboundPort.currentTankLevel();
-			if (sResult == null ||
-						!sResult.getMeasure().equals(
-										Generator.FAKE_CURRENT_TANK_LEVEL)) {
+			if (sResult == null || !sResult.getMeasure().getData().equals(
+										GeneratorSimulationConfiguration.
+														INITIAL_TANK_LEVEL)) {
 				tester.logMessage("        but was: " + sResult);
 				statistics.incorrectResult();
 			}
@@ -454,9 +456,7 @@ extends		AbstractComponent
 		sResult = null;
 		try {
 			sResult = outboundPort.currentFuelConsumption();
-			if (sResult == null ||
-						!sResult.getMeasure().equals(
-										Generator.FAKE_FUEL_CONSUMPTION)) {
+			if (sResult == null || !sResult.getMeasure().getData().equals(0.0)) {
 				tester.logMessage("        but was: " + sResult);
 				statistics.incorrectResult();
 			}

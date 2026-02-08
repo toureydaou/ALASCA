@@ -66,9 +66,10 @@ import fr.sorbonne_u.devs_simulation.models.time.Duration;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulationReportI;
+import fr.sorbonne_u.devs_simulation.utils.Pair;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.exceptions.AssertionChecking;
-import physical_data.MeasurementUnit;
 
 // -----------------------------------------------------------------------------
 /**
@@ -525,19 +526,43 @@ public class FanElectricitySILModel extends AtomicHIOA implements FanOperationI 
 	}
 
 	/**
-	 * @see fr.sorbonne_u.devs_simulation.hioa.models.interfaces.VariableInitialisationI#initialiseVariables()
+	 * @see fr.sorbonne_u.devs_simulation.hioa.models.interfaces.VariableInitialisationI#useFixpointInitialiseVariables()
 	 */
 	@Override
-	public void initialiseVariables() {
-		super.initialiseVariables();
+	public boolean useFixpointInitialiseVariables() {
+		return true;
+	}
 
-		// initially, the fan is off, so its consumption is zero.
-		this.currentIntensity.initialise(0.0);
+	/**
+	 * @see fr.sorbonne_u.devs_simulation.hioa.models.interfaces.VariableInitialisationI#fixpointInitialiseVariables()
+	 */
+	@Override
+	public Pair<Integer, Integer> fixpointInitialiseVariables() {
+		Pair<Integer, Integer> ret = null;
+
+		if (!this.currentIntensity.isInitialised()) {
+			// initially, the fan is off, so its consumption is zero.
+			this.currentIntensity.initialise(0.0);
+
+			if (VERBOSE) {
+				StringBuffer sb = new StringBuffer("new consumption: ");
+				sb.append(this.currentIntensity.getValue());
+				sb.append(" at ");
+				sb.append(this.currentIntensity.getTime());
+				this.logMessage(sb.toString());
+			}
+
+			ret = new Pair<>(1, 0);
+		} else {
+			ret = new Pair<>(0, 0);
+		}
 
 		assert FanElectricitySILModel.implementationInvariants(this)
 				: new NeoSim4JavaException("FanElectricityModel.implementationInvariants(" + "this)");
 		assert FanElectricitySILModel.invariants(this)
 				: new NeoSim4JavaException("FanElectricityModel.invariants(this)");
+
+		return ret;
 	}
 
 	/**

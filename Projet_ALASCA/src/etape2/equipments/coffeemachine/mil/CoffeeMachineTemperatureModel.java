@@ -40,6 +40,7 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
  */
 @ModelExternalEvents(imported = { SwitchOnCoffeeMachine.class, SwitchOffCoffeeMachine.class, MakeCoffee.class,
 		DoNotHeat.class })
+@ModelImportedVariable(name = "currentHeatingPower", type = Double.class)
 @ModelImportedVariable(name = "currentWaterLevel", type = Double.class)
 public class CoffeeMachineTemperatureModel extends AtomicHIOA implements CoffeeMachineOperationI {
 
@@ -112,12 +113,12 @@ public class CoffeeMachineTemperatureModel extends AtomicHIOA implements CoffeeM
 	}
 
 	// -------------------------------------------------------------------------
-	// Méthodes de calcul physique (Adaptation de votre méthode startHeating)
+	// Méthodes de calcul physique (Adaptation de la méthode startHeating)
 	// -------------------------------------------------------------------------
 
 	/**
 	 * Calcule la dérivée de la température (dT/dt) à l'instant t. * C'est ici que
-	 * l'on adapte votre formule : heatingTime = (mass * Cp * deltaT) / Power
+	 * l'on adapte la formule : heatingTime = (mass * Cp * deltaT) / Power
 	 * Devenant : Rate (dT/dt) = Power / (mass * Cp) * @param currentTemp La
 	 * température actuelle.
 	 * 
@@ -141,7 +142,7 @@ public class CoffeeMachineTemperatureModel extends AtomicHIOA implements CoffeeM
 			double power = this.currentHeatingPower.getValue(); // En Watts (Joules/sec)
 
 			// Formule : P = m * Cp * (dT/dt) => dT/dt = P / (m * Cp)
-			heatingContribution = power / (waterMass * WATER_SPECIFIC_HEAT_CAPACITY);
+			heatingContribution = power / (waterMass * WATER_SPECIFIC_HEAT_CAPACITY) * 60.0;
 		}
 
 		// Contribution du refroidissement (Perte vers l'extérieur)

@@ -8,6 +8,8 @@ import etape1.equipements.coffee_machine.CoffeeMachineUnitTester;
 import etape1.equipements.fan.Fan;
 import etape1.equipements.fan.FanTester;
 import etape1.equipements.hem.HEM;
+import etape1.equipements.kettle.Kettle;
+import etape1.equipements.kettle.KettleUnitTester;
 import etape1.equipements.laundry.Laundry;
 import etape1.equipements.laundry.LaundryUnitTester;
 import etape1.equipments.meter.ElectricMeter;
@@ -214,6 +216,12 @@ public class CVMIntegrationTest extends AbstractCVM {
 		Laundry.VERBOSE = true;
 		Laundry.X_RELATIVE_POSITION = 3;
 		Laundry.Y_RELATIVE_POSITION = 0;
+		Kettle.VERBOSE = true;
+		Kettle.X_RELATIVE_POSITION = 3;
+		Kettle.Y_RELATIVE_POSITION = 1;
+		KettleUnitTester.VERBOSE = true;
+		KettleUnitTester.X_RELATIVE_POSITION = 3;
+		KettleUnitTester.Y_RELATIVE_POSITION = 2;
 
 		assert CVMIntegrationTest.implementationInvariants(this)
 				: new InvariantException("CVMIntegrationTest.glassBoxInvariants(this)");
@@ -244,6 +252,10 @@ public class CVMIntegrationTest extends AbstractCVM {
 		AbstractComponent.createComponent(Laundry.class.getCanonicalName(), new Object[] { true });
 
 		AbstractComponent.createComponent(LaundryUnitTester.class.getCanonicalName(), new Object[] { false });
+
+		AbstractComponent.createComponent(Kettle.class.getCanonicalName(), new Object[] { true });
+
+		AbstractComponent.createComponent(KettleUnitTester.class.getCanonicalName(), new Object[] { false });
 
 		AbstractComponent.createComponent(Fan.class.getCanonicalName(), new Object[] {});
 

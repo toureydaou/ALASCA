@@ -1,99 +1,99 @@
 package etape1.equipements.kettle.connections.ports;
 
 import etape1.equipements.kettle.interfaces.KettleExternalControlJava4CI;
+import etape1.equipements.kettle.interfaces.KettleImplementationI;
+import etape1.equipements.kettle.interfaces.KettleImplementationI.KettleMode;
+import etape1.equipements.kettle.interfaces.KettleImplementationI.KettleState;
+import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.ComponentI;
 
+// -----------------------------------------------------------------------------
+/**
+ * The class <code>KettleExternalControlJava4InboundPort</code> extends the
+ * external control inbound port with Java 4 compatible methods for
+ * Javassist connector generation.
+ *
+ * <p>
+ * This port delegates to the parent port's methods (which use
+ * KettleExternalControlI interface) instead of casting directly to Kettle.
+ * This ensures compatibility with both Kettle (etape1) and KettleCyPhy
+ * (etape3) components.
+ * </p>
+ *
+ * <p>Created on : 2023-09-19</p>
+ *
+ * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ */
 public class KettleExternalControlJava4InboundPort extends KettleExternalControlInboundPort
 		implements KettleExternalControlJava4CI {
 
-	// -------------------------------------------------------------------------
-	// Constants and variables
-	// -------------------------------------------------------------------------
-
-	
-
 	private static final long serialVersionUID = 1L;
 
-	// -------------------------------------------------------------------------
-	// Constructors
-	// -------------------------------------------------------------------------
-
-	/**
-	 * create an inbound port.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * owner != null
-	 * }
-	 * pre	{@code
-	 * owner instanceof KettleUserI
-	 * }
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 *
-	 * @param owner component that owns this port.
-	 * @throws Exception <i>to do</i>.
-	 */
 	public KettleExternalControlJava4InboundPort(ComponentI owner) throws Exception {
 		super(KettleExternalControlJava4CI.class, owner);
 	}
 
-	/**
-	 * create an inbound port.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * uri != null && !uri.isEmpty()
-	 * }
-	 * pre	{@code
-	 * owner != null
-	 * }
-	 * pre	{@code
-	 * owner instanceof KettleUserI
-	 * }
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 *
-	 * @param uri   unique identifier of the port.
-	 * @param owner component that owns this port.
-	 * @throws Exception <i>to do</i>.
-	 */
 	public KettleExternalControlJava4InboundPort(String uri, ComponentI owner) throws Exception {
 		super(uri, KettleExternalControlJava4CI.class, owner);
 	}
 
+	// -------------------------------------------------------------------------
+	// Java4 methods (primitive types for Javassist)
+	// Delegates to parent port methods (KettleExternalControlI) instead of
+	// casting to Kettle directly, for compatibility with KettleCyPhy.
+	// -------------------------------------------------------------------------
+
 	@Override
-	public void turnOnJava4() throws Exception {
-		this.turnOn();
-		
+	public int getStateJava4() throws Exception {
+		KettleState state = this.getState();
+		return state.ordinal();
 	}
 
 	@Override
-	public void turnOffJava4() throws Exception {
-		this.turnOff();
-		
+	public int getKettleModeJava4() throws Exception {
+		KettleMode mode = this.getKettleMode();
+		return mode.ordinal();
 	}
 
 	@Override
-	public KettleState getStateJava4() throws Exception {
-		return this.getState();
+	public double getTargetTemperatureJava4() throws Exception {
+		return this.getTargetTemperature().getData();
 	}
 
 	@Override
-	public KettleMode getKettleModeJava4() throws Exception {
-		return this.getKettleMode();
+	public double getCurrentTemperatureJava4() throws Exception {
+		return this.getCurrentTemperature().getData();
 	}
 
+	@Override
+	public double getMaxPowerLevelJava4() throws Exception {
+		return this.getMaxPowerLevel().getData();
+	}
+
+	@Override
+	public double getCurrentPowerLevelJava4() throws Exception {
+		return this.getCurrentPowerLevel().getData();
+	}
+
+	@Override
+	public void setCurrentPowerLevelJava4(double powerLevel) throws Exception {
+		this.setCurrentPowerLevel(
+			new Measure<Double>(powerLevel, KettleImplementationI.POWER_UNIT));
+	}
+
+	@Override
+	public void setModeJava4(int mode) throws Exception {
+		// Map int mode to power level and set via setCurrentPowerLevel
+		double powerLevel;
+		switch (mode) {
+			case 1: powerLevel = 0.0; break;       // SUSPEND
+			case 2: powerLevel = 1000.0; break;     // ECO
+			case 3: powerLevel = 2000.0; break;     // NORMAL
+			case 4: powerLevel = 3000.0; break;     // MAX
+			default: powerLevel = 0.0;
+		}
+		this.setCurrentPowerLevel(
+			new Measure<Double>(powerLevel, KettleImplementationI.POWER_UNIT));
+	}
 }
+// -----------------------------------------------------------------------------

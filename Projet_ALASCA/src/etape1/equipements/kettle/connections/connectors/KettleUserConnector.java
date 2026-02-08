@@ -1,39 +1,8 @@
 package etape1.equipements.kettle.connections.connectors;
 
+import etape1.equipements.kettle.interfaces.KettleImplementationI.KettleMode;
 import etape1.equipements.kettle.interfaces.KettleUserCI;
-
-// Copyright Jacques Malenfant, Sorbonne Universite.
-// Jacques.Malenfant@lip6.fr
-//
-// This software is a computer program whose purpose is to implement a mock-up
-// of household energy management system.
-//
-// This software is governed by the CeCILL-C license under French law and
-// abiding by the rules of distribution of free software.  You can use,
-// modify and/ or redistribute the software under the terms of the
-// CeCILL-C license as circulated by CEA, CNRS and INRIA at the following
-// URL "http://www.cecill.info".
-//
-// As a counterpart to the access to the source code and  rights to copy,
-// modify and redistribute granted by the license, users are provided only
-// with a limited warranty  and the software's author,  the holder of the
-// economic rights,  and the successive licensors  have only  limited
-// liability. 
-//
-// In this respect, the user's attention is drawn to the risks associated
-// with loading,  using,  modifying and/or developing or reproducing the
-// software by the user in light of its specific status of free software,
-// that may mean  that it is complicated to manipulate,  and  that  also
-// therefore means  that it is reserved for developers  and  experienced
-// professionals having in-depth computer knowledge. Users are therefore
-// encouraged to load and test the software's suitability as regards their
-// requirements in conditions enabling the security of their systems and/or 
-// data to be ensured and,  more generally, to use and operate it in the 
-// same conditions as regards security. 
-//
-// The fact that you are presently reading this means that you have had
-// knowledge of the CeCILL-C license and that you accept its terms.
-
+import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.connectors.AbstractConnector;
 
 // -----------------------------------------------------------------------------
@@ -41,86 +10,95 @@ import fr.sorbonne_u.components.connectors.AbstractConnector;
  * The class <code>KettleUserConnector</code> implements a connector for the
  * <code>KettleUserCI</code> component interface.
  *
- * <p>
- * <strong>Description</strong>
- * </p>
- * 
- * <p>
- * <strong>Implementation Invariants</strong>
- * </p>
- * 
- * <pre>
- * invariant	{@code
- * true
- * }	// no more invariant
- * </pre>
- * 
- * <p>
- * <strong>Invariants</strong>
- * </p>
- * 
- * <pre>
- * invariant	{@code
- * true
- * }	// no more invariant
- * </pre>
- * 
- * <p>
- * Created on : 2023-09-19
- * </p>
- * 
- * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ * <p>Created on : 2023-09-19</p>
+ *
+ * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
 public class KettleUserConnector extends AbstractConnector implements KettleUserCI {
-	/**
-	 * @see etape1.equipements.kettle.interfaces.KettleUserCI.equipments.Fan.FanUserCI#getState()
-	 */
+
 	@Override
 	public KettleState getState() throws Exception {
 		return ((KettleUserCI) this.offering).getState();
 	}
 
-	/**
-	 * @see etape1.equipements.kettle.interfaces.KettleUserCI.equipments.Fan.FanUserCI#getMode()
-	 */
 	@Override
 	public KettleMode getKettleMode() throws Exception {
 		return ((KettleUserCI) this.offering).getKettleMode();
 	}
 
-	/**
-	 * @see etape1.equipements.kettle.interfaces.KettleUserCI.equipments.Fan.FanUserCI#turnOn()
-	 */
+	@Override
+	public Measure<Double> getTargetTemperature() throws Exception {
+		return ((KettleUserCI) this.offering).getTargetTemperature();
+	}
+
+	@Override
+	public Measure<Double> getCurrentTemperature() throws Exception {
+		return ((KettleUserCI) this.offering).getCurrentTemperature();
+	}
+
+	@Override
+	public boolean isHeating() throws Exception {
+		return ((KettleUserCI) this.offering).isHeating();
+	}
+
 	@Override
 	public void turnOn() throws Exception {
 		((KettleUserCI) this.offering).turnOn();
 	}
 
-	/**
-	 * @see etape1.equipements.kettle.interfaces.KettleUserCI.equipments.Fan.FanUserCI#turnOff()
-	 */
 	@Override
 	public void turnOff() throws Exception {
 		((KettleUserCI) this.offering).turnOff();
 	}
 
 	@Override
-	public void setTotalMode() throws Exception {
-		((KettleUserCI) this.offering).setTotalMode();
-
+	public void suspend() throws Exception {
+		((KettleUserCI) this.offering).suspend();
 	}
 
 	@Override
-	public void setPartialMode() throws Exception {
-		((KettleUserCI) this.offering).setPartialMode();
-
+	public void resume() throws Exception {
+		((KettleUserCI) this.offering).resume();
 	}
-	
+
 	@Override
-	public void setTemperature() throws Exception {
-		((KettleUserCI) this.offering).setTemperature();
-
+	public boolean isSuspended() throws Exception {
+		return ((KettleUserCI) this.offering).isSuspended();
 	}
 
+	@Override
+	public Measure<Double> getMaxPowerLevel() throws Exception {
+		return ((KettleUserCI) this.offering).getMaxPowerLevel();
+	}
+
+	@Override
+	public Measure<Double> getCurrentPowerLevel() throws Exception {
+		return ((KettleUserCI) this.offering).getCurrentPowerLevel();
+	}
+
+	@Override
+	public void setCurrentPowerLevel(Measure<Double> powerLevel) throws Exception {
+		((KettleUserCI) this.offering).setCurrentPowerLevel(powerLevel);
+	}
+
+	@Override
+	public void startHeating() throws Exception {
+		((KettleUserCI) this.offering).startHeating();
+	}
+
+	@Override
+	public void stopHeating() throws Exception {
+		((KettleUserCI) this.offering).stopHeating();
+	}
+
+	@Override
+	public void setTargetTemperature(Measure<Double> temperature) throws Exception {
+		((KettleUserCI) this.offering).setTargetTemperature(temperature);
+	}
+
+	@Override
+	public void setMode(KettleMode mode) throws Exception {
+		((KettleUserCI) this.offering).setMode(mode);
+	}
 }
 // -----------------------------------------------------------------------------

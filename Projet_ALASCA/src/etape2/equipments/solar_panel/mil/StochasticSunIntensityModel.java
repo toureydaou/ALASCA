@@ -1,5 +1,10 @@
 package etape2.equipments.solar_panel.mil;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Map;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -34,15 +39,16 @@ package etape2.equipments.solar_panel.mil;
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.shredzone.commons.suncalc.SunPosition;
 import org.shredzone.commons.suncalc.SunTimes;
 
 import etape1.equipments.solar_panel.SolarPanel;
 import etape2.equipments.solar_panel.mil.events.SolarPanelEventI;
+import etape2.equipments.solar_panel.mil.events.SolarPanelEventI.Position;
 import etape2.equipments.solar_panel.mil.events.SunriseEvent;
 import etape2.equipments.solar_panel.mil.events.SunsetEvent;
-import etape2.equipments.solar_panel.mil.events.SolarPanelEventI.Position;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.ExportedVariable;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.ModelExportedVariable;
@@ -55,10 +61,6 @@ import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.utils.Pair;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Map;
 
 // -----------------------------------------------------------------------------
 /**
@@ -202,7 +204,7 @@ implements	SunIntensityModelI
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @see etape2.equipments.solar_panel.mil.SunStateManagementI#setState(etape2.equipments.solar_panel.mil.SunState)
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.SunStateManagementI#setState(fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.SunState)
 	 */
 	@Override
 	public void			setState(SunState s)
@@ -211,7 +213,7 @@ implements	SunIntensityModelI
 	}
 
 	/**
-	 * @see etape2.equipments.solar_panel.mil.SunStateManagementI#setCurrent(java.time.ZonedDateTime)
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.SunStateManagementI#setCurrent(java.time.ZonedDateTime)
 	 */
 	@Override
 	public void			setCurrent(ZonedDateTime newCurrent)

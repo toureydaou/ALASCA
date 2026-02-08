@@ -1,5 +1,10 @@
 package etape2.equipments.solar_panel.mil;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Map;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -50,10 +55,6 @@ import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.utils.Pair;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Map;
 
 // -----------------------------------------------------------------------------
 /**
@@ -107,7 +108,7 @@ implements	SunIntensityModelI
 
 	private static final long	serialVersionUID = 1L;
 	/** when true, leaves a trace of the execution of the model.			*/
-	public static boolean		VERBOSE = true;
+	public static boolean		VERBOSE = false;
 	/** when true, leaves a debugging trace of the execution of the model.	*/
 	public static boolean		DEBUG = false;
 
@@ -174,7 +175,7 @@ implements	SunIntensityModelI
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @see etape2.equipments.solar_panel.mil.SunStateManagementI#setState(etape2.equipments.solar_panel.mil.SunState)
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.SunStateManagementI#setState(fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.SunState)
 	 */
 	@Override
 	public void			setState(SunState s)
@@ -183,7 +184,7 @@ implements	SunIntensityModelI
 	}
 
 	/**
-	 * @see etape2.equipments.solar_panel.mil.SunStateManagementI#setCurrent(java.time.ZonedDateTime)
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.SunStateManagementI#setCurrent(java.time.ZonedDateTime)
 	 */
 	@Override
 	public void			setCurrent(ZonedDateTime newCurrent)
@@ -330,15 +331,19 @@ implements	SunIntensityModelI
 	@Override
 	public Duration		timeAdvance()
 	{
-		if (DEBUG) {
-			this.logMessage("timeAdvance " + this.currentState);
+		Duration ret = null;
+		if (this.currentState == null || this.currentState.equals(SunState.NIGHT)) {
+			ret = Duration.INFINITY;
+		} else {
+			ret = new Duration(this.computationStep, this.getSimulatedTimeUnit());
 		}
 
-		if (this.currentState == null || this.currentState.equals(SunState.NIGHT)) {
-			return Duration.INFINITY;
-		} else {
-			return new Duration(this.computationStep, this.getSimulatedTimeUnit());
+		if (DEBUG) {
+			this.logMessage("timeAdvance in " + this.currentState
+							+ " returns " + ret);
 		}
+
+		return ret;
 	}
 
 	/**

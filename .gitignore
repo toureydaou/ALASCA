@@ -12,5 +12,7 @@ Projet_ALASCA/.settings/*
 .classpath
 .org.eclipse.jdt.core.prefs
 /HEM-2025-etape3-02122025-src/
-/.settings/
-
+/HEM-2025-etape3*
+Projet_ALASCA/INTEGRATION_TEST_ANALYSIS.md
+.gitignore
+Projet_ALASCA/ETAPE4_COORDINATION_DESIGN.md

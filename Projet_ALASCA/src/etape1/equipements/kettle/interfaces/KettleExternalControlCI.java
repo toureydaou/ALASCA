@@ -3,12 +3,15 @@ package etape1.equipements.kettle.interfaces;
 import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.components.interfaces.RequiredCI;
 
-
-
-public interface KettleExternalControlCI extends KettleExternalControlI,  RequiredCI, OfferedCI {
-	
-	public void turnOn() throws Exception;
-	
-	public void turnOff() throws Exception;
-	
+// -----------------------------------------------------------------------------
+/**
+ * The component interface <code>KettleExternalControlCI</code> for external
+ * control of the water heater.
+ *
+ * <p>Created on : 2023-09-18</p>
+ *
+ * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ */
+public interface KettleExternalControlCI
+extends KettleExternalControlI, RequiredCI, OfferedCI {
 }

@@ -1,5 +1,7 @@
 package etape2.equipments.batteries.mil;
 
+
+import java.util.ArrayList;
 import java.util.Map;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
@@ -42,6 +44,8 @@ import etape2.equipments.batteries.mil.events.BatteriesEmpty;
 import etape2.equipments.batteries.mil.events.BatteriesRequiredPowerChanged;
 import etape2.equipments.batteries.mil.events.StartCharging;
 import etape2.equipments.batteries.mil.events.StopCharging;
+import fr.sorbonne_u.components.cyphy.utils.tests.AbstractTestScenarioBasedAtomicHIOA;
+import fr.sorbonne_u.components.cyphy.utils.tests.TestScenarioWithSimulation;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.ExportedVariable;
@@ -58,8 +62,6 @@ import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.utils.Pair;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
-import tests_utils.AbstractTestScenarioBasedAtomicHIOA;
-import tests_utils.TestScenario;
 
 // -----------------------------------------------------------------------------
 /**
@@ -224,7 +226,30 @@ implements	BatteriesUserI
 		assert	simParams.containsKey(testScenarioName) :
 				new MissingRunParameterException(testScenarioName);
 
-		this.setTestScenario((TestScenario) simParams.get(testScenarioName));
+		this.setTestScenario((TestScenarioWithSimulation)
+											simParams.get(testScenarioName));
+	}
+
+	/**
+	 * set a new batteries required power value.
+	 * 
+	 * <p><strong>Contract</strong></p>
+	 * 
+	 * <pre>
+	 * pre	{@code value >= 0.0}
+	 * pre	{@code t != null}
+	 * post	{@code true}	// no postcondition.
+	 * </pre>
+	 *
+	 * @param value	a new batteries required power value.
+	 * @param t		the simulated time at which the change is made.
+	 */
+	public void			setBatteriesRequiredPower(double value, Time t)
+	{
+		assert	value >= 0 : new NeoSim4JavaException("value >= 0");
+		assert	t != null : new NeoSim4JavaException("t != null");
+
+		this.batteriesRequiredPower.setNewValue(value, t);
 	}
 
 	/**
@@ -285,7 +310,7 @@ implements	BatteriesUserI
 	}
 
 	/**
-	 * @see etape2.equipments.batteries.mil.BatteriesUserI#signalBatteriesEmpty()
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.batteries.mil.BatteriesUserI#signalBatteriesEmpty()
 	 */
 	@Override
 	public void			signalBatteriesEmpty()
@@ -294,12 +319,28 @@ implements	BatteriesUserI
 	}
 
 	/**
-	 * @see etape2.equipments.batteries.mil.BatteriesUserI#signalBatteriesAvailable()
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.batteries.mil.BatteriesUserI#signalBatteriesAvailable()
 	 */
 	@Override
 	public void			signalBatteriesAvailable()
 	{
 		this.batteriesEmpty = false;
+	}
+
+	/**
+	 * 
+	 * <p><strong>Contract</strong></p>
+	 * 
+	 * <pre>
+	 * pre	{@code true}	// no more preconditions.
+	 * post	{@code true}	// no more postconditions.
+	 * </pre>
+	 * 
+	 * @see fr.sorbonne_u.components.cyphy.utils.tests.AbstractTestScenarioBasedAtomicHIOA#output()
+	 */
+	@Override
+	public ArrayList<EventI> output() {
+		return super.output();
 	}
 
 	/**

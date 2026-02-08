@@ -1,10 +1,12 @@
 package etape1.equipments.batteries;
 
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnitI;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.PreconditionException;
-import physical_data.Measure;
-import physical_data.MeasurementUnit;
-import physical_data.SignalData;
+
 
 // -----------------------------------------------------------------------------
 /**
@@ -38,7 +40,7 @@ public interface		BatteriesImplementationI
 	/** measurement unit for tension used in the batteries.				*/
 	public static final MeasurementUnit	TENSION_UNIT = MeasurementUnit.VOLTS;
 	/** capacity measurement unit for the batteries.						*/
-	public static final MeasurementUnit	CAPACITY_UNIT =
+	public static final MeasurementUnitI	CAPACITY_UNIT =
 													MeasurementUnit.WATT_HOURS;
 
 	// -------------------------------------------------------------------------

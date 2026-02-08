@@ -2,6 +2,8 @@ package etape1.equipments.solar_panel;
 
 import etape1.equipments.solar_panel.connections.SolarPanelConnector;
 import etape1.equipments.solar_panel.connections.SolarPanelOutboundPort;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -40,12 +42,11 @@ import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
+import fr.sorbonne_u.components.utils.tests.TestsStatistics;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PreconditionException;
-import physical_data.Measure;
-import physical_data.SignalData;
-import tests_utils.TestsStatistics;
+
 
 // -----------------------------------------------------------------------------
 /**

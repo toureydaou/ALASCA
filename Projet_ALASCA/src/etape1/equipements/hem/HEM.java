@@ -12,6 +12,7 @@ import etape1.bases.parser.ConnectorAdapterInfo;
 import etape1.bases.parser.ConnectorAdapterParserXML;
 import etape1.equipements.coffee_machine.CoffeeMachine;
 import etape1.equipements.hem.ports.AdjustableOutboundPort;
+import etape1.equipements.kettle.Kettle;
 import etape1.equipements.registration.ports.RegistrationI;
 import etape1.equipements.registration.ports.RegistrationInboundPort;
 import etape1.equipments.meter.ElectricMeter;
@@ -58,6 +59,7 @@ import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.BCMRuntimeException;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
+import fr.sorbonne_u.components.utils.tests.TestsStatistics;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.InvariantException;
@@ -67,7 +69,7 @@ import fr.sorbonne_u.utils.aclocks.ClocksServer;
 import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
 import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
-import tests_utils.TestsStatistics;
+
 
 // -----------------------------------------------------------------------------
 /**
@@ -133,6 +135,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	// HEM registration URI for equipements
 	public static final String REGISTRATION_COFFEE_INBOUND_PORT_URI = "HEM-REGISTRATION-COFFEE-INBOUND-PORT-URI";
 	public static final String REGISTRATION_LAUNDRY_INBOUND_PORT_URI = "HEM-REGISTRATION-LAUNDRY-INBOUND-PORT-URI";
+	public static final String REGISTRATION_KETTLE_INBOUND_PORT_URI = "HEM-REGISTRATION-KETTLE-INBOUND-PORT-URI";
 
 	// HashMap to register equipements URI and connector class names
 	private HashMap<String, String> equipementsRegitered;
@@ -165,6 +168,9 @@ public class HEM extends AbstractComponent implements RegistrationI {
 	// Registration port for laundry
 	protected RegistrationInboundPort rlip;
 
+	// Registration port for kettle (chauffe-eau)
+	protected RegistrationInboundPort rkip;
+
 	/**
 	 * when true, this implementation of the HEM performs the tests that are planned
 	 * in the method execute.
@@ -175,6 +181,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 
 	public static final int COFFEE_MACHINE_TEST_DELAY = 5;
 	public static final int LAUNDRY_TEST_DELAY = 15;
+	public static final int KETTLE_TEST_DELAY = 25;
 
 	/** collector of test statistics. */
 	protected TestsStatistics statistics;
@@ -296,6 +303,9 @@ public class HEM extends AbstractComponent implements RegistrationI {
 
 			this.rlip = new RegistrationInboundPort(REGISTRATION_LAUNDRY_INBOUND_PORT_URI, this);
 			this.rlip.publishPort();
+
+			this.rkip = new RegistrationInboundPort(REGISTRATION_KETTLE_INBOUND_PORT_URI, this);
+			this.rkip.publishPort();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -373,6 +383,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 				System.out.println("Schedule test");
 				this.scheduleTestCoffee();
 				this.scheduleTestLaundry();
+				this.scheduleTestKettle();
 			}
 		}
 	}
@@ -402,6 +413,7 @@ public class HEM extends AbstractComponent implements RegistrationI {
 			}
 			this.rcip.unpublishPort();
 			this.rlip.unpublishPort();
+			this.rkip.unpublishPort();
 
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
@@ -1145,6 +1157,226 @@ public class HEM extends AbstractComponent implements RegistrationI {
 			public void run() {
 				try {
 					testLaundry();
+				} catch (Throwable e) {
+					throw new BCMRuntimeException(e);
+				}
+			}
+		}, delay, TimeUnit.NANOSECONDS);
+
+	}
+
+	/**
+	 * Test the kettle (chauffe-eau) via AdjustableCI.
+	 *
+	 * <p>
+	 * <strong>Gherkin specification</strong>
+	 * </p>
+	 *
+	 * <pre>
+	 * Feature: adjustable appliance mode management for kettle
+	 *   Scenario: getting the maximum mode index
+	 *     Given the kettle has just been turned on
+	 *     When I call maxMode()
+	 *     Then the result is its maximum mode index
+	 *
+	 *   Scenario: getting the current mode index
+	 *     Given the kettle has just been turned on
+	 *     When I call currentMode()
+	 *     Then the current mode is within the valid range
+	 *
+	 *   Scenario: increasing the mode index
+	 *     Given the kettle is turned on
+	 *     And the current mode index is strictly less than the maximum mode index
+	 *     When I call upMode()
+	 *     Then the method returns true
+	 *     And the current mode becomes the previous mode plus one
+	 *
+	 *   Scenario: decreasing the mode index
+	 *     Given the kettle is turned on
+	 *     And the current mode index is strictly greater than 0
+	 *     When I call downMode()
+	 *     Then the method returns true
+	 *     And the current mode becomes the previous mode minus one
+	 *
+	 * Feature: getting the power consumption given a mode
+	 *   Scenario: getting the power consumption of the maximum mode
+	 *     Given the kettle is turned on
+	 *     When I get the power consumption of the maximum mode
+	 *     Then the result is strictly greater than 0
+	 *
+	 * Feature: suspending and resuming
+	 *   Scenario: suspending
+	 *     Given the kettle is turned on
+	 *     And it is not suspended yet
+	 *     When I call suspend()
+	 *     Then the method returns true
+	 *     And the kettle becomes suspended
+	 *
+	 *   Scenario: resuming
+	 *     Given the kettle is turned on
+	 *     And it is suspended
+	 *     When I call resume()
+	 *     Then the method returns true
+	 *     And the kettle is no longer suspended
+	 * </pre>
+	 *
+	 * @throws Exception <i>to do</i>.
+	 */
+	protected void testKettle() throws Exception {
+		this.logMessage("Kettle tests start.");
+		this.statistics = new TestsStatistics();
+		try {
+			// Get the kettle port from the registered equipment
+			AdjustableOutboundPort kettlePort = this.equipmentPorts.get(Kettle.KETTLE_CONNECTOR_NAME);
+
+			if (kettlePort == null) {
+				this.logMessage("ERROR: Kettle not registered in equipmentPorts!");
+				this.logMessage("Available equipment UIDs: " + this.equipmentPorts.keySet());
+				return;
+			}
+
+			this.logMessage("\n*** Testing kettle adjustable modes ***\n");
+
+			// ---------------------------------------------------------------------
+			// Scenario: Getting the maximum mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("Testing maxMode():");
+			int maxMode = kettlePort.maxMode();
+			this.logMessage("  - maxMode() returned: " + maxMode);
+
+			if (maxMode <= 0) {
+				this.logMessage("  -> Incorrect: maximum mode should be > 0.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Getting the current mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting currentMode():");
+			int currentMode = kettlePort.currentMode();
+			this.logMessage("  - currentMode() returned: " + currentMode);
+
+			if (currentMode < 0 || currentMode > maxMode) {
+				this.logMessage("  -> Incorrect: current mode is out of valid range.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Increasing the mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting upMode():");
+			if (currentMode == maxMode) {
+				this.logMessage("  - Already at maximum mode, cannot increase.");
+				this.statistics.updateStatistics();
+			} else {
+				boolean upSuccess = kettlePort.upMode();
+				int newMode = kettlePort.currentMode();
+				this.logMessage("  - upMode() returned: " + upSuccess);
+				this.logMessage("  - New mode is: " + newMode);
+
+				if (!upSuccess) {
+					this.logMessage("  -> Incorrect: upMode() should return true when current < max.");
+					this.statistics.incorrectResult();
+				}
+				if (newMode != currentMode + 1) {
+					this.logMessage("  -> Incorrect: new mode should be previous mode + 1.");
+					this.statistics.incorrectResult();
+				}
+				this.statistics.updateStatistics();
+
+				currentMode = newMode;
+			}
+
+			// ---------------------------------------------------------------------
+			// Scenario: Decreasing the mode index
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting downMode():");
+			if (currentMode == 0) {
+				this.logMessage("  - Already at minimum mode, cannot decrease.");
+				this.statistics.updateStatistics();
+			} else {
+				boolean downSuccess = kettlePort.downMode();
+				int newMode = kettlePort.currentMode();
+				this.logMessage("  - downMode() returned: " + downSuccess);
+				this.logMessage("  - New mode is: " + newMode);
+
+				if (!downSuccess) {
+					this.logMessage("  -> Incorrect: downMode() should return true when current > 0.");
+					this.statistics.incorrectResult();
+				}
+				if (newMode != currentMode - 1) {
+					this.logMessage("  -> Incorrect: new mode should be previous mode - 1.");
+					this.statistics.incorrectResult();
+				}
+				this.statistics.updateStatistics();
+
+				currentMode = newMode;
+			}
+
+			// ---------------------------------------------------------------------
+			// Scenario: Getting consumption of the maximum mode
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting getModeConsumption():");
+			double maxConsumption = kettlePort.getModeConsumption(maxMode);
+			this.logMessage("  - getModeConsumption(" + maxMode + ") returned: " + maxConsumption);
+
+			if (maxConsumption <= 0) {
+				this.logMessage("  -> Incorrect: consumption for max mode must be > 0.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Suspending
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting suspend():");
+			boolean suspendSuccess = kettlePort.suspend();
+			this.logMessage("  - suspend() returned: " + suspendSuccess);
+
+			if (!suspendSuccess) {
+				this.logMessage("  -> Incorrect: suspend() should return true.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// ---------------------------------------------------------------------
+			// Scenario: Resuming
+			// ---------------------------------------------------------------------
+			this.logMessage("\nTesting resume():");
+			boolean resumeSuccess = kettlePort.resume();
+			this.logMessage("  - resume() returned: " + resumeSuccess);
+
+			if (!resumeSuccess) {
+				this.logMessage("  -> Incorrect: resume() should return true.");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			this.statistics.statisticsReport(this);
+
+			this.logMessage("\n*** Kettle tests completed ***\n");
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Schedule the test of the kettle (chauffe-eau).
+	 */
+	protected void scheduleTestKettle() {
+
+		Instant kettleTestStart = this.ac.getStartInstant().plusSeconds(KETTLE_TEST_DELAY);
+		this.traceMessage("HEM schedules the kettle test.\n");
+		long delay = this.ac.nanoDelayUntilInstant(kettleTestStart);
+		this.scheduleTaskOnComponent(new AbstractComponent.AbstractTask() {
+
+			@Override
+			public void run() {
+				try {
+					testKettle();
 				} catch (Throwable e) {
 					throw new BCMRuntimeException(e);
 				}

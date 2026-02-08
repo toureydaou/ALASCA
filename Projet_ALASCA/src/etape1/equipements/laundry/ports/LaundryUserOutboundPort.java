@@ -219,5 +219,29 @@ implements	LaundryUserCI
 	{
 		((LaundryUserCI)this.getConnector()).setSpinSpeed(speed);
 	}
+
+	@Override
+	public boolean		isDelayedStartSet() throws Exception
+	{
+		return ((LaundryUserCI)this.getConnector()).isDelayedStartSet();
+	}
+
+	@Override
+	public long			getDelayedStartTime() throws Exception
+	{
+		return ((LaundryUserCI)this.getConnector()).getDelayedStartTime();
+	}
+
+	@Override
+	public void			setDelayedStart(long delayInSeconds) throws Exception
+	{
+		((LaundryUserCI)this.getConnector()).setDelayedStart(delayInSeconds);
+	}
+
+	@Override
+	public void			cancelDelayedStart() throws Exception
+	{
+		((LaundryUserCI)this.getConnector()).cancelDelayedStart();
+	}
 }
 // -----------------------------------------------------------------------------

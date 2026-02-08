@@ -1,5 +1,7 @@
 package etape2.equipments.generator.mil;
 
+
+
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -39,7 +41,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import etape1.equipments.generator.Generator;
-import etape1.equipments.generator.Generator.State;
+import etape1.equipments.generator.GeneratorImplementationI.State;
 import etape2.GlobalSimulationConfigurationI;
 import etape2.equipments.generator.mil.events.GeneratorRequiredPowerChanged;
 import etape2.equipments.generator.mil.events.Start;
@@ -184,14 +186,14 @@ implements	TankLevelManagementI,
 	/** when true, leaves a trace of the execution of the model.			*/
 	public static boolean			VERBOSE = true;
 	/** when true, leaves a debugging trace of the execution of the model.	*/
-	public static boolean			DEBUG = false;
+	public static boolean			DEBUG = true;
 	/** when comparing floating point values, use this tolerance to get
 	 *  the result of the comparison.										*/
 	protected static final double	TOLERANCE  = 1.0e-08;
 
 	/** single model URI.													*/
-	public static final String		URI = "generator-power-model";
-	/** tension used in the batteries.										*/
+	public static final String	URI =
+									GeneratorPowerModel.class.getSimpleName();
 	
 	/**	name of the run parameter for the maximum out power of the generator
 	 *  in {@code MeasurementUnit.WATTS}.									*/
@@ -199,24 +201,24 @@ implements	TankLevelManagementI,
 	
 	/** total maximal out power provided when producing power in
 	 *  {@code MeasurementUnit.WATTS}.	 									*/
-	protected double	totalMaximumOutputPower;
+	protected double			totalMaximumOutputPower;
 
 	/** current state of the generator.										*/
-	protected State		currentState;
+	protected State				currentState;
 	/** when true, the model must emit an event of type
 	 *  {@code SharedContinuousStateChange}.								*/
-	protected boolean	signalSharedContinuousStateChange;
+	protected boolean			signalSharedContinuousStateChange;
 
 	/** current power required by the electric circuit from the generator
 	 *  in {@code MeasurementUnit.AMPERES}; it is set by the electric
 	 *  meter according to the difference between the overall current power
 	 *  production and the current power consumption.						*/
 	@ImportedVariable(type = Double.class)
-	protected Value<Double>	generatorRequiredPower;
+	protected Value<Double>		generatorRequiredPower;
 	/** current power delivered to the electric circuit by the generator
 	 *  in {@code MeasurementUnit.AMPERES}.									*/
 	@ExportedVariable(type = Double.class)
-	protected Value<Double>	generatorOutputPower = new Value<>(this);
+	protected Value<Double>		generatorOutputPower = new Value<>(this);
 
 	// -------------------------------------------------------------------------
 	// Invariants
@@ -539,7 +541,7 @@ implements	TankLevelManagementI,
 	}
 
 	/**
-	 * @see etape2.equipments.generator.mil.GeneratorStateManagementI#getGeneratorState()
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.GeneratorStateManagementI#getGeneratorState()
 	 */
 	@Override
 	public State		getGeneratorState()
@@ -548,7 +550,7 @@ implements	TankLevelManagementI,
 	}
 
 	/**
-	 * @see etape2.equipments.generator.mil.GeneratorStateManagementI#setGeneratorState(etape1.equipments.generator.Generator.State)
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.GeneratorStateManagementI#setGeneratorState(fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI.State)
 	 */
 	@Override
 	public void			setGeneratorState(State newState)
@@ -557,16 +559,27 @@ implements	TankLevelManagementI,
 	}
 
 	/**
-	 * @see etape2.equipments.generator.mil.TankLevelManagementI#signalTankEmpty()
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.TankLevelManagementI#notTankEmpty()
+	 */
+	@Override
+	public boolean		notTankEmpty()
+	{
+		return !this.currentState.equals(State.TANK_EMPTY);
+	}
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.TankLevelManagementI#signalTankEmpty()
 	 */
 	@Override
 	public void			signalTankEmpty()
 	{
-		this.currentState = State.TANK_EMPTY;
+		if (!this.currentState.equals(State.OFF)) {
+			this.currentState = State.TANK_EMPTY;
+		}
 	}
 
 	/**
-	 * @see etape2.equipments.generator.mil.TankLevelManagementI#signalTankNoLongerEmpty()
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.TankLevelManagementI#signalTankNoLongerEmpty()
 	 */
 	@Override
 	public void			signalTankNoLongerEmpty()

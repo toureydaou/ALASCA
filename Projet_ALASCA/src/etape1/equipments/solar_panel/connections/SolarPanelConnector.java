@@ -1,9 +1,10 @@
 package etape1.equipments.solar_panel.connections;
 
 import etape1.equipments.solar_panel.SolarPanelCI;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 import fr.sorbonne_u.components.connectors.AbstractConnector;
-import physical_data.Measure;
-import physical_data.SignalData;
+
 
 // -----------------------------------------------------------------------------
 /**

@@ -1,5 +1,6 @@
 package etape2.equipments.generator.mil;
 
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -56,6 +57,21 @@ public interface		TankLevelManagementI
 	// -------------------------------------------------------------------------
 	// Signature and default methods
 	// -------------------------------------------------------------------------
+
+	/**
+	 * return true if the model is not in the state {@code State.TANK_EMPTY},
+	 * otherwise false.
+	 * 
+	 * <p><strong>Contract</strong></p>
+	 * 
+	 * <pre>
+	 * pre	{@code true}	// no precondition.
+	 * post	{@code true}	// no postcondition.
+	 * </pre>
+	 *
+	 * @return	true if the model is not in the state {@code State.TANK_EMPTY}, otherwise false.
+	 */
+	public boolean		notTankEmpty();
 
 	/**
 	 * update the state to note that the tank of the generator is empty.

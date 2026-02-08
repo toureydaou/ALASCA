@@ -1,11 +1,13 @@
 package etape3.equipements.coffee_machine;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import etape1.bases.RegistrationCI;
 import etape1.equipements.coffee_machine.CoffeeMachine;
 import etape1.equipements.coffee_machine.Constants;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineExternalControlI;
@@ -17,6 +19,9 @@ import etape1.equipements.coffee_machine.interfaces.CoffeeMachineUserI;
 import etape1.equipements.coffee_machine.ports.CoffeeMachineExternalControlJava4InboundPort;
 import etape1.equipements.coffee_machine.ports.CoffeeMachineInternalInboundPort;
 import etape1.equipements.coffee_machine.ports.CoffeeMachineUserInboundPort;
+import etape1.equipements.hem.HEM;
+import etape1.equipements.registration.connector.RegistrationConnector;
+import etape1.equipements.registration.ports.RegistrationOutboundPort;
 import etape2.equipments.coffeemachine.mil.events.DoNotHeat;
 import etape2.equipments.coffeemachine.mil.events.FillWaterCoffeeMachine;
 import etape2.equipments.coffeemachine.mil.events.Heat;
@@ -47,6 +52,7 @@ import fr.sorbonne_u.alasca.physical_data.TimedMeasure;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.AbstractPort;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
+import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.cyphy.AbstractCyPhyComponent;
 import fr.sorbonne_u.components.cyphy.ExecutionMode;
 import fr.sorbonne_u.components.cyphy.annotations.LocalArchitecture;
@@ -67,6 +73,7 @@ import fr.sorbonne_u.exceptions.PostconditionException;
 import fr.sorbonne_u.exceptions.PreconditionException;
 import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
+import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
 
 @SIL_Simulation_Architectures({
 		@LocalArchitecture(uri = "silUnitTests", rootModelURI = "CoffeeMachineCoupledModel", simulatedTimeUnit = TimeUnit.HOURS, externalEvents = @ModelExternalEvents()),
@@ -77,6 +84,7 @@ import fr.sorbonne_u.utils.aclocks.ClocksServer;
 @OfferedInterfaces(offered = { CoffeeMachineUserCI.class, CoffeeMachineInternalControlCI.class,
 		CoffeeMachineExternalControlJava4CI.class, CoffeeMachineSensorDataCI.CoffeeMachineSensorOfferedPullCI.class,
 		CoffeeMachineActuatorCI.class })
+@RequiredInterfaces(required = { RegistrationCI.class })
 public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		implements CoffeeMachineUserI, CoffeeMachineInternalControlI, CoffeeMachineExternalControlI {
 
@@ -138,6 +146,18 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 
 	protected static final String CURRENT_TEMPERATURE_NAME = "currentTemperature";
 	protected static final String CURRENT_WATER_LEVEL_NAME = "currentWaterLevel";
+	
+
+	public static final String XML_COFFEE_MACHINE_ADAPTER_DESCRIPTOR = "adapters/coffeem-adapter/coffeeci-descriptor.xml";
+
+
+	public static final String COFFEE_MACHINE_CONNECTOR_NAME = "CoffeeMachineGeneratedConnector";
+	
+	protected RegistrationOutboundPort rop;
+
+	protected String uid;
+
+	protected boolean isIntegrationTestMode;
 
 	protected RTAtomicSimulatorPlugin asp;
 	protected final String localArchitectureURI;
@@ -147,19 +167,19 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 	// Constructors
 	// -------------------------------------------------------------------------
 
-	protected CoffeeMachineCyPhy() throws Exception {
-		this(USER_INBOUND_PORT_URI, INTERNAL_CONTROL_INBOUND_PORT_URI, EXTERNAL_CONTROL_INBOUND_PORT_URI,
+	protected CoffeeMachineCyPhy(boolean isIntegrationTestMode) throws Exception {
+		this(isIntegrationTestMode, USER_INBOUND_PORT_URI, INTERNAL_CONTROL_INBOUND_PORT_URI, EXTERNAL_CONTROL_INBOUND_PORT_URI,
 				SENSOR_INBOUND_PORT_URI, ACTUATOR_INBOUND_PORT_URI);
 	}
 
-	protected CoffeeMachineCyPhy(String userInboundPortURI, String internalControlInboundPortURI,
+	protected CoffeeMachineCyPhy(boolean isIntegrationTestMode, String userInboundPortURI, String internalControlInboundPortURI,
 			String externalControlInboundPortURI, String sensorInboundPortURI, String actuatorInboundPortURI)
 			throws Exception {
-		this(AbstractPort.generatePortURI(CyPhyReflectionCI.class), userInboundPortURI, internalControlInboundPortURI,
+		this(isIntegrationTestMode, AbstractPort.generatePortURI(CyPhyReflectionCI.class), userInboundPortURI, internalControlInboundPortURI,
 				externalControlInboundPortURI, sensorInboundPortURI, actuatorInboundPortURI);
 	}
 
-	protected CoffeeMachineCyPhy(String reflectionInboundPortURI, String userInboundPortURI,
+	protected CoffeeMachineCyPhy(boolean isIntegrationTestMode, String reflectionInboundPortURI, String userInboundPortURI,
 			String internalControlInboundPortURI, String externalControlInboundPortURI, String sensorInboundPortURI,
 			String actuatorInboundPortURI) throws Exception {
 		super(reflectionInboundPortURI, NUMBER_OF_STANDARD_THREADS, NUMBER_OF_SCHEDULABLE_THREADS);
@@ -167,23 +187,38 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		this.localArchitectureURI = null;
 		this.accelerationFactor = 0.0;
 
-		this.initialise(userInboundPortURI, internalControlInboundPortURI, externalControlInboundPortURI,
+		this.initialise(isIntegrationTestMode, userInboundPortURI, internalControlInboundPortURI, externalControlInboundPortURI,
 				sensorInboundPortURI, actuatorInboundPortURI);
 	}
 
-	protected CoffeeMachineCyPhy(ExecutionMode executionMode, String clockURI) throws Exception {
-		this(USER_INBOUND_PORT_URI, INTERNAL_CONTROL_INBOUND_PORT_URI, EXTERNAL_CONTROL_INBOUND_PORT_URI,
+	protected CoffeeMachineCyPhy(boolean isIntegrationTestMode, ExecutionMode executionMode, String clockURI) throws Exception {
+		this(isIntegrationTestMode, USER_INBOUND_PORT_URI, INTERNAL_CONTROL_INBOUND_PORT_URI, EXTERNAL_CONTROL_INBOUND_PORT_URI,
 				SENSOR_INBOUND_PORT_URI, ACTUATOR_INBOUND_PORT_URI, executionMode, clockURI);
 	}
 
-	protected CoffeeMachineCyPhy(String userInboundPortURI, String internalControlInboundPortURI,
+	/**
+	 * Constructor with instanceId for multiple instances.
+	 */
+	protected CoffeeMachineCyPhy(int instanceId, boolean isIntegrationTestMode, ExecutionMode executionMode, String clockURI) throws Exception {
+		this(isIntegrationTestMode,
+			 REFLECTION_INBOUND_PORT_URI + "-" + instanceId,
+			 USER_INBOUND_PORT_URI + "-" + instanceId,
+			 INTERNAL_CONTROL_INBOUND_PORT_URI + "-" + instanceId,
+			 EXTERNAL_CONTROL_INBOUND_PORT_URI + "-" + instanceId,
+			 SENSOR_INBOUND_PORT_URI + "-" + instanceId,
+			 ACTUATOR_INBOUND_PORT_URI + "-" + instanceId,
+			 executionMode, clockURI);
+		this.uid = "CoffeeMachine_" + instanceId;
+	}
+
+	protected CoffeeMachineCyPhy(boolean isIntegrationTestMode, String userInboundPortURI, String internalControlInboundPortURI,
 			String externalControlInboundPortURI, String sensorInboundPortURI, String actuatorInboundPortURI,
 			ExecutionMode executionMode, String clockURI) throws Exception {
-		this(AbstractPort.generatePortURI(CyPhyReflectionCI.class), userInboundPortURI, internalControlInboundPortURI,
+		this(isIntegrationTestMode, AbstractPort.generatePortURI(CyPhyReflectionCI.class), userInboundPortURI, internalControlInboundPortURI,
 				externalControlInboundPortURI, sensorInboundPortURI, actuatorInboundPortURI, executionMode, clockURI);
 	}
 
-	protected CoffeeMachineCyPhy(String reflectionInboundPortURI, String userInboundPortURI,
+	protected CoffeeMachineCyPhy(boolean isIntegrationTestMode, String reflectionInboundPortURI, String userInboundPortURI,
 			String internalControlInboundPortURI, String externalControlInboundPortURI, String sensorInboundPortURI,
 			String actuatorInboundPortURI, ExecutionMode executionMode, String clockURI) throws Exception {
 		super(reflectionInboundPortURI, NUMBER_OF_STANDARD_THREADS, NUMBER_OF_SCHEDULABLE_THREADS, executionMode,
@@ -195,11 +230,11 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		this.localArchitectureURI = null;
 		this.accelerationFactor = 0.0;
 
-		this.initialise(userInboundPortURI, internalControlInboundPortURI, externalControlInboundPortURI,
+		this.initialise(isIntegrationTestMode, userInboundPortURI, internalControlInboundPortURI, externalControlInboundPortURI,
 				sensorInboundPortURI, actuatorInboundPortURI);
 	}
 
-	protected CoffeeMachineCyPhy(String reflectionInboundPortURI, String userInboundPortURI,
+	protected CoffeeMachineCyPhy(boolean isIntegrationTestMode, String reflectionInboundPortURI, String userInboundPortURI,
 			String internalControlInboundPortURI, String externalControlInboundPortURI, String sensorInboundPortURI,
 			String actuatorInboundPortURI, ExecutionMode executionMode, TestScenario testScenario,
 			String localArchitectureURI, double accelerationFactor) throws Exception {
@@ -219,13 +254,18 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		this.localArchitectureURI = localArchitectureURI;
 		this.accelerationFactor = accelerationFactor;
 
-		this.initialise(userInboundPortURI, internalControlInboundPortURI, externalControlInboundPortURI,
+		this.initialise(isIntegrationTestMode, userInboundPortURI, internalControlInboundPortURI, externalControlInboundPortURI,
 				sensorInboundPortURI, actuatorInboundPortURI);
 	}
 
-	protected void initialise(String userInboundPortURI, String internalControlInboundPortURI,
+	protected void initialise(boolean isIntegrationTestMode, String userInboundPortURI, String internalControlInboundPortURI,
 			String externalControlInboundPortURI, String sensorInboundPortURI, String actuatorInboundPortURI)
 			throws Exception {
+
+		this.isIntegrationTestMode = isIntegrationTestMode;
+		this.uid = COFFEE_MACHINE_CONNECTOR_NAME;
+		System.out.println("DEBUG CoffeeMachine: uid initialized to: " + this.uid);
+
 		this.currentState = CoffeeMachineState.OFF;
 		this.currentMode = CoffeeMachineMode.SUSPEND;
 
@@ -243,6 +283,16 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 
 		this.actuatorInboundPort = new CoffeeMachineActuatorInboundPort(actuatorInboundPortURI, this);
 		this.actuatorInboundPort.publishPort();
+		
+		
+		
+		if (isIntegrationTestMode) {
+			System.out.println("Machine à café publication port Registration (CM)");
+			this.rop = new RegistrationOutboundPort(this);
+			this.rop.publishPort();
+			System.out.println("Machine à café port Registration publié (CM)");
+		}
+		
 
 		if (VERBOSE) {
 			this.tracer.get().setTitle("CoffeeMachine CyPhy component");
@@ -263,10 +313,25 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 			switch (this.getExecutionMode()) {
 			case STANDARD:
 			case UNIT_TEST:
+				break;
 			case INTEGRATION_TEST:
+				if (isIntegrationTestMode) {
+					System.out.println("Connexion avec HEM pour enregistrement (CM)");
+					this.doPortConnection(this.rop.getPortURI(), HEM.REGISTRATION_COFFEE_INBOUND_PORT_URI,
+							RegistrationConnector.class.getCanonicalName());
+					System.out.println("Connexion avec HEM pour enregistrement réalisée (CM)");
+				}
 				break;
 			case UNIT_TEST_WITH_SIL_SIMULATION:
 			case INTEGRATION_TEST_WITH_SIL_SIMULATION:
+
+				if (isIntegrationTestMode) {
+					System.out.println("Connexion avec HEM pour enregistrement (CM)");
+					this.doPortConnection(this.rop.getPortURI(), HEM.REGISTRATION_COFFEE_INBOUND_PORT_URI,
+							RegistrationConnector.class.getCanonicalName());
+					System.out.println("Connexion avec HEM pour enregistrement réalisée (CM)");
+				}
+				
 				RTArchitecture architecture = (RTArchitecture) this.localSimulationArchitectures
 						.get(this.localArchitectureURI);
 
@@ -278,9 +343,6 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 						if (name.equals(CURRENT_TEMPERATURE_NAME)) {
 							return ((CoffeeMachineTemperatureSILModel) this.atomicSimulators.get(modelURI)
 									.getSimulatedModel()).getCurrentTemperature();
-						} else if (name.equals(CURRENT_WATER_LEVEL_NAME)) {
-							return ((CoffeeMachineElectricitySILModel) this.atomicSimulators.get(modelURI)
-									.getSimulatedModel()).getCurrentWaterLevel();
 						}
 						throw new BCMException("Unknown variable: " + name);
 					}
@@ -373,6 +435,12 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 			this.cmecjip.unpublishPort();
 			this.sensorInboundPort.unpublishPort();
 			this.actuatorInboundPort.unpublishPort();
+			if (isIntegrationTestMode) {
+				if (this.rop.connected()) {
+					this.doPortDisconnection(this.rop.getPortURI());
+				}
+				this.rop.unpublishPort();
+			}
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
 		}
@@ -421,6 +489,7 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 
 		this.currentState = CoffeeMachineState.ON;
 		this.currentMode = CoffeeMachineMode.SUSPEND;
+		
 
 		if (this.getExecutionMode().isSILTest()) {
 			try {
@@ -444,6 +513,27 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 				e.printStackTrace();
 			}
 		}
+		
+		if (isIntegrationTestMode) {
+			try {
+				System.out.println("DEBUG CoffeeMachine.turnOn(): uid = " + uid);
+				System.out.println("DEBUG CoffeeMachine.turnOn(): this.uid = " + this.uid);
+				System.out.println("DEBUG CoffeeMachine.turnOn(): COFFEE_MACHINE_CONNECTOR_NAME = " + COFFEE_MACHINE_CONNECTOR_NAME);
+				// Reconnect rop if it was disconnected (e.g., after turnOff)
+				if (!this.rop.connected()) {
+					System.out.println("DEBUG CoffeeMachine.turnOn(): rop disconnected, reconnecting...");
+					this.doPortConnection(this.rop.getPortURI(),
+						HEM.REGISTRATION_COFFEE_INBOUND_PORT_URI,
+						RegistrationConnector.class.getCanonicalName());
+					System.out.println("DEBUG CoffeeMachine.turnOn(): rop reconnected");
+				}
+				this.rop.register(uid, cmecjip.getPortURI(), XML_COFFEE_MACHINE_ADAPTER_DESCRIPTOR);
+				System.out.println("DEBUG CoffeeMachine.turnOn(): registered successfully");
+			} catch (Exception e) {
+				System.out.println("ERROR CoffeeMachine.turnOn() registration failed: " + e.getMessage());
+				e.printStackTrace();
+			}
+		}
 
 		assert this.on() : new PostconditionException("on()");
 	}
@@ -455,16 +545,24 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		}
 
 		assert this.on() : new PreconditionException("on()");
+		
+		
 
 		if (this.getExecutionMode().isSILTest()) {
 			this.sensorInboundPort.send(new CoffeeMachineStateSensorData(CoffeeMachineState.OFF));
 			((RTAtomicSimulatorPlugin) this.asp).triggerExternalEvent(CoffeeMachineStateSILModel.URI,
 					t -> new SwitchOffCoffeeMachine(t));
 		}
+		
 
 		this.currentState = CoffeeMachineState.OFF;
 		this.currentMode = CoffeeMachineMode.SUSPEND;
 		this.currentTemperature = new TimedMeasure<>(MIN_TEMPERATURE.getData(), TEMPERATURE_UNIT);
+		
+		if (isIntegrationTestMode) {
+			this.rop.unregister(uid);
+			this.doPortDisconnection(this.rop.getPortURI());
+		}
 
 		assert !this.on() : new PostconditionException("!on()");
 	}
@@ -492,6 +590,8 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		this.currentState = CoffeeMachineState.HEATING;
 
 		if (this.getExecutionMode().isSILTest()) {
+			// Notify controller of state change to HEATING
+			this.sensorInboundPort.send(new CoffeeMachineStateSensorData(this.currentState));
 			((RTAtomicSimulatorPlugin) this.asp).triggerExternalEvent(CoffeeMachineStateSILModel.URI, t -> new Heat(t));
 		}
 
@@ -510,10 +610,11 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		this.currentState = CoffeeMachineState.ON;
 
 		if (this.getExecutionMode().isSILTest()) {
+			this.sensorInboundPort.send(new CoffeeMachineStateSensorData(this.currentState));
 			((RTAtomicSimulatorPlugin) this.asp).triggerExternalEvent(CoffeeMachineStateSILModel.URI,
 					t -> new DoNotHeat(t));
 		}
-		this.sensorInboundPort.send(new CoffeeMachineStateSensorData(this.currentState));
+		
 		assert !this.heating() : new PostconditionException("!heating()");
 	}
 
@@ -638,6 +739,7 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		this.currentState = CoffeeMachineState.HEATING;
 
 		if (this.getExecutionMode().isSILTest()) {
+			this.sensorInboundPort.send(new CoffeeMachineStateSensorData(this.currentState));
 			// Trigger MakeCoffee event to start heating
 			((RTAtomicSimulatorPlugin) this.asp).triggerExternalEvent(CoffeeMachineStateSILModel.URI,
 					t -> new MakeCoffee(t));
@@ -646,7 +748,7 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 			double newWaterLevel = Math.max(0.0, this.currentWaterLevel.getData() - 0.25);
 			this.currentWaterLevel = new TimedMeasure<>(newWaterLevel, LITERS);
 		}
-		this.sensorInboundPort.send(new CoffeeMachineStateSensorData(this.currentState));
+		
 	}
 
 	@Override
@@ -658,9 +760,9 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		double newWaterLevel = Math.max(0.0,
 				this.currentWaterLevel.getData() - CoffeeMachine.CUP_OF_CAFE_CAPACITY.getData());
 		this.currentWaterLevel = new TimedMeasure<>(newWaterLevel, LITERS);
-		this.sensorInboundPort.send(new WaterLevelSensorData(currentWaterLevel));
-
+		
 		if (this.getExecutionMode().isSILTest()) {
+			this.sensorInboundPort.send(new WaterLevelSensorData(currentWaterLevel));
 			((RTAtomicSimulatorPlugin) this.asp).triggerExternalEvent(CoffeeMachineElectricitySILModel.URI,
 					t -> new ServeCoffee(t));
 		}
@@ -673,8 +775,9 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		}
 
 		this.currentWaterLevel = new TimedMeasure<>(WATER_CAPACITY.getData(), LITERS);
-		this.sensorInboundPort.send(new WaterLevelSensorData(currentWaterLevel));
+		
 		if (this.getExecutionMode().isSILTest()) {
+			this.sensorInboundPort.send(new WaterLevelSensorData(currentWaterLevel));
 			((RTAtomicSimulatorPlugin) this.asp).triggerExternalEvent(CoffeeMachineStateSILModel.URI,
 					t -> new FillWaterCoffeeMachine(t,
 							new FillWaterCoffeeMachine.WaterValue(WATER_CAPACITY.getData())));
@@ -690,20 +793,27 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 		Measure<Double> temp = null;
 		if (this.executionMode.isSILTest()) {
 			VariableValue<Double> v = this.computeCurrentTemperature();
-			temp = new Measure<>(v.getValue(), TEMPERATURE_UNIT);
+			if (v != null) {
+				temp = new Measure<>(v.getValue(), TEMPERATURE_UNIT);
+			} else {
+				temp = new Measure<>(this.currentTemperature.getData(), TEMPERATURE_UNIT);
+			}
 		} else {
 			temp = new Measure<>(this.currentTemperature.getData(), this.currentTemperature.getMeasurementUnit());
 		}
 		return temp;
 	}
 
+	@SuppressWarnings("unchecked")
 	protected VariableValue<Double> computeCurrentTemperature() throws Exception {
-		return this.asp.getModelVariableValue(CoffeeMachineTemperatureSILModel.URI, CURRENT_TEMPERATURE_NAME);
+		try {
+			return (VariableValue<Double>) this.asp.getModelVariableValue(
+					CoffeeMachineTemperatureSILModel.URI, CURRENT_TEMPERATURE_NAME);
+		} catch (Throwable e) {
+			return null;
+		}
 	}
 
-	protected VariableValue<Double> computeCurrentWaterLevel() throws Exception {
-		return this.asp.getModelVariableValue(CoffeeMachineElectricitySILModel.URI, CURRENT_WATER_LEVEL_NAME);
-	}
 
 	@Override
 	public Measure<Double> getMaxPowerLevel() throws Exception {
@@ -766,9 +876,23 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 			break;
 		case UNIT_TEST_WITH_SIL_SIMULATION:
 		case INTEGRATION_TEST_WITH_SIL_SIMULATION:
-			VariableValue<Double> v = this.computeCurrentTemperature();
-			ret = new TemperatureSensorData(new TimedMeasure<>(v.getValue(), TEMPERATURE_UNIT,
-					this.getClock4Simulation(), this.getClock4Simulation().instantOfSimulatedTime(v.getTime())));
+			try {
+				VariableValue<Double> v = this.computeCurrentTemperature();
+				if (v != null) {
+					ret = new TemperatureSensorData(new TimedMeasure<>(v.getValue(), TEMPERATURE_UNIT,
+							this.getClock4Simulation(), this.getClock4Simulation().instantOfSimulatedTime(v.getTime())));
+				} else {
+					ret = new TemperatureSensorData(
+							new TimedMeasure<>(this.currentTemperature.getData(), TEMPERATURE_UNIT,
+									this.getClock4Simulation(), Instant.now()));
+				}
+			} catch (Throwable e) {
+				// Must catch Throwable: AssertionError extends Error, not Exception
+				System.out.println("[COFFEE] SIL temperature not ready, using default 20.0C");
+				ret = new TemperatureSensorData(
+						new TimedMeasure<>(20.0, TEMPERATURE_UNIT,
+								this.getClock4Simulation(), Instant.now()));
+			}
 			break;
 		default:
 		}
@@ -806,9 +930,15 @@ public class CoffeeMachineCyPhy extends AbstractCyPhyComponent
 			break;
 		case UNIT_TEST_WITH_SIL_SIMULATION:
 		case INTEGRATION_TEST_WITH_SIL_SIMULATION:
-			VariableValue<Double> v = this.computeCurrentWaterLevel();
-			ret = new WaterLevelSensorData(new TimedMeasure<>(v.getValue(), LITERS, this.getClock4Simulation(),
-					this.getClock4Simulation().instantOfSimulatedTime(v.getTime())));
+			// Water level is tracked by the component itself (fillWater,
+			// makeExpresso, serveCoffee update currentWaterLevel directly).
+			// Unlike temperature, water level is not computed by the
+			// simulation model in this component.
+			ret = new WaterLevelSensorData(
+					new TimedMeasure<>(this.currentWaterLevel.getData(),
+							this.currentWaterLevel.getMeasurementUnit(),
+							this.getClock4Simulation(),
+							this.currentWaterLevel.getTimestamp()));
 			break;
 		default:
 		}

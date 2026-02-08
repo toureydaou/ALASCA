@@ -1,5 +1,7 @@
 package etape2.equipments.generator.mil;
 
+
+
 import java.util.Map;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
@@ -43,7 +45,10 @@ import etape2.equipments.generator.mil.events.Start;
 import etape2.equipments.generator.mil.events.Stop;
 import etape2.equipments.generator.mil.events.TankEmpty;
 import etape2.equipments.generator.mil.events.TankNoLongerEmpty;
+import fr.sorbonne_u.components.cyphy.utils.tests.AbstractTestScenarioBasedAtomicHIOA;
+import fr.sorbonne_u.components.cyphy.utils.tests.TestScenarioWithSimulation;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
+import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.ExportedVariable;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.ImportedVariable;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.ModelExportedVariable;
@@ -57,8 +62,6 @@ import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.utils.Pair;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
-import tests_utils.AbstractTestScenarioBasedAtomicHIOA;
-import tests_utils.TestScenario;
 
 // -----------------------------------------------------------------------------
 /**
@@ -72,6 +75,21 @@ import tests_utils.TestScenario;
  * scenarios (@see fr.sorbonne_u.components.hem2025.tests_utils.AbstractTestScenarioBasedAtomicHIOA)
  * for more explanations.
  * </p>
+ * 
+ * <ul>
+ * <li>Imported events:
+ *   {@code TankEmpty},
+ *   {@code TankNoLongerEmpty}</li>
+ * <li>Exported events:
+ *   {@code Start},
+ *   {@code Stop},
+ *   {@code Refill},
+ *   {@code GeneratorRequiredPowerChanged}</li>
+ * <li>Imported variables:
+ *   name = {@code generatorOutputPower}, type = {@code Double}</li>
+ * <li>Exported variables: none</li>
+ *   name = {@code generatorRequiredPower}, type = {@code Double}</li>
+ * </ul>
  * 
  * <p><strong>Implementation Invariants</strong></p>
  * 
@@ -115,7 +133,8 @@ implements	TankLevelManagementI
 	protected static final double	TOLERANCE  = 1.0e-08;
 
 	/** single model URI.													*/
-	public static final String		URI = "generator-unit-tester-model";
+	public static final String		URI =
+								GeneratorUnitTesterModel.class.getSimpleName();
 	/**	name of the run parameter for the test scenario to be executed.		*/
 	public static final String		TEST_SCENARIO_RP_NAME = "TEST_SCENARIO";
 	/**	name of the run parameter for the initial fuel level of the tank
@@ -198,7 +217,8 @@ implements	TankLevelManagementI
 		assert	simParams.containsKey(initialLevelName) :
 				new MissingRunParameterException(initialLevelName);
 
-		this.setTestScenario((TestScenario) simParams.get(testScenarioName));
+		this.setTestScenario((TestScenarioWithSimulation)
+										simParams.get(testScenarioName));
 		this.initialLevel = (double) simParams.get(initialLevelName);
 	}
 
@@ -264,7 +284,16 @@ implements	TankLevelManagementI
 	}
 
 	/**
-	 * @see etape2.equipments.generator.mil.TankLevelManagementI#signalTankEmpty()
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.TankLevelManagementI#notTankEmpty()
+	 */
+	@Override
+	public boolean		notTankEmpty()
+	{
+		return !this.tankEmpty;
+	}
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.TankLevelManagementI#signalTankEmpty()
 	 */
 	@Override
 	public void			signalTankEmpty()
@@ -274,7 +303,7 @@ implements	TankLevelManagementI
 	}
 
 	/**
-	 * @see etape2.equipments.generator.mil.TankLevelManagementI#signalTankNoLongerEmpty()
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.TankLevelManagementI#signalTankNoLongerEmpty()
 	 */
 	@Override
 	public void			signalTankNoLongerEmpty()
@@ -283,7 +312,34 @@ implements	TankLevelManagementI
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025.tests_utils.AbstractTestScenarioBasedAtomicHIOA#userDefinedInternalTransition(fr.sorbonne_u.devs_simulation.models.time.Duration)
+	 * set a new value for the generator required power; used in test scenarios.
+	 * 
+	 * <p><strong>Contract</strong></p>
+	 * 
+	 * <pre>
+	 * pre	{@code v >= 0.0}
+	 * pre	{@code t != null}
+	 * post	{@code true}	// no postcondition.
+	 * </pre>
+	 *
+	 * @param v	new value for the generator required power.
+	 * @param t	simulated time at which this new value if assigned.
+	 */
+	public void			setGeneratorRequiredPower(double v, Time t)
+	{
+		assert	v >= 0.0 :
+				new NeoSim4JavaException("Precondition violation: v >= 0.0");
+		assert	t != null :
+				new NeoSim4JavaException("Precondition violation: t != null");
+		assert	t.greaterThanOrEqual(this.generatorRequiredPower.getTime()) :
+				new NeoSim4JavaException(
+					"t.greaterThanOrEqual(generatorRequiredPower.getTime()))");
+
+		this.generatorRequiredPower.setNewValue(v, t);
+	}
+
+	/**
+	 * @see fr.sorbonne_u.components.cyphy.utils.tests.AbstractTestScenarioBasedAtomicHIOA#userDefinedInternalTransition(fr.sorbonne_u.devs_simulation.models.time.Duration)
 	 */
 	@Override
 	public void			userDefinedInternalTransition(Duration elapsedTime)

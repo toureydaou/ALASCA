@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<control-adapter
+    xmlns="http://www.sorbonne-universite.fr/alasca/control-adapter"
+    uid="KT10000"
+    offered="etape1.equipements.kettle.interfaces.KettleExternalControlJava4CI">
+
+  <consumption nominal="2000" min="0" max="3000"/>
+
+  <required>java.lang.Math</required>
+  <required>fr.sorbonne_u.exceptions.PreconditionException</required>
+  <required>fr.sorbonne_u.components.connectors.AbstractConnector</required>
+  <required>etape1.equipements.kettle.interfaces.KettleExternalControlJava4CI</required>
+  <required>etape1.bases.AdjustableCI</required>
+
+  <instance-var modifiers="protected static" type="int" name="MIN_MODE" static-init="1"/>
+  <instance-var modifiers="protected static" type="int" name="MAX_MODE" static-init="4"/>
+  <instance-var modifiers="protected static" type="double" name="MAX_ADMISSIBLE_TEMP" static-init="80.0"/>
+  <instance-var modifiers="protected" type="int" name="currentMode" static-init="2"/>
+  <instance-var modifiers="protected" type="boolean" name="isSuspended" static-init="false"/>
+
+  <internal modifiers="protected" name="computePowerLevel" type="double">
+    <parameter type="int" name="mode"/>
+    <thrown>java.lang.Exception</thrown>
+    <body>
+      if (mode == 1) {
+        return 0.0;
+      } else if (mode == 2) {
+        return 1000.0;
+      } else if (mode == 3) {
+        return 2000.0;
+      } else if (mode == 4) {
+        return 3000.0;
+      } else {
+        return 0.0;
+      }
+    </body>
+  </internal>
+
+  <internal modifiers="protected" name="setPowerLevel" type="void">
+    <parameter type="double" name="newPowerLevel"/>
+    <thrown>java.lang.Exception</thrown>
+    <body equipmentRef="kettle">
+      double maxPowerLevel = kettle.getMaxPowerLevelJava4();
+      if (newPowerLevel &gt; maxPowerLevel) newPowerLevel = maxPowerLevel;
+      kettle.setCurrentPowerLevelJava4(newPowerLevel);
+    </body>
+  </internal>
+
+  <internal modifiers="protected" name="computeAndSetNewPowerLevel" type="void">
+    <parameter type="int" name="newMode"/>
+    <thrown>java.lang.Exception</thrown>
+    <body equipmentRef="kettle">
+      double newPowerLevel = computePowerLevel(newMode);
+      setPowerLevel(newPowerLevel);
+      kettle.setModeJava4(newMode);
+    </body>
+  </internal>
+
+  <!-- AdjustableCI operations -->
+
+  <maxMode>
+    <body>return MAX_MODE;</body>
+  </maxMode>
+
+  <upMode>
+    <body equipmentRef="kettle">
+      currentMode++;
+      computeAndSetNewPowerLevel(currentMode);
+      return true;
+    </body>
+  </upMode>
+
+  <downMode>
+    <body equipmentRef="kettle">
+      currentMode--;
+      computeAndSetNewPowerLevel(currentMode);
+      return true;
+    </body>
+  </downMode>
+
+  <setMode>
+    <parameter name="modeIndex"/>
+    <body>
+      currentMode = modeIndex;
+      computeAndSetNewPowerLevel(currentMode);
+      return true;
+    </body>
+  </setMode>
+
+  <currentMode>
+    <body equipmentRef="kettle">
+      double pl = kettle.getCurrentPowerLevelJava4();
+      if (pl &gt;= 3000.0) { currentMode = 4; }
+      else if (pl &gt;= 2000.0) { currentMode = 3; }
+      else if (pl &gt;= 1000.0) { currentMode = 2; }
+      else { currentMode = 1; }
+      return currentMode;
+    </body>
+  </currentMode>
+
+  <getModeConsumption>
+    <parameter name="modeIndex"/>
+    <body>
+      return computePowerLevel(modeIndex);
+    </body>
+  </getModeConsumption>
+
+  <suspended>
+    <body>return isSuspended;</body>
+  </suspended>
+
+  <suspend>
+    <body equipmentRef="kettle">
+      kettle.setCurrentPowerLevelJava4(0.0);
+      isSuspended = true;
+      return isSuspended;
+    </body>
+  </suspend>
+
+  <resume>
+    <body equipmentRef="kettle">
+      computeAndSetNewPowerLevel(currentMode);
+      isSuspended = false;
+      return true;
+    </body>
+  </resume>
+
+  <emergency>
+    <body equipmentRef="kettle">
+      double temperature = kettle.getCurrentTemperatureJava4();
+      if (temperature &gt;= MAX_ADMISSIBLE_TEMP &amp;&amp; kettle.getStateJava4() == 2)
+        return 1.0;
+      return 0.0;
+    </body>
+  </emergency>
+
+</control-adapter>

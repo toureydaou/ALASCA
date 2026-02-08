@@ -1,6 +1,5 @@
 package etape1.equipments.generator;
 
-import etape1.equipments.generator.Generator.State;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -35,10 +34,10 @@ import etape1.equipments.generator.Generator.State;
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 import fr.sorbonne_u.exceptions.AssertionChecking;
-import physical_data.Measure;
-import physical_data.MeasurementUnit;
-import physical_data.SignalData;
 
 // -----------------------------------------------------------------------------
 /**
@@ -60,6 +59,40 @@ import physical_data.SignalData;
  */
 public interface		GeneratorImplementationI
 {
+	// -------------------------------------------------------------------------
+	// Inner types and classes
+	// -------------------------------------------------------------------------
+
+	/**
+	 * The enumeration <code>State</code> defines the states in which the
+	 * generator can be.
+	 *
+	 * <p><strong>Description</strong></p>
+	 * 
+	 * <p><strong>Implementation Invariants</strong></p>
+	 * 
+	 * <pre>
+	 * invariant	{@code true}	// no more invariant
+	 * </pre>
+	 * 
+	 * <p><strong>Invariants</strong></p>
+	 * 
+	 * <pre>
+	 * invariant	{@code true}	// no more invariant
+	 * </pre>
+	 * 
+	 * <p>Created on : 2025-10-17</p>
+	 * 
+	 * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+	 */
+	public static enum	State
+	{
+		OFF,
+		TANK_EMPTY,
+		IDLE,
+		PRODUCING;
+	}
+
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
@@ -153,13 +186,32 @@ public interface		GeneratorImplementationI
 	public Measure<Double>	tankCapacity() throws Exception;
 
 	/**
+	 * refill the tank up to the quantity provided or to its capacity if the
+	 * quantity os too large.
+	 * 
+	 * <p><strong>Contract</strong></p>
+	 * 
+	 * <pre>
+	 * pre	{@code quantity != null}
+	 * pre	{@code quantity.getData() > 0.0}
+	 * pre	{@code quantity.getMeasurementUnit().equals(CAPACITY_UNIT)}
+	 * post	{@code true}	// TO DO
+	 * </pre>
+	 *
+	 * @param quantity		quantity of fuel to be added to the generator tank.
+	 * @throws Exception	<i>to do</i>.
+	 */
+	public void				refillTank(Measure<Double> quantity)
+	throws Exception;
+
+	/**
 	 * return the current tank level in the capacity unit used by the generator.
 	 * 
 	 * <p><strong>Contract</strong></p>
 	 * 
 	 * <pre>
 	 * pre	{@code true}	// no precondition.
-	 * post	{@code return != null && return.getMeasure().getData() > 0.0 && return.getMeasure().getMeasurementUnit().equals(CAPACITY_UNIT)}
+	 * post	{@code return != null && return.getMeasure().getData() >= 0.0 && return.getMeasure().getMeasurementUnit().equals(CAPACITY_UNIT)}
 	 * </pre>
 	 *
 	 * @return				the current tank level in the tension unit used by the generator.
@@ -242,7 +294,7 @@ public interface		GeneratorImplementationI
 	 * <pre>
 	 * pre	{@code true}	// no precondition.
 	 * post	{@code return != null && return.getMeasurementUnit().equals(CONSUMPTION_UNIT)}
-	 * post	{@code return.getMeasure().getData() >= minFuelConsumption().getData() && return.getMeasure().getData() <= maxFuelConsumption().getData()}
+	 * post	{@code return.getMeasure().getData() >= 0.0 && return.getMeasure().getData() <= maxFuelConsumption().getData()}
 	 * </pre>
 	 *
 	 * @return				the current fuel consumption of the generator in the generator consumption unit.

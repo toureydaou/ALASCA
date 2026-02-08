@@ -1042,7 +1042,7 @@ public class			RunGlobal_RT_Simulation
 						ModelI.createRunParameterName(
 							BatteriesPowerModel.URI,
 							BatteriesPowerModel.INITIAL_LEVEL_RP_NAME),
-						BatteriesSimulationConfiguration.INITIAL_BATTERIES_LEVEL);
+						BatteriesSimulationConfiguration.INITIAL_BATTERIES_LEVEL_RATIO);
 					simulationParameters.put(
 						ModelI.createRunParameterName(
 							GeneratorFuelModel.URI,

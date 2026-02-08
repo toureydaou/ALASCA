@@ -1,5 +1,6 @@
 package etape2.equipments.generator.mil;
 
+
 import java.time.Instant;
 import java.util.ArrayList;
 
@@ -41,6 +42,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import etape1.equipments.generator.Generator;
 import etape2.equipments.generator.mil.events.GeneratorRequiredPowerChanged;
@@ -50,6 +52,10 @@ import etape2.equipments.generator.mil.events.Start;
 import etape2.equipments.generator.mil.events.Stop;
 import etape2.equipments.generator.mil.events.TankEmpty;
 import etape2.equipments.generator.mil.events.TankNoLongerEmpty;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
+import fr.sorbonne_u.components.cyphy.utils.tests.SimulationTestStep;
+import fr.sorbonne_u.components.cyphy.utils.tests.TestScenarioWithSimulation;
 import fr.sorbonne_u.devs_simulation.architectures.Architecture;
 import fr.sorbonne_u.devs_simulation.architectures.ArchitectureI;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.AtomicHIOA_Descriptor;
@@ -66,10 +72,7 @@ import fr.sorbonne_u.devs_simulation.models.time.Duration;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.simulators.SimulationEngine;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulatorI;
-import physical_data.Measure;
-import physical_data.MeasurementUnit;
-import tests_utils.SimulationTestStep;
-import tests_utils.TestScenario;
+import fr.sorbonne_u.exceptions.VerboseException;
 
 // -----------------------------------------------------------------------------
 /**
@@ -287,28 +290,52 @@ public class			RunGeneratorUnitaryMILSimulation
 			SimulationEngine.SIMULATION_STEP_SLEEP_TIME = 0L;
 
 			// run a CLASSICAL test scenario
-			CLASSICAL.setUpSimulator(se);
-			Time startTime = CLASSICAL.getStartTime();
-			Duration d = CLASSICAL.getEndTime().subtract(startTime);
+			TestScenarioWithSimulation classical = classical();
+			Map<String, Object> classicalRunParameters =
+												new HashMap<String, Object>();
+			classical.addToRunParameters(classicalRunParameters);
+			se.setSimulationRunParameters(classicalRunParameters);
+			Time startTime = classical.getStartTime();
+			Duration d = classical.getEndTime().subtract(startTime);
+			((Consumer<String>) (m -> { if (m != null) System.out.println(m); }))
+											.accept(classical.beginMessage());
 			se.doStandAloneSimulation(startTime.getSimulatedTime(),
 									  d.getSimulatedDuration());
 			se.getSimulatedModel().finalise();
+			((Consumer<String>) (m -> { if (m != null) System.out.println(m); }))
+											.accept(classical.endMessage());
 
 			// run a TANK_EMPTY test scenario
-			TANK_EMPTY.setUpSimulator(se);
-			startTime = TANK_EMPTY.getStartTime();
-			d = TANK_EMPTY.getEndTime().subtract(startTime);
+			TestScenarioWithSimulation tankEmpty = tankEmpty();
+			Map<String, Object> tankEmptyRunParameters =
+												new HashMap<String, Object>();
+			tankEmpty.addToRunParameters(tankEmptyRunParameters);
+			se.setSimulationRunParameters(tankEmptyRunParameters);
+			startTime = tankEmpty.getStartTime();
+			d = tankEmpty.getEndTime().subtract(startTime);
+			((Consumer<String>) (m -> { if (m != null) System.out.println(m); }))
+											.accept(tankEmpty.beginMessage());
 			se.doStandAloneSimulation(startTime.getSimulatedTime(),
 									  d.getSimulatedDuration());
 			se.getSimulatedModel().finalise();
+			((Consumer<String>) (m -> { if (m != null) System.out.println(m); }))
+											.accept(tankEmpty.endMessage());
 
 			// run a TANK_REFILL test scenario
-			TANK_REFILL.setUpSimulator(se);
-			startTime = TANK_REFILL.getStartTime();
-			d = TANK_REFILL.getEndTime().subtract(startTime);
+			TestScenarioWithSimulation tankRefill = tankRefill();
+			Map<String, Object> tankRefillRunParameters =
+											new HashMap<String, Object>();
+			tankRefill.addToRunParameters(tankRefillRunParameters);
+			se.setSimulationRunParameters(tankRefillRunParameters);
+			startTime = tankRefill.getStartTime();
+			d = tankRefill.getEndTime().subtract(startTime);
+			((Consumer<String>) (m -> { if (m != null) System.out.println(m); }))
+											.accept(tankRefill.beginMessage());
 			se.doStandAloneSimulation(startTime.getSimulatedTime(),
 									  d.getSimulatedDuration());
 			se.getSimulatedModel().finalise();
+			((Consumer<String>) (m -> { if (m != null) System.out.println(m); }))
+											.accept(tankRefill.endMessage());
 			System.exit(0);
 		} catch (Throwable e) {
 			throw new RuntimeException(e) ;
@@ -330,9 +357,12 @@ public class			RunGeneratorUnitaryMILSimulation
 	protected static Time		START_TIME =
 									new Time(0.0, TimeUnit.HOURS);
 
-	/** standard test scenario, see Gherkin specification.				 	*/
-	protected static TestScenario	CLASSICAL =
-		new TestScenario(
+	/** standard test scenario, see Gherkin specification.				 	
+	 * @throws VerboseException */
+	protected static TestScenarioWithSimulation	classical()
+	throws VerboseException
+	{
+		return new TestScenarioWithSimulation(
 			"-----------------------------------------------------\n" +
 			"Classical\n\n" +
 			"  Gherkin specification\n\n" +
@@ -345,11 +375,12 @@ public class			RunGeneratorUnitaryMILSimulation
 			"\n-----------------------------------------------------\n" +
 			"End Classical\n" +
 			"-----------------------------------------------------",
+			"fake-clock-URI",	// for simulation only test scenario, no clock needed
 			START_INSTANT,
 			END_INSTANT,
+			GeneratorCoupledModel.URI,
 			START_TIME,
-			(se, ts) -> { 
-				HashMap<String, Object> simParams = new HashMap<>();
+			(ts, simParams) -> {
 				simParams.put(
 					ModelI.createRunParameterName(
 						GeneratorFuelModel.URI,
@@ -396,7 +427,6 @@ public class			RunGeneratorUnitaryMILSimulation
 						GeneratorUnitTesterModel.URI,
 						GeneratorUnitTesterModel.INITIAL_LEVEL_RP_NAME),
 					GeneratorSimulationConfiguration.INITIAL_TANK_LEVEL);
-				se.setSimulationRunParameters(simParams);
 			},
 			new SimulationTestStep[]{
 				new SimulationTestStep(
@@ -457,11 +487,15 @@ public class			RunGeneratorUnitaryMILSimulation
 					(m, t) -> {})
 			}	// end SimulationTestStep[]
 		);	// end TestScenario
+	}
 
 	/** test scenario where the generator tank is used until empty,
-	 *  see Gherkin specification.										 	*/
-	protected static TestScenario	TANK_EMPTY =
-		new TestScenario(
+	 *  see Gherkin specification.										 	
+	 * @throws VerboseException */
+	protected static TestScenarioWithSimulation	tankEmpty()
+	throws VerboseException
+	{
+		return new TestScenarioWithSimulation(
 			"-----------------------------------------------------\n" +
 			"Generator tank empty\n\n" +
 			"  Gherkin specification\n\n" +
@@ -474,11 +508,12 @@ public class			RunGeneratorUnitaryMILSimulation
 			"\n-----------------------------------------------------\n" +
 			"End Generator tank empty\n" +
 			"-----------------------------------------------------",
+			"fake-clock-URI",	// for simulation only test scenario, no clock needed
 			START_INSTANT,
 			END_INSTANT,
+			GeneratorCoupledModel.URI,
 			START_TIME,
-			(se, ts) -> { 
-				HashMap<String, Object> simParams = new HashMap<>();
+			(ts, simParams) -> {
 				simParams.put(
 					ModelI.createRunParameterName(
 						GeneratorFuelModel.URI,
@@ -525,7 +560,6 @@ public class			RunGeneratorUnitaryMILSimulation
 						GeneratorUnitTesterModel.URI,
 						GeneratorUnitTesterModel.INITIAL_LEVEL_RP_NAME),
 					GeneratorSimulationConfiguration.INITIAL_TANK_LEVEL);
-				se.setSimulationRunParameters(simParams);
 			},
 			new SimulationTestStep[]{
 				new SimulationTestStep(
@@ -570,12 +604,15 @@ public class			RunGeneratorUnitaryMILSimulation
 					})
 			}	// end SimulationTestStep[]
 		);	// end TestScenario
-
+	}
 
 	/** test scenario where the generator empty tank is refilled the used,
-	 *  see Gherkin specification.										 	*/
-	protected static TestScenario	TANK_REFILL =
-		new TestScenario(
+	 *  see Gherkin specification.										 	
+	 * @throws VerboseException */
+	protected static TestScenarioWithSimulation	tankRefill()
+	throws VerboseException
+	{
+		return new TestScenarioWithSimulation(
 			"-----------------------------------------------------\n" +
 			"Generator tank refilled\n\n" +
 			"  Gherkin specification\n\n" +
@@ -589,11 +626,12 @@ public class			RunGeneratorUnitaryMILSimulation
 			"\n-----------------------------------------------------\n" +
 			"End Generator tank refilled\n" +
 			"-----------------------------------------------------",
+			"fake-clock-URI",	// for simulation only test scenario, no clock needed
 			START_INSTANT,
 			END_INSTANT,
+			GeneratorCoupledModel.URI,
 			START_TIME,
-			(se, ts) -> { 
-				HashMap<String, Object> simParams = new HashMap<>();
+			(ts, simParams) -> {
 				simParams.put(
 					ModelI.createRunParameterName(
 						GeneratorFuelModel.URI,
@@ -640,7 +678,6 @@ public class			RunGeneratorUnitaryMILSimulation
 						GeneratorUnitTesterModel.URI,
 						GeneratorUnitTesterModel.INITIAL_LEVEL_RP_NAME),
 					0.0);
-				se.setSimulationRunParameters(simParams);
 			},
 			new SimulationTestStep[]{
 				new SimulationTestStep(
@@ -716,5 +753,6 @@ public class			RunGeneratorUnitaryMILSimulation
 					(m, t) -> { })
 			}	// end SimulationTestStep[]
 		);	// end TestScenario
+	}
 }
 // -----------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 package etape1.equipments.meter;
 
-import physical_data.Measure;
-import physical_data.MeasurementUnit;
-import physical_data.SignalData;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr

@@ -1,5 +1,16 @@
 package etape2.equipments.solar_panel.mil.events;
 
+import java.time.ZonedDateTime;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import org.shredzone.commons.suncalc.SunTimes;
+
+import etape2.equipments.solar_panel.mil.AstronomicalSunRiseAndSetModel;
+import etape2.equipments.solar_panel.mil.DeterministicSunRiseAndSetModel;
+import etape2.equipments.solar_panel.mil.SolarPanelSimulationConfigurationI;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -38,15 +49,6 @@ import fr.sorbonne_u.devs_simulation.es.events.ES_EventI;
 import fr.sorbonne_u.devs_simulation.es.models.AtomicES_Model;
 import fr.sorbonne_u.devs_simulation.models.time.Duration;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
-import java.time.ZonedDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import org.shredzone.commons.suncalc.SunTimes;
-
-import etape2.equipments.solar_panel.mil.AstronomicalSunRiseAndSetModel;
-import etape2.equipments.solar_panel.mil.DeterministicSunRiseAndSetModel;
-import etape2.equipments.solar_panel.mil.SolarPanelSimulationConfigurationI;
 
 // -----------------------------------------------------------------------------
 /**
@@ -187,7 +189,7 @@ implements	InternalSunRiseAndSetEventI
 	}
 
 	/**
-	 * @see etape2.equipments.solar_panel.mil.events.InternalSunRiseAndSetEventI#generateExternalEvent()
+	 * @see fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.events.InternalSunRiseAndSetEventI#generateExternalEvent()
 	 */
 	public	ExternalSolarPanelEventI	generateExternalEvent()
 	{

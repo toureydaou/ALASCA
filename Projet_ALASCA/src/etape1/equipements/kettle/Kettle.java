@@ -1,14 +1,5 @@
 package etape1.equipements.kettle;
 
-import etape1.equipements.kettle.connections.ports.KettleExternalControlJava4InboundPort;
-import etape1.equipements.kettle.connections.ports.KettleUserInboundPort;
-import etape1.equipements.kettle.interfaces.KettleExternalControlCI;
-import etape1.equipements.kettle.interfaces.KettleExternalControlI;
-import etape1.equipements.kettle.interfaces.KettleExternalControlJava4CI;
-import etape1.equipements.kettle.interfaces.KettleImplementationI;
-import etape1.equipements.kettle.interfaces.KettleUserCI;
-import etape1.equipements.kettle.interfaces.KettleUserI;
-
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -25,7 +16,7 @@ import etape1.equipements.kettle.interfaces.KettleUserI;
 // modify and redistribute granted by the license, users are provided only
 // with a limited warranty  and the software's author,  the holder of the
 // economic rights,  and the successive licensors  have only  limited
-// liability. 
+// liability.
 //
 // In this respect, the user's attention is drawn to the risks associated
 // with loading,  using,  modifying and/or developing or reproducing the
@@ -34,136 +25,80 @@ import etape1.equipements.kettle.interfaces.KettleUserI;
 // therefore means  that it is reserved for developers  and  experienced
 // professionals having in-depth computer knowledge. Users are therefore
 // encouraged to load and test the software's suitability as regards their
-// requirements in conditions enabling the security of their systems and/or 
-// data to be ensured and,  more generally, to use and operate it in the 
-// same conditions as regards security. 
+// requirements in conditions enabling the security of their systems and/or
+// data to be ensured and,  more generally, to use and operate it in the
+// same conditions as regards security.
 //
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
+import etape1.bases.RegistrationCI;
+import etape1.equipements.hem.HEM;
+import etape1.equipements.kettle.connections.ports.KettleExternalControlJava4InboundPort;
+import etape1.equipements.kettle.connections.ports.KettleUserInboundPort;
+import etape1.equipements.kettle.interfaces.KettleExternalControlCI;
+import etape1.equipements.kettle.interfaces.KettleExternalControlI;
+import etape1.equipements.kettle.interfaces.KettleExternalControlJava4CI;
+import etape1.equipements.kettle.interfaces.KettleImplementationI;
+import etape1.equipements.kettle.interfaces.KettleUserCI;
+import etape1.equipements.kettle.interfaces.KettleUserI;
+import etape1.equipements.registration.connector.RegistrationConnector;
+import etape1.equipements.registration.ports.RegistrationOutboundPort;
+import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
+import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
-
+import fr.sorbonne_u.components.exceptions.ComponentStartException;
+import fr.sorbonne_u.exceptions.PostconditionException;
 import fr.sorbonne_u.exceptions.PreconditionException;
-import physical_data.Measure;
-import physical_data.SignalData;
+import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>Kettle</code> implements a Kettle component.
+ * The class <code>Kettle</code> implements the water heater (chauffe-eau)
+ * component.
+ *
+ * <p><strong>Description</strong></p>
  *
  * <p>
- * <strong>Description</strong>
+ * The water heater is a "non-programmable" appliance that heats water in a
+ * tank (200L) to a target temperature (30-80 degrees Celsius). It can be
+ * controlled remotely by the HEM to modulate its maximum power consumption
+ * through different operating modes (SUSPEND, ECO, NORMAL, MAX).
  * </p>
- * 
- * <p>
- * <strong>Implementation Invariants</strong>
- * </p>
- * 
- * <pre>
- * invariant	{@code
- * currentState != null
- * }
- * invariant	{@code
- * targetTemperature != null && targetTemperature.getMeasurementUnit().equals(TEMPERATURE_UNIT)
- * }
- * invariant	{@code
- * targetTemperature.getData() >= MIN_TARGET_TEMPERATURE.getData()
- * 		&& targetTemperature.getData() <= MAX_TARGET_TEMPERATURE.getData()
- * }
- * invariant	{@code
- * currentPowerLevel == null || currentPowerLevel.getMeasure().getMeasurementUnit().equals(POWER_UNIT)
- * }
- * invariant	{@code
- * currentPowerLevel == null || currentPowerLevel.getMeasure().getData() >= 0.0
- * 		&& currentPowerLevel.getMeasure().getData() <= MAX_POWER_LEVEL.getData()
- * }
- * </pre>
- * 
- * <p>
- * <strong>Invariants</strong>
- * </p>
- * 
- * <pre>
- * invariant	{@code
- * REFLECTION_INBOUND_PORT_URI != null && !REFLECTION_INBOUND_PORT_URI.isEmpty()
- * }
- * invariant	{@code
- * USER_INBOUND_PORT_URI != null && !USER_INBOUND_PORT_URI.isEmpty()
- * }
- * invariant	{@code
- * INTERNAL_CONTROL_INBOUND_PORT_URI != null && !INTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty()
- * }
- * invariant	{@code
- * EXTERNAL_CONTROL_INBOUND_PORT_URI != null && !EXTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty()
- * }
- * invariant	{@code
- * X_RELATIVE_POSITION >= 0
- * }
- * invariant	{@code
- * Y_RELATIVE_POSITION >= 0
- * }
- * </pre>
- * 
- * <p>
- * Created on : 2023-09-18
- * </p>
- * 
- * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ *
+ * <p>Created on : 2023-09-18</p>
+ *
+ * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
 @OfferedInterfaces(offered = { KettleUserCI.class, KettleExternalControlCI.class,
 		KettleExternalControlJava4CI.class })
-//@RequiredInterfaces(required = { KettleUserCI.class, KettleExternalControlCI.class, KettleExternalControlJava4CI.class })
+@RequiredInterfaces(required = { RegistrationCI.class, ClocksServerCI.class })
 public class Kettle extends AbstractComponent
 		implements KettleImplementationI, KettleUserI, KettleExternalControlI {
-	// -------------------------------------------------------------------------
-	// Inner interfaces and types
-	// -------------------------------------------------------------------------
-
-	/**
-	 * The enumeration <code>KettleState</code> describes the operation states of
-	 * the Kettle.
-	 *
-	 * <p>
-	 * <strong>Description</strong>
-	 * </p>
-	 * 
-	 * <p>
-	 * Created on : 2021-09-10
-	 * </p>
-	 * 
-	 * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
-	 */
 
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
 
-	// BCM4Java information
-
-	/** URI of the Kettle inbound port used in tests. */
+	/** URI of the Kettle reflection inbound port used in tests. */
 	public static final String REFLECTION_INBOUND_PORT_URI = "Kettle-RIP-URI";
 
 	/** URI of the Kettle port for user interactions. */
 	public static final String USER_INBOUND_PORT_URI = "Kettle-USER-INBOUND-PORT-URI";
-	/** URI of the Kettle port for internal control. */
-	// public static final String INTERNAL_CONTROL_INBOUND_PORT_URI =
-	// "Kettle-INTERNAL-CONTROL-INBOUND-PORT-URI";
-	/** URI of the Kettle port for internal control. */
+
+	/** URI of the Kettle port for external control. */
 	public static final String EXTERNAL_CONTROL_INBOUND_PORT_URI = "Kettle-EXTERNAL-CONTROL-INBOUND-PORT-URI";
 
-	/** inbound port offering the <code>KettleUserCI</code> interface. */
-	protected KettleUserInboundPort hip;
-	/**
-	 * inbound port offering the <code>KettleInternalControlCI</code> interface.
-	 */
-	// protected KettleInternalControlInboundPort hicip;
-	/**
-	 * inbound port offering the <code>KettleExternalControlCI</code> interface.
-	 */
-	protected KettleExternalControlJava4InboundPort hecip;
-	
+	/** XML adapter descriptor path for connector generation. */
+	public static final String XML_KETTLE_ADAPTER_DESCRIPTOR = "adapters/kettle-adapter/kettleci-descriptor.xml";
+
+	/** Connector name for HEM registration. */
+	public static final String KETTLE_CONNECTOR_NAME = "KettleGeneratedConnector";
+
+	/** Fake current temperature used when testing without simulation. */
+	public static final double FAKE_CURRENT_TEMPERATURE = 40.0;
 
 	/** when true, methods trace their actions. */
 	public static boolean VERBOSE = false;
@@ -172,355 +107,113 @@ public class Kettle extends AbstractComponent
 	/** when tracing, y coordinate of the window relative position. */
 	public static int Y_RELATIVE_POSITION = 0;
 
-	// Appliance information
+	// Component state
 
-	/** standard target temperature for the Kettle in celsius. */
-	protected static final Measure<Double> STANDARD_TARGET_TEMPERATURE = new Measure<>(19.0, TEMPERATURE_UNIT);
-	/** fake current temperature, used when testing without simulation. */
-	public static final SignalData<Double> FAKE_CURRENT_TEMPERATURE = new SignalData<>(
-			new Measure<>(10.0, TEMPERATURE_UNIT));
-
-	protected KettleState INITIAL_STATE = KettleState.ON;
-	protected KettleMode INITIAL_MODE = KettleMode.TOTAL;
-
-	protected Measure<Double> INITIAL_WASH_TEMPERATURE = new Measure<Double>(30.0, TEMPERATURE_UNIT);;
-
-	/** current state (on, off) of the Kettle. */
+	/** current state of the water heater. */
 	protected KettleState currentState;
+	/** current power mode of the water heater. */
+	protected KettleMode currentMode;
+	/** target temperature for the water heater. */
+	protected Measure<Double> targetTemperature;
+	/** current power level. */
+	protected Measure<Double> currentPowerLevel;
 
-	protected KettleMode currentKettleMode;
+	/** true when the water heater is suspended by HEM. */
+	protected boolean suspended;
+	/** mode saved before suspension, restored on resume. */
+	protected KettleMode modeBeforeSuspend;
 
-	protected Measure<Double> Temperature;
-	// -------------------------------------------------------------------------
-	// Invariants
-	// -------------------------------------------------------------------------
+	// Ports
 
-	/**
-	 * return true if the implementation invariants are observed, false otherwise.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * h != null
-	 * }
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 *
-	 * @param h instance to be tested.
-	 * @return true if the implementation invariants are observed, false otherwise.
-	 */
-	/*
-	 * protected static boolean implementationInvariants(Kettle h) {
-	 * 
-	 * assert h != null : new PreconditionException("h != null");
-	 * 
-	 * boolean ret = true; ret &=
-	 * AssertionChecking.checkImplementationInvariant(h.currentState != null,
-	 * Kettle.class, h, "h.currentState != null"); ret &=
-	 * AssertionChecking.checkImplementationInvariant( h.targetTemperature.getData()
-	 * >= MIN_TARGET_TEMPERATURE.getData() && h.targetTemperature.getData() <=
-	 * MAX_TARGET_TEMPERATURE.getData(), Kettle.class, h,
-	 * "targetTemperature.getData() >= MIN_TARGET_TEMPERATURE.getData() && " +
-	 * "targetTemperature.getData() <= MIN_TARGET_TEMPERATURE.getData()"); ret &=
-	 * AssertionChecking.checkImplementationInvariant(
-	 * h.currentPowerLevel.getMeasure().getData() >= 0.0 &&
-	 * h.currentPowerLevel.getMeasure().getData() <= MAX_POWER_LEVEL.getData(),
-	 * Kettle.class, h, "currentPowerLevel.getMeasure().getData() >= 0.0 && " +
-	 * "currentPowerLevel.getMeasure().getData() <= " +
-	 * "MAX_POWER_LEVEL.getData()"); return ret; }
-	 */
+	/** inbound port offering the KettleUserCI interface. */
+	protected KettleUserInboundPort hip;
+	/** inbound port offering the KettleExternalControlJava4CI interface. */
+	protected KettleExternalControlJava4InboundPort hecip;
+	/** outbound port for registering to the HEM. */
+	protected RegistrationOutboundPort rop;
 
-	/**
-	 * return true if the invariants are observed, false otherwise.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * h != null
-	 * }
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 *
-	 * @param h instance to be tested.
-	 * @return true if the invariants are observed, false otherwise.
-	 */
-	/*
-	 * protected static boolean invariants(Kettle h) { assert h != null : new
-	 * PreconditionException("h != null");
-	 * 
-	 * boolean ret = true; ret &= KettleTemperatureI.invariants(h); ret &=
-	 * KettleExternalControlI.invariants(h); ret &=
-	 * AssertionChecking.checkInvariant( REFLECTION_INBOUND_PORT_URI != null &&
-	 * !REFLECTION_INBOUND_PORT_URI.isEmpty(), Kettle.class, h,
-	 * "REFLECTION_INBOUND_PORT_URI != null && " +
-	 * "!REFLECTION_INBOUND_PORT_URI.isEmpty()"); ret &=
-	 * AssertionChecking.checkInvariant(USER_INBOUND_PORT_URI != null &&
-	 * !USER_INBOUND_PORT_URI.isEmpty(), Kettle.class, h,
-	 * "USER_INBOUND_PORT_URI != null && !USER_INBOUND_PORT_URI.isEmpty()"); ret &=
-	 * AssertionChecking.checkInvariant( INTERNAL_CONTROL_INBOUND_PORT_URI != null
-	 * && !INTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty(), Kettle.class, h,
-	 * "INTERNAL_CONTROL_INBOUND_PORT_URI != null && " +
-	 * "!INTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty()"); ret &=
-	 * AssertionChecking.checkInvariant( EXTERNAL_CONTROL_INBOUND_PORT_URI != null
-	 * && !EXTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty(), Kettle.class, h,
-	 * "EXTERNAL_CONTROL_INBOUND_PORT_URI != null &&" +
-	 * "!EXTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty()"); ret &=
-	 * AssertionChecking.checkInvariant(X_RELATIVE_POSITION >= 0, Kettle.class, h,
-	 * "X_RELATIVE_POSITION >= 0"); ret &=
-	 * AssertionChecking.checkInvariant(Y_RELATIVE_POSITION >= 0, Kettle.class, h,
-	 * "Y_RELATIVE_POSITION >= 0"); return ret; }
-	 */
+	/** uid for HEM registration. */
+	protected String uid;
+	/** true when running in integration test mode (with HEM). */
+	protected boolean isIntegrationTestMode;
 
 	// -------------------------------------------------------------------------
 	// Constructors
 	// -------------------------------------------------------------------------
 
-	/**
-	 * create a new Kettle.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * true
-	 * }	// no precondition.
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 * 
-	 * @throws Exception <i>to do</i>.
-	 */
-	/*
-	 * protected Kettle() throws Exception { this(USER_INBOUND_PORT_URI,
-	 * INTERNAL_CONTROL_INBOUND_PORT_URI, EXTERNAL_CONTROL_INBOUND_PORT_URI); }
-	 */
-
-	protected Kettle() throws Exception {
-		this(USER_INBOUND_PORT_URI, EXTERNAL_CONTROL_INBOUND_PORT_URI);
+	protected Kettle(boolean isIntegrationTestMode) throws Exception {
+		this(isIntegrationTestMode, USER_INBOUND_PORT_URI, EXTERNAL_CONTROL_INBOUND_PORT_URI);
 	}
 
-	/**
-	 * create a new Kettle.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * KettleUserInboundPortURI != null && !KettleUserInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * KettleInternalControlInboundPortURI != null && !KettleInternalControlInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * KettleExternalControlInboundPortURI != null && !KettleExternalControlInboundPortURI.isEmpty()
-	 * }
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 * 
-	 * @param KettleUserInboundPortURI            URI of the inbound port to call
-	 *                                             the Kettle component for user
-	 *                                             interactions.
-	 * @param KettleInternalControlInboundPortURI URI of the inbound port to call
-	 *                                             the Kettle component for
-	 *                                             internal control.
-	 * @param KettleExternalControlInboundPortURI URI of the inbound port to call
-	 *                                             the Kettle component for
-	 *                                             external control.
-	 * @throws Exception <i>to do</i>.
-	 */
-	/*
-	 * protected Kettle(String KettleUserInboundPortURI, String
-	 * KettleInternalControlInboundPortURI, String
-	 * KettleExternalControlInboundPortURI) throws Exception { super(1, 0);
-	 * this.initialise(KettleUserInboundPortURI,
-	 * KettleInternalControlInboundPortURI, KettleExternalControlInboundPortURI);
-	 * }
-	 */
-
-	protected Kettle(String KettleUserInboundPortURI, String KettleExternalControlInboundPortURI) throws Exception {
-		super(1, 0);
-		this.initialise(KettleUserInboundPortURI, KettleExternalControlInboundPortURI);
+	protected Kettle(boolean isIntegrationTestMode,
+			String kettleUserInboundPortURI,
+			String kettleExternalControlInboundPortURI) throws Exception {
+		super(REFLECTION_INBOUND_PORT_URI, 1, 1);
+		this.initialise(isIntegrationTestMode, kettleUserInboundPortURI,
+				kettleExternalControlInboundPortURI);
 	}
 
-	/**
-	 * create a new Kettle.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * reflectionInboundPortURI != null && !reflectionInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * KettleUserInboundPortURI != null && !KettleUserInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * KettleInternalControlInboundPortURI != null && !KettleInternalControlInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * KettleExternalControlInboundPortURI != null && !KettleExternalControlInboundPortURI.isEmpty()
-	 * }
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 * 
-	 * @param reflectionInboundPortURI             URI of the reflection inbound
-	 *                                             port of the component.
-	 * @param KettleUserInboundPortURI            URI of the inbound port to call
-	 *                                             the Kettle component for user
-	 *                                             interactions.
-	 * @param KettleInternalControlInboundPortURI URI of the inbound port to call
-	 *                                             the Kettle component for
-	 *                                             internal control.
-	 * @param KettleExternalControlInboundPortURI URI of the inbound port to call
-	 *                                             the Kettle component for
-	 *                                             external control.
-	 * @throws Exception <i>to do</i>.
-	 */
-	protected Kettle(String reflectionInboundPortURI, String KettleUserInboundPortURI,
-			String KettleInternalControlInboundPortURI, String KettleExternalControlInboundPortURI) throws Exception {
-		super(reflectionInboundPortURI, 1, 0);
+	protected void initialise(boolean isIntegrationTestMode,
+			String kettleUserInboundPortURI,
+			String kettleExternalControlInboundPortURI) throws Exception {
 
-		this.initialise(KettleUserInboundPortURI, 
-				KettleExternalControlInboundPortURI);
-	}
+		assert kettleUserInboundPortURI != null && !kettleUserInboundPortURI.isEmpty();
+		assert kettleExternalControlInboundPortURI != null && !kettleExternalControlInboundPortURI.isEmpty();
 
-	/**
-	 * create a new thermostated Kettle.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * KettleUserInboundPortURI != null && !KettleUserInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * KettleInternalControlInboundPortURI != null && !KettleInternalControlInboundPortURI.isEmpty()
-	 * }
-	 * pre	{@code
-	 * KettleExternalControlInboundPortURI != null && !KettleExternalControlInboundPortURI.isEmpty()
-	 * }
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 *
-	 * @param KettleUserInboundPortURI            URI of the inbound port to call
-	 *                                             the Kettle component for user
-	 *                                             interactions.
-	 * @param KettleInternalControlInboundPortURI URI of the inbound port to call
-	 *                                             the Kettle component for
-	 *                                             internal control.
-	 * @param KettleExternalControlInboundPortURI URI of the inbound port to call
-	 *                                             the Kettle component for
-	 *                                             external control.
-	 * @throws Exception <i>to do</i>.
-	 */
-
-	/*
-	 * protected void initialise(String KettleUserInboundPortURI, String
-	 * KettleInternalControlInboundPortURI, String
-	 * KettleExternalControlInboundPortURI) throws Exception { assert
-	 * KettleUserInboundPortURI != null && !KettleUserInboundPortURI.isEmpty();
-	 * assert KettleInternalControlInboundPortURI != null &&
-	 * !KettleInternalControlInboundPortURI.isEmpty(); assert
-	 * KettleExternalControlInboundPortURI != null &&
-	 * !KettleExternalControlInboundPortURI.isEmpty();
-	 * 
-	 * this.currentState = KettleState.OFF; // this.currentPowerLevel = new
-	 * SignalData<>(MAX_POWER_LEVEL); // this.targetTemperature =
-	 * STANDARD_TARGET_TEMPERATURE;
-	 * 
-	 * // this.hip = new KettleUserJava4InboundPort(KettleUserInboundPortURI,
-	 * this); // this.hip.publishPort(); // this.hicip = new //
-	 * KettleInternalControlInboundPort(KettleInternalControlInboundPortURI, //
-	 * this); // this.hicip.publishPort(); this.hecip = new
-	 * KettleExternalControlJava4InboundPort(KettleExternalControlInboundPortURI,
-	 * this); this.hecip.publishPort();
-	 * 
-	 * if (VERBOSE) { this.tracer.get().setTitle("Kettle component");
-	 * this.tracer.get().setRelativePosition(X_RELATIVE_POSITION,
-	 * Y_RELATIVE_POSITION); this.toggleTracing(); }
-	 * 
-	 * /* assert Kettle.implementationInvariants(this) : new
-	 * ImplementationInvariantException("Kettle.implementationInvariants(this)");
-	 * assert Kettle.invariants(this) : new
-	 * InvariantException("Kettle.invariants(this)");
-	 */
-	//}
-
-	
-
-	protected void initialise(String KettleUserInboundPortURI, 
-			String KettleExternalControlInboundPortURI) throws Exception {
-		assert KettleUserInboundPortURI != null && !KettleUserInboundPortURI.isEmpty();
-		assert KettleExternalControlInboundPortURI != null && !KettleExternalControlInboundPortURI.isEmpty();
+		this.isIntegrationTestMode = isIntegrationTestMode;
 
 		this.currentState = KettleState.OFF;
-		this.currentKettleMode = KettleMode.TOTAL;
-		// this.currentPowerLevel = new SignalData<>(MAX_POWER_LEVEL);
-		// this.targetTemperature = STANDARD_TARGET_TEMPERATURE;
+		this.currentMode = KettleMode.NORMAL;
+		this.targetTemperature = new Measure<Double>(DEFAULT_TARGET_TEMPERATURE, TEMPERATURE_UNIT);
+		this.currentPowerLevel = new Measure<Double>(0.0, POWER_UNIT);
+		this.suspended = false;
+		this.modeBeforeSuspend = null;
+		this.uid = KETTLE_CONNECTOR_NAME;
 
-		// this.hip = new KettleUserJava4InboundPort(KettleUserInboundPortURI, this);
-		// this.hip.publishPort();
-		// this.hicip = new
-		// KettleInternalControlInboundPort(KettleInternalControlInboundPortURI,
-		// this);
-		// this.hicip.publishPort();
-		this.hip = new KettleUserInboundPort(KettleUserInboundPortURI, this);
+		this.hip = new KettleUserInboundPort(kettleUserInboundPortURI, this);
 		this.hip.publishPort();
-		this.hecip = new KettleExternalControlJava4InboundPort(KettleExternalControlInboundPortURI, this);
+
+		this.hecip = new KettleExternalControlJava4InboundPort(kettleExternalControlInboundPortURI, this);
 		this.hecip.publishPort();
 
+		if (isIntegrationTestMode) {
+			this.rop = new RegistrationOutboundPort(this);
+			this.rop.publishPort();
+		}
+
 		if (VERBOSE) {
-			this.tracer.get().setTitle("Kettle component");
+			this.tracer.get().setTitle("Kettle (Water Heater) component");
 			this.tracer.get().setRelativePosition(X_RELATIVE_POSITION, Y_RELATIVE_POSITION);
 			this.toggleTracing();
 		}
-
-		/*
-		 * assert Kettle.implementationInvariants(this) : new
-		 * ImplementationInvariantException("Kettle.implementationInvariants(this)");
-		 * assert Kettle.invariants(this) : new
-		 * InvariantException("Kettle.invariants(this)");
-		 */
 	}
 
 	// -------------------------------------------------------------------------
 	// Component life-cycle
 	// -------------------------------------------------------------------------
 
-	/**
-	 * @see fr.sorbonne_u.components.AbstractComponent#shutdown()
-	 */
+	@Override
+	public synchronized void start() throws ComponentStartException {
+		super.start();
+		try {
+			if (isIntegrationTestMode) {
+				this.doPortConnection(this.rop.getPortURI(),
+						HEM.REGISTRATION_KETTLE_INBOUND_PORT_URI,
+						RegistrationConnector.class.getCanonicalName());
+			}
+		} catch (Throwable e) {
+			throw new ComponentStartException(e);
+		}
+	}
+
 	@Override
 	public synchronized void shutdown() throws ComponentShutdownException {
 		try {
-			 this.hip.unpublishPort();
-			//this.hicip.unpublishPort();
+			this.hip.unpublishPort();
 			this.hecip.unpublishPort();
+			if (isIntegrationTestMode) {
+				this.rop.unpublishPort();
+			}
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
 		}
@@ -528,71 +221,328 @@ public class Kettle extends AbstractComponent
 	}
 
 	// -------------------------------------------------------------------------
-	// Component services implementation
+	// Helper methods
+	// -------------------------------------------------------------------------
+
+	protected double getPowerForMode(KettleMode mode) {
+		switch (mode) {
+		case SUSPEND:	return SUSPEND_MODE_POWER;
+		case ECO:		return ECO_MODE_POWER;
+		case NORMAL:	return NORMAL_MODE_POWER;
+		case MAX:		return MAX_MODE_POWER;
+		default:		return 0.0;
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// KettleImplementationI
 	// -------------------------------------------------------------------------
 
 	@Override
 	public KettleState getState() throws Exception {
-
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle returns its state: " + this.currentState + ".\n");
+		}
 		return this.currentState;
 	}
 
 	@Override
 	public KettleMode getKettleMode() throws Exception {
-
-		assert this.getState() == KettleState.ON : new PreconditionException("getState() == KettleState.ON");
-
-		return currentKettleMode;
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle returns its mode: " + this.currentMode + ".\n");
+		}
+		assert this.getState() != KettleState.OFF
+				: new PreconditionException("getState() != KettleState.OFF");
+		return this.currentMode;
 	}
 
 	@Override
-	public void turnOn() throws Exception {
+	public Measure<Double> getTargetTemperature() throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle returns target temperature: "
+					+ this.targetTemperature.getData() + " C.\n");
+		}
+		return this.targetTemperature;
+	}
 
-		assert this.getState() == KettleState.OFF : new PreconditionException("getState() == KettleState.OFF");
+	@Override
+	public Measure<Double> getCurrentTemperature() throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle returns current temperature: "
+					+ FAKE_CURRENT_TEMPERATURE + " C.\n");
+		}
+		return new Measure<Double>(FAKE_CURRENT_TEMPERATURE, TEMPERATURE_UNIT);
+	}
+
+	@Override
+	public boolean isHeating() throws Exception {
+		return this.currentState == KettleState.HEATING;
+	}
+
+	// -------------------------------------------------------------------------
+	// KettleExternalControlI
+	// -------------------------------------------------------------------------
+
+	@Override
+	public void turnOn() throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle switches on.\n");
+		}
+
+		assert this.getState() == KettleState.OFF
+				: new PreconditionException("getState() == KettleState.OFF");
+
+		if (isIntegrationTestMode) {
+			this.traceMessage("Kettle registering to HEM.\n");
+			this.rop.register(uid, hecip.getPortURI(), XML_KETTLE_ADAPTER_DESCRIPTOR);
+			this.traceMessage("Kettle registered to HEM.\n");
+		}
 
 		this.currentState = KettleState.ON;
+		this.currentMode = KettleMode.NORMAL;
+		this.currentPowerLevel = new Measure<Double>(NORMAL_MODE_POWER, POWER_UNIT);
+		this.suspended = false;
 
+		assert this.getState() == KettleState.ON
+				: new PostconditionException("getState() == KettleState.ON");
 	}
 
 	@Override
 	public void turnOff() throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle switches off.\n");
+		}
 
-		assert this.getState() == KettleState.ON : new PreconditionException("getState() == KettleState.ON");
+		assert this.getState() == KettleState.ON
+				: new PreconditionException("getState() == KettleState.ON");
+
+		if (isIntegrationTestMode) {
+			this.rop.unregister(uid);
+		}
 
 		this.currentState = KettleState.OFF;
+		this.currentPowerLevel = new Measure<Double>(0.0, POWER_UNIT);
+		this.suspended = false;
+		this.modeBeforeSuspend = null;
+
+		assert this.getState() == KettleState.OFF
+				: new PostconditionException("getState() == KettleState.OFF");
 	}
 
 	@Override
-	public void setTotalMode() throws Exception {
-
-		assert this.getKettleMode() == KettleMode.TOTAL
-				: new PreconditionException("getKettleMode() == KettleMode.DRY");
-
-		this.currentKettleMode = KettleMode.TOTAL;
-
-	}
-
-	@Override
-	public void setPartialMode() throws Exception {
-
-		assert this.getKettleMode() == KettleMode.PARTIAL
-				: new PreconditionException("getKettleMode() == KettleMode.WASH");
-
-		this.currentKettleMode = KettleMode.PARTIAL;
-	}
-
-	@Override
-	public void setTemperature() throws Exception {
-
-		if (this.getKettleMode() == KettleMode.TOTAL) {
-			this.Temperature = new Measure<Double>(100.0, TEMPERATURE_UNIT);
+	public void suspend() throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle is suspended by HEM.\n");
 		}
 
-		if (this.getKettleMode() == KettleMode.PARTIAL) {
-			this.Temperature = new Measure<Double>(60.0, TEMPERATURE_UNIT);
-			}
+		assert this.getState() != KettleState.OFF
+				: new PreconditionException("getState() != KettleState.OFF");
+		assert !this.isSuspended()
+				: new PreconditionException("!isSuspended()");
+
+		this.modeBeforeSuspend = this.currentMode;
+		this.currentMode = KettleMode.SUSPEND;
+		this.currentPowerLevel = new Measure<Double>(SUSPEND_MODE_POWER, POWER_UNIT);
+		this.suspended = true;
+
+		if (this.currentState == KettleState.HEATING) {
+			this.currentState = KettleState.ON;
 		}
 
+		assert this.isSuspended()
+				: new PostconditionException("isSuspended()");
 	}
+
+	@Override
+	public void resume() throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle is resumed by HEM.\n");
+		}
+
+		assert this.isSuspended()
+				: new PreconditionException("isSuspended()");
+
+		this.suspended = false;
+		if (this.modeBeforeSuspend != null) {
+			this.currentMode = this.modeBeforeSuspend;
+			this.currentPowerLevel = new Measure<Double>(
+					getPowerForMode(this.currentMode), POWER_UNIT);
+			this.modeBeforeSuspend = null;
+		} else {
+			this.currentMode = KettleMode.NORMAL;
+			this.currentPowerLevel = new Measure<Double>(NORMAL_MODE_POWER, POWER_UNIT);
+		}
+
+		assert !this.isSuspended()
+				: new PostconditionException("!isSuspended()");
+	}
+
+	@Override
+	public boolean isSuspended() throws Exception {
+		return this.suspended;
+	}
+
+	@Override
+	public Measure<Double> getMaxPowerLevel() throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle returns max power level: " + MAX_POWER_LEVEL + " W.\n");
+		}
+		return new Measure<Double>(MAX_POWER_LEVEL, POWER_UNIT);
+	}
+
+	@Override
+	public Measure<Double> getCurrentPowerLevel() throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle returns current power level: "
+					+ this.currentPowerLevel.getData() + " W.\n");
+		}
+		return this.currentPowerLevel;
+	}
+
+	@Override
+	public void setCurrentPowerLevel(Measure<Double> powerLevel) throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle sets power level to: "
+					+ powerLevel.getData() + " W.\n");
+		}
+
+		assert powerLevel != null && powerLevel.getData() >= 0.0
+				: new PreconditionException("powerLevel != null && powerLevel.getData() >= 0.0");
+		assert powerLevel.getData() <= MAX_POWER_LEVEL
+				: new PreconditionException("powerLevel.getData() <= MAX_POWER_LEVEL");
+
+		this.currentPowerLevel = powerLevel;
+	}
+
+	// -------------------------------------------------------------------------
+	// KettleUserI
+	// -------------------------------------------------------------------------
+
+	@Override
+	public void startHeating() throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle starts heating.\n");
+		}
+
+		assert this.getState() == KettleState.ON
+				: new PreconditionException("getState() == KettleState.ON");
+		assert this.getKettleMode() != KettleMode.SUSPEND
+				: new PreconditionException("getKettleMode() != KettleMode.SUSPEND");
+
+		this.currentState = KettleState.HEATING;
+
+		assert this.getState() == KettleState.HEATING
+				: new PostconditionException("getState() == KettleState.HEATING");
+	}
+
+	@Override
+	public void stopHeating() throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle stops heating.\n");
+		}
+
+		assert this.getState() == KettleState.HEATING
+				: new PreconditionException("getState() == KettleState.HEATING");
+
+		this.currentState = KettleState.ON;
+
+		assert this.getState() == KettleState.ON
+				: new PostconditionException("getState() == KettleState.ON");
+	}
+
+	@Override
+	public void setTargetTemperature(Measure<Double> temperature) throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle sets target temperature to: "
+					+ temperature.getData() + " C.\n");
+		}
+
+		assert this.getState() != KettleState.OFF
+				: new PreconditionException("getState() != KettleState.OFF");
+		assert temperature != null
+				: new PreconditionException("temperature != null");
+		assert temperature.getData() >= MIN_TARGET_TEMPERATURE
+				: new PreconditionException("temperature.getData() >= MIN_TARGET_TEMPERATURE");
+		assert temperature.getData() <= MAX_TARGET_TEMPERATURE
+				: new PreconditionException("temperature.getData() <= MAX_TARGET_TEMPERATURE");
+
+		this.targetTemperature = temperature;
+
+		assert this.getTargetTemperature().getData() == temperature.getData()
+				: new PostconditionException("getTargetTemperature().getData() == temperature.getData()");
+	}
+
+	@Override
+	public void setMode(KettleMode mode) throws Exception {
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle sets mode to: " + mode + ".\n");
+		}
+
+		assert this.getState() != KettleState.OFF
+				: new PreconditionException("getState() != KettleState.OFF");
+		assert mode != null
+				: new PreconditionException("mode != null");
+
+		this.currentMode = mode;
+		this.currentPowerLevel = new Measure<Double>(getPowerForMode(mode), POWER_UNIT);
+
+		assert this.getKettleMode() == mode
+				: new PostconditionException("getKettleMode() == mode");
+	}
+
+	// -------------------------------------------------------------------------
+	// Java4 methods (for Javassist connector generation)
+	// -------------------------------------------------------------------------
+
+	public int getStateJava4() throws Exception {
+		KettleState state = this.getState();
+		switch (state) {
+		case OFF:		return 0;
+		case ON:		return 1;
+		case HEATING:	return 2;
+		default:		return 0;
+		}
+	}
+
+	public int getKettleModeJava4() throws Exception {
+		KettleMode mode = this.getKettleMode();
+		switch (mode) {
+		case SUSPEND:	return 0;
+		case ECO:		return 1;
+		case NORMAL:	return 2;
+		case MAX:		return 3;
+		default:		return 0;
+		}
+	}
+
+	public double getTargetTemperatureJava4() throws Exception {
+		return this.getTargetTemperature().getData();
+	}
+
+	public double getCurrentTemperatureJava4() throws Exception {
+		return this.getCurrentTemperature().getData();
+	}
+
+	public double getMaxPowerLevelJava4() throws Exception {
+		return this.getMaxPowerLevel().getData();
+	}
+
+	public double getCurrentPowerLevelJava4() throws Exception {
+		return this.getCurrentPowerLevel().getData();
+	}
+
+	public void setCurrentPowerLevelJava4(double powerLevel) throws Exception {
+		this.setCurrentPowerLevel(new Measure<Double>(powerLevel, POWER_UNIT));
+	}
+
+	public void setModeJava4(int mode) throws Exception {
+		switch (mode) {
+		case 1: this.setMode(KettleMode.ECO); break;
+		case 2: this.setMode(KettleMode.NORMAL); break;
+		case 3: this.setMode(KettleMode.MAX); break;
+		default: break;
+		}
+	}
+}
 
 // -----------------------------------------------------------------------------

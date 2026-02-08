@@ -578,6 +578,7 @@ implements	CoffeeMachinePushImplementationI
 		assert	state != null :
 				new PreconditionException("state != null");
 
+		System.out.println("[COFFEE CTRL] receives state: " + state);
 		if (DEBUG) {
 			this.traceMessage("receives coffee machine state: " + state + ".\n");
 		}
@@ -591,6 +592,7 @@ implements	CoffeeMachinePushImplementationI
 
 			if (state != CoffeeMachineState.OFF && oldState == CoffeeMachineState.OFF) {
 				if (this.controlMode == ControlMode.PULL) {
+					System.out.println("[COFFEE CTRL] START control loop (PULL mode)");
 					if (VERBOSE) {
 						this.traceMessage("start pull control.\n");
 					}
@@ -773,13 +775,13 @@ implements	CoffeeMachinePushImplementationI
 			}
 
 			if (shouldStopHeating) {
-				
 				// Stop heating
 				this.actuatorOutboundPort.stopHeating();
 				// Update state
 				synchronized (this.stateLock) {
 					this.currentState = CoffeeMachineState.ON;
 				}
+				System.out.println("[COFFEE CTRL] STOP heating: " + reason);
 				if (VERBOSE) {
 					this.traceMessage("stop heating: " + reason
 							+ " at " + temperature.getTimestamp() + ".\n");
@@ -818,58 +820,47 @@ implements	CoffeeMachinePushImplementationI
 	protected void		pullControlLoop()
 	{
 		try {
-			// execute the control as long as the coffee machine is ON
 			CoffeeMachineState priorState = CoffeeMachineState.OFF;
 			synchronized (this.stateLock) {
 				priorState = this.currentState;
 			}
-			if (priorState != CoffeeMachineState.OFF) {
-				// get the sensor data from the coffee machine
-				CoffeeMachineCompoundSensorData sensorData =
-						(CoffeeMachineCompoundSensorData)
-										this.sensorOutboundPort.request();
-
-				if (DEBUG) {
-					this.traceMessage(
-							"executes a new pull control step on " + sensorData + "\n");
-				}
-
+			if (priorState != CoffeeMachineState.OFF
+					&& !this.sensorOutboundPort.isDestroyed()) {
 				try {
+					CoffeeMachineCompoundSensorData sensorData =
+							(CoffeeMachineCompoundSensorData)
+											this.sensorOutboundPort.request();
+
+					System.out.println("[COFFEE CTRL] pull step: state="
+							+ priorState + ", temp="
+							+ sensorData.getTemperature().getMeasure().getData()
+							+ "C, water="
+							+ sensorData.getWaterLevel().getMeasure().getData()
+							+ "L");
+
 					this.oneControlStep(sensorData.getState(),
 										sensorData.getMode(),
 										sensorData.getTemperature(),
 										sensorData.getWaterLevel(),
 										priorState);
 				} catch (Exception e) {
-					this.traceMessage("ERROR in oneControlStep: " + e.getClass().getName()
-							+ ": " + e.getMessage() + "\n");
+					System.out.println("[COFFEE CTRL] ERROR in pull sensor request: "
+							+ e.getMessage());
 					e.printStackTrace();
 				}
 
-				// schedule the next execution of the loop only if the
-				// current execution is standard or if it is a real time
-				// simulation with code execution i.e., SIL or HIL
-				// otherwise, perform only one call to pull sensors to
-				// test the functionality
-				if (VERBOSE) {
-					this.traceMessage("scheduling next pull in " + this.actualControlPeriod
-							+ " ns\n");
-				}
+				// Always reschedule, even after error
 				this.scheduleTask(
 						o -> ((CoffeeMachineController)o).pullControlLoop(),
 						this.actualControlPeriod,
 						TimeUnit.NANOSECONDS);
-				if (VERBOSE) {
-					this.traceMessage("next pull scheduled successfully\n");
-				}
 			} else {
-				// when the coffee machine is OFF, exit the control loop
-				if (VERBOSE) {
-					this.traceMessage("exit the control.\n");
-				}
+				System.out.println("[COFFEE CTRL] exit control (state=OFF)");
 			}
 		} catch (Exception e) {
-			throw new RuntimeException(e) ;
+			System.out.println("[COFFEE CTRL] FATAL in pullControlLoop: "
+					+ e.getMessage());
+			e.printStackTrace();
 		}
 	}
 }

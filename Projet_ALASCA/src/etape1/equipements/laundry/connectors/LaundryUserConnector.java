@@ -162,5 +162,29 @@ implements	LaundryUserCI
 	{
 		((LaundryUserCI)this.offering).setSpinSpeed(speed);
 	}
+
+	@Override
+	public boolean		isDelayedStartSet() throws Exception
+	{
+		return ((LaundryUserCI)this.offering).isDelayedStartSet();
+	}
+
+	@Override
+	public long			getDelayedStartTime() throws Exception
+	{
+		return ((LaundryUserCI)this.offering).getDelayedStartTime();
+	}
+
+	@Override
+	public void			setDelayedStart(long delayInSeconds) throws Exception
+	{
+		((LaundryUserCI)this.offering).setDelayedStart(delayInSeconds);
+	}
+
+	@Override
+	public void			cancelDelayedStart() throws Exception
+	{
+		((LaundryUserCI)this.offering).cancelDelayedStart();
+	}
 }
 // -----------------------------------------------------------------------------

@@ -1,6 +1,44 @@
 package etape1.equipments.generator;
 
+
 import etape1.equipments.generator.connections.GeneratorInboundPort;
+import etape2.equipments.generator.mil.GeneratorSimulationConfiguration;
+
+// Copyright Jacques Malenfant, Sorbonne Universite.
+// Jacques.Malenfant@lip6.fr
+//
+// This software is a computer program whose purpose is to provide a
+// basic component programming model to program with components
+// distributed applications in the Java programming language.
+//
+// This software is governed by the CeCILL-C license under French law and
+// abiding by the rules of distribution of free software.  You can use,
+// modify and/ or redistribute the software under the terms of the
+// CeCILL-C license as circulated by CEA, CNRS and INRIA at the following
+// URL "http://www.cecill.info".
+//
+// As a counterpart to the access to the source code and  rights to copy,
+// modify and redistribute granted by the license, users are provided only
+// with a limited warranty  and the software's author,  the holder of the
+// economic rights,  and the successive licensors  have only  limited
+// liability. 
+//
+// In this respect, the user's attention is drawn to the risks associated
+// with loading,  using,  modifying and/or developing or reproducing the
+// software by the user in light of its specific status of free software,
+// that may mean  that it is complicated to manipulate,  and  that  also
+// therefore means  that it is reserved for developers  and  experienced
+// professionals having in-depth computer knowledge. Users are therefore
+// encouraged to load and test the software's suitability as regards their
+// requirements in conditions enabling the security of their systems and/or 
+// data to be ensured and,  more generally, to use and operate it in the 
+// same conditions as regards security. 
+//
+// The fact that you are presently reading this means that you have had
+// knowledge of the CeCILL-C license and that you accept its terms.
+
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
@@ -9,8 +47,6 @@ import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
 import fr.sorbonne_u.exceptions.PreconditionException;
-import physical_data.Measure;
-import physical_data.SignalData;
 
 // -----------------------------------------------------------------------------
 /**
@@ -35,12 +71,6 @@ import physical_data.SignalData;
  * invariant	{@code MIN_FUEL_CONSUMPTION.getData() <= MAX_FUEL_CONSUMPTION.getData()}
  * invariant	{@code TANK_CAPACITY != null && TANK_CAPACITY.getData() > 0.0 && TANK_CAPACITY.getMeasurementUnit().equals(CAPACITY_UNIT)}
  * invariant	{@code MAX_POWER != null && MAX_POWER.getData() > 0.0 && MAX_POWER.getMeasurementUnit().equals(POWER_UNIT)}
- * invariant	{@code FAKE_CURRENT_POWER_LEVEL != null && FAKE_CURRENT_POWER_LEVEL.getData() > 0.0 && FAKE_CURRENT_POWER_LEVEL.getMeasurementUnit().equals(POWER_UNIT)}
- * invariant	{@code FAKE_CURRENT_POWER_LEVEL.getData() <= MAX_POWER.getData()}
- * invariant	{@code FAKE_FUEL_CONSUMPTION != null && FAKE_FUEL_CONSUMPTION.getMeasurementUnit().equals(CONSUMPTION_UNIT)}
- * invariant	{@code FAKE_FUEL_CONSUMPTION.getData() >= MIN_FUEL_CONSUMPTION.getData() && FAKE_FUEL_CONSUMPTION.getData() <= MAX_FUEL_CONSUMPTION.getData()}
- * invariant	{@code FAKE_CURRENT_TANK_LEVEL != null && FAKE_CURRENT_TANK_LEVEL.getData() >= 0.0 && FAKE_CURRENT_TANK_LEVEL.getMeasurementUnit().equals(CONSUMPTION_UNIT)}
- * invariant	{@code FAKE_CURRENT_TANK_LEVEL.getData() <= TANK_CAPACITY.getData()}
  * </pre>
  * 
  * <p>Created on : 2025-09-29</p>
@@ -52,40 +82,6 @@ public class			Generator
 extends		AbstractComponent
 implements	GeneratorImplementationI
 {
-	// -------------------------------------------------------------------------
-	// Inner types and classes
-	// -------------------------------------------------------------------------
-
-	/**
-	 * The enumeration <code>State</code> defines the states in which the
-	 * generator can be.
-	 *
-	 * <p><strong>Description</strong></p>
-	 * 
-	 * <p><strong>Implementation Invariants</strong></p>
-	 * 
-	 * <pre>
-	 * invariant	{@code true}	// no more invariant
-	 * </pre>
-	 * 
-	 * <p><strong>Invariants</strong></p>
-	 * 
-	 * <pre>
-	 * invariant	{@code true}	// no more invariant
-	 * </pre>
-	 * 
-	 * <p>Created on : 2025-10-17</p>
-	 * 
-	 * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
-	 */
-	public static enum	State
-	{
-		OFF,
-		TANK_EMPTY,
-		IDLE,
-		PRODUCING;
-	}
-
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
@@ -127,22 +123,6 @@ implements	GeneratorImplementationI
 	public static final Measure<Double>	MAX_POWER = new Measure<Double>(
 															5500.0,
 															POWER_UNIT);
-
-	/** value for current power level used in tests.						*/
-	public static final Measure<Double>		FAKE_CURRENT_POWER_LEVEL =
-													new Measure<Double>(
-															2000.0,
-															POWER_UNIT);
-	/** test value for fuel consumption of the generator.					*/
-	public static final Measure<Double>	FAKE_FUEL_CONSUMPTION =
-													new Measure<Double>(
-															6.0,
-															CONSUMPTION_UNIT);
-	/** test value for the current tank level.								*/
-	public static final Measure<Double>	FAKE_CURRENT_TANK_LEVEL =
-													new Measure<Double>(
-															20.0,
-															CAPACITY_UNIT);
 
 	/** maximum power in {@code POWER_UNIT}.								*/
 	protected final Measure<Double>	maxPower;
@@ -255,47 +235,6 @@ implements	GeneratorImplementationI
 				Generator.class,
 				"MAX_POWER != null && MAX_POWER.getData() > 0.0 && "
 				+ "MAX_POWER.getMeasurementUnit().equals(POWER_UNIT)");
-		ret &= AssertionChecking.checkStaticInvariant(
-				FAKE_CURRENT_POWER_LEVEL != null &&
-					FAKE_CURRENT_POWER_LEVEL.getData() > 0.0 &&
-						FAKE_CURRENT_POWER_LEVEL.getMeasurementUnit().equals(
-																	POWER_UNIT),
-				Generator.class,
-				"FAKE_CURRENT_POWER_LEVEL != null && FAKE_CURRENT_POWER_LEVEL."
-				+ "getData() > 0.0 && FAKE_CURRENT_POWER_LEVEL."
-				+ "getMeasurementUnit().equals(POWER_UNIT)");
-		ret &= AssertionChecking.checkStaticInvariant(
-				FAKE_CURRENT_POWER_LEVEL.getData() <= MAX_POWER.getData(),
-				Generator.class,
-				"FAKE_CURRENT_POWER_LEVEL.getData() <= MAX_POWER.getData()");
-		ret &= AssertionChecking.checkStaticInvariant(
-				FAKE_FUEL_CONSUMPTION != null &&
-					FAKE_FUEL_CONSUMPTION.getData() > 0.0 &&
-						FAKE_FUEL_CONSUMPTION.getMeasurementUnit().equals(
-															CONSUMPTION_UNIT),
-				Generator.class,
-				"FAKE_FUEL_CONSUMPTION != null && FAKE_FUEL_CONSUMPTION."
-				+ "getMeasurementUnit().equals(CONSUMPTION_UNIT)");
-		ret &= AssertionChecking.checkStaticInvariant(
-				FAKE_FUEL_CONSUMPTION.getData() >= MIN_FUEL_CONSUMPTION.getData()
-					&& FAKE_FUEL_CONSUMPTION.getData() <= MAX_FUEL_CONSUMPTION.getData(),
-				Generator.class,
-				"FAKE_FUEL_CONSUMPTION.getData() >= MIN_FUEL_CONSUMPTION."
-				+ "getData() && FAKE_FUEL_CONSUMPTION.getData() <= "
-				+ "MAX_FUEL_CONSUMPTION.getData()");
-		ret &= AssertionChecking.checkStaticInvariant(
-				FAKE_CURRENT_TANK_LEVEL != null &&
-					FAKE_CURRENT_TANK_LEVEL.getData() >= 0.0 &&
-						FAKE_CURRENT_TANK_LEVEL.getMeasurementUnit().equals(
-																CAPACITY_UNIT),
-				Generator.class,
-				"FAKE_CURRENT_TANK_LEVEL != null && FAKE_CURRENT_TANK_LEVEL."
-				+ "getData() >= 0.0 && FAKE_CURRENT_TANK_LEVEL."
-				+ "getMeasurementUnit().equals(CONSUMPTION_UNIT)");
-		ret &= AssertionChecking.checkStaticInvariant(
-				FAKE_CURRENT_TANK_LEVEL.getData() <= TANK_CAPACITY.getData(),
-				Generator.class,
-				"FAKE_CURRENT_TANK_LEVEL.getData() <= TANK_CAPACITY.getData()");
 		return ret;
 	}
 
@@ -502,7 +441,7 @@ implements	GeneratorImplementationI
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @see etape1.equipments.generator.GeneratorImplementationI#getState()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#getState()
 	 */
 	@Override
 	public State		getState() throws Exception
@@ -516,7 +455,7 @@ implements	GeneratorImplementationI
 	}
 
 	/**
-	 * @see etape1.equipments.generator.GeneratorImplementationI#nominalOutputTension()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#nominalOutputTension()
 	 */
 	@Override
 	public Measure<Double>	nominalOutputTension() throws Exception
@@ -539,7 +478,7 @@ implements	GeneratorImplementationI
 	}
 
 	/**
-	 * @see etape1.equipments.generator.GeneratorImplementationI#tankCapacity()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#tankCapacity()
 	 */
 	@Override
 	public Measure<Double>	tankCapacity() throws Exception
@@ -562,13 +501,37 @@ implements	GeneratorImplementationI
 	}
 
 	/**
-	 * @see etape1.equipments.generator.GeneratorImplementationI#currentTankLevel()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#refillTank(fr.sorbonne_u.alasca.physical_data.Measure)
+	 */
+	@Override
+	public void				refillTank(Measure<Double> quantity)
+	throws Exception
+	{
+		// Preconditions checking
+		assert	quantity != null :
+				new PreconditionException("quantity != null");
+		assert	quantity.getData() > 0.0 :
+				new PreconditionException("quantity.getData() > 0.0");
+		assert	quantity.getMeasurementUnit().equals(CAPACITY_UNIT) :
+				new PreconditionException(
+						"quantity.getMeasurementUnit().equals(CAPACITY_UNIT)");
+
+		// temporary implementation; would need the hardware
+	}
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#currentTankLevel()
 	 */
 	@Override
 	public SignalData<Double>	currentTankLevel() throws Exception
 	{
 		// temporary implementation, would need a physical sensor
-		SignalData<Double> ret = new SignalData<>(FAKE_CURRENT_TANK_LEVEL);
+		SignalData<Double> ret = 
+				new SignalData<Double>(
+						new Measure<Double>(
+								GeneratorSimulationConfiguration.
+													INITIAL_TANK_LEVEL,
+								GeneratorImplementationI.CAPACITY_UNIT));			
 
 		if (VERBOSE) {
 			this.logMessage("Generator returns its current tank level: "
@@ -587,7 +550,7 @@ implements	GeneratorImplementationI
 	}
 
 	/**
-	 * @see etape1.equipments.generator.GeneratorImplementationI#maxPowerProductionCapacity()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#maxPowerProductionCapacity()
 	 */
 	@Override
 	public Measure<Double>	maxPowerProductionCapacity() throws Exception
@@ -610,13 +573,17 @@ implements	GeneratorImplementationI
 	}
 
 	/**
-	 * @see etape1.equipments.generator.GeneratorImplementationI#currentPowerProduction()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#currentPowerProduction()
 	 */
 	@Override
 	public SignalData<Double>	currentPowerProduction() throws Exception
 	{
 		// temporary implementation, would need a physical sensor.
-		SignalData<Double> ret = new SignalData<>(FAKE_CURRENT_POWER_LEVEL);
+		SignalData<Double> ret =
+				new SignalData<Double>(
+						new Measure<Double>(
+								0.0,
+								GeneratorImplementationI.POWER_UNIT));			
 
 		if (VERBOSE) {
 			this.logMessage("Generator returns its current power production: "
@@ -640,7 +607,7 @@ implements	GeneratorImplementationI
 	}
 
 	/**
-	 * @see etape1.equipments.generator.GeneratorImplementationI#minFuelConsumption()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#minFuelConsumption()
 	 */
 	@Override
 	public Measure<Double>	minFuelConsumption() throws Exception
@@ -666,7 +633,7 @@ implements	GeneratorImplementationI
 	}
 
 	/**
-	 * @see etape1.equipments.generator.GeneratorImplementationI#maxFuelConsumption()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#maxFuelConsumption()
 	 */
 	@Override
 	public Measure<Double>	maxFuelConsumption() throws Exception
@@ -689,13 +656,17 @@ implements	GeneratorImplementationI
 	}
 
 	/**
-	 * @see etape1.equipments.generator.GeneratorImplementationI#currentFuelConsumption()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#currentFuelConsumption()
 	 */
 	@Override
 	public SignalData<Double>	currentFuelConsumption() throws Exception
 	{
 		// temporary implementation, would need a physical sensor.
-		SignalData<Double> ret = new SignalData<>(FAKE_FUEL_CONSUMPTION);
+		SignalData<Double> ret =
+				new SignalData<Double>(
+						new Measure<Double>(
+								0.0,
+								GeneratorImplementationI.CONSUMPTION_UNIT));			
 
 		if (VERBOSE) {
 			this.logMessage("Generator returns its current fuel consumption: "
@@ -708,18 +679,18 @@ implements	GeneratorImplementationI
 				new PostconditionException(
 						"return != null && return.getMeasurementUnit()."
 						+ "equals(CONSUMPTION_UNIT)");
-		assert	ret.getMeasure().getData() >= minFuelConsumption().getData() &&
+		assert	ret.getMeasure().getData() >= 0.0 &&
 					ret.getMeasure().getData() <= maxFuelConsumption().getData() :
 				new PreconditionException(
-						"return.getMeasure().getData() >= minFuelConsumption()."
-						+ "getData() && return.getMeasure().getData() <= "
+						"return.getMeasure().getData() >= 0.0 && "
+						+ "return.getMeasure().getData() <= "
 						+ "maxFuelConsumption().getData()");
 		
 		return ret;
 	}
 
 	/**
-	 * @see etape1.equipments.generator.GeneratorImplementationI#startGenerator()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#startGenerator()
 	 */
 	@Override
 	public void			startGenerator() throws Exception
@@ -736,7 +707,7 @@ implements	GeneratorImplementationI
 	}
 
 	/**
-	 * @see etape1.equipments.generator.GeneratorImplementationI#stopGenerator()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorImplementationI#stopGenerator()
 	 */
 	@Override
 	public void			stopGenerator() throws Exception

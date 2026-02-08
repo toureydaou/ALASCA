@@ -1,5 +1,7 @@
 package etape2.equipments.generator.mil;
 
+
+
 import java.time.Instant;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
@@ -41,9 +43,9 @@ import etape1.equipments.generator.Generator;
 import etape1.equipments.generator.GeneratorImplementationI;
 import etape1.equipments.meter.ElectricMeter;
 import etape1.equipments.meter.ElectricMeterImplementationI;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.devs_simulation.utils.AssertionChecking;
-import physical_data.Measure;
-import physical_data.MeasurementUnit;
 
 // -----------------------------------------------------------------------------
 /**

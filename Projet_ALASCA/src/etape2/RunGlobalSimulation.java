@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import etape1.equipements.laundry.interfaces.LaundryImplementationI.SpinSpeed;
 import etape1.equipments.batteries.Batteries;
 import etape1.equipments.generator.Generator;
 import etape1.equipments.solar_panel.SolarPanel;
@@ -29,6 +30,18 @@ import etape2.equipments.coffeemachine.mil.events.SetPowerCoffeeMachine;
 import etape2.equipments.coffeemachine.mil.events.SetSuspendedModeCoffeeMachine;
 import etape2.equipments.coffeemachine.mil.events.SwitchOffCoffeeMachine;
 import etape2.equipments.coffeemachine.mil.events.SwitchOnCoffeeMachine;
+import etape2.equipments.kettle.mil.KettleElectricityModel;
+import etape2.equipments.kettle.mil.KettleTemperatureModel;
+import etape2.equipments.kettle.mil.KettleUnitTesterModel;
+import etape2.equipments.kettle.mil.events.DoNotHeatKettle;
+import etape2.equipments.kettle.mil.events.HeatKettle;
+import etape2.equipments.kettle.mil.events.SetEcoModeKettle;
+import etape2.equipments.kettle.mil.events.SetMaxModeKettle;
+import etape2.equipments.kettle.mil.events.SetNormalModeKettle;
+import etape2.equipments.kettle.mil.events.SetPowerKettle;
+import etape2.equipments.kettle.mil.events.SetSuspendedModeKettle;
+import etape2.equipments.kettle.mil.events.SwitchOffKettle;
+import etape2.equipments.kettle.mil.events.SwitchOnKettle;
 import etape2.equipments.fan.mil.FanElectricityModel;
 import etape2.equipments.fan.mil.FanSimpleUserModel;
 import etape2.equipments.fan.mil.events.SetHighModeFan;
@@ -46,6 +59,18 @@ import etape2.equipments.generator.mil.events.Start;
 import etape2.equipments.generator.mil.events.Stop;
 import etape2.equipments.generator.mil.events.TankEmpty;
 import etape2.equipments.generator.mil.events.TankNoLongerEmpty;
+import etape2.equipments.laundry.mil.LaundryElectricityModel;
+import etape2.equipments.laundry.mil.LaundryUnitTesterModel;
+import etape2.equipments.laundry.mil.events.CancelWash;
+import etape2.equipments.laundry.mil.events.SetColorModeLaundry;
+import etape2.equipments.laundry.mil.events.SetDelicateModeLaundry;
+import etape2.equipments.laundry.mil.events.SetIntensiveModeLaundry;
+import etape2.equipments.laundry.mil.events.SetSpinSpeed;
+import etape2.equipments.laundry.mil.events.SetWashTemperature;
+import etape2.equipments.laundry.mil.events.SetWhiteModeLaundry;
+import etape2.equipments.laundry.mil.events.StartWash;
+import etape2.equipments.laundry.mil.events.SwitchOffLaundry;
+import etape2.equipments.laundry.mil.events.SwitchOnLaundry;
 import etape2.equipments.meter.mil.ElectricMeterElectricityModel;
 import etape2.equipments.solar_panel.mil.AstronomicalSunRiseAndSetModel;
 import etape2.equipments.solar_panel.mil.DeterministicSunIntensityModel;
@@ -57,6 +82,9 @@ import etape2.equipments.solar_panel.mil.SunIntensityModelI;
 import etape2.equipments.solar_panel.mil.SunRiseAndSetModelI;
 import etape2.equipments.solar_panel.mil.events.SunriseEvent;
 import etape2.equipments.solar_panel.mil.events.SunsetEvent;
+import fr.sorbonne_u.components.cyphy.utils.tests.SimulationTestStep;
+import fr.sorbonne_u.components.cyphy.utils.tests.TestScenarioWithSimulation;
+import fr.sorbonne_u.components.utils.tests.TestStepI;
 import fr.sorbonne_u.devs_simulation.architectures.Architecture;
 import fr.sorbonne_u.devs_simulation.architectures.ArchitectureI;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.AtomicHIOA_Descriptor;
@@ -74,8 +102,7 @@ import fr.sorbonne_u.devs_simulation.models.time.Duration;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.simulators.SimulationEngine;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulatorI;
-import tests_utils.SimulationTestStep;
-import tests_utils.TestScenario;
+import fr.sorbonne_u.exceptions.VerboseException;
 
 public class			RunGlobalSimulation
 {
@@ -163,7 +190,47 @@ public class			RunGlobalSimulation
 							GlobalSimulationConfigurationI.TIME_UNIT,
 							null));
 
-			
+			// Laundry models
+
+			atomicModelDescriptors.put(
+					LaundryElectricityModel.URI,
+					AtomicHIOA_Descriptor.create(
+							LaundryElectricityModel.class,
+							LaundryElectricityModel.URI,
+							GlobalSimulationConfigurationI.TIME_UNIT,
+							null));
+			atomicModelDescriptors.put(
+					LaundryUnitTesterModel.URI,
+					AtomicModelDescriptor.create(
+							LaundryUnitTesterModel.class,
+							LaundryUnitTesterModel.URI,
+							GlobalSimulationConfigurationI.TIME_UNIT,
+							null));
+
+			// Kettle models
+
+			atomicModelDescriptors.put(
+					KettleElectricityModel.URI,
+					AtomicHIOA_Descriptor.create(
+							KettleElectricityModel.class,
+							KettleElectricityModel.URI,
+							GlobalSimulationConfigurationI.TIME_UNIT,
+							null));
+			atomicModelDescriptors.put(
+					KettleTemperatureModel.URI,
+					AtomicHIOA_Descriptor.create(
+							KettleTemperatureModel.class,
+							KettleTemperatureModel.URI,
+							GlobalSimulationConfigurationI.TIME_UNIT,
+							null));
+			atomicModelDescriptors.put(
+					KettleUnitTesterModel.URI,
+					AtomicModelDescriptor.create(
+							KettleUnitTesterModel.class,
+							KettleUnitTesterModel.URI,
+							GlobalSimulationConfigurationI.TIME_UNIT,
+							null));
+
 			atomicModelDescriptors.put(
 					BatteriesPowerModel.URI,
 					AtomicHIOA_Descriptor.create(
@@ -278,6 +345,11 @@ public class			RunGlobalSimulation
 			submodels.add(CoffeeMachineElectricityModel.URI);
 			submodels.add(CoffeeMachineTemperatureModel.URI);
 			submodels.add(CoffeeMachineUnitTesterModel.URI);
+			submodels.add(LaundryElectricityModel.URI);
+			submodels.add(LaundryUnitTesterModel.URI);
+			submodels.add(KettleElectricityModel.URI);
+			submodels.add(KettleTemperatureModel.URI);
+			submodels.add(KettleUnitTesterModel.URI);
 			submodels.add(BatteriesPowerModel.URI);
 			submodels.add(sunRiseAndSetURI);
 			submodels.add(sunIntensityModelURI);
@@ -410,6 +482,151 @@ public class			RunGlobalSimulation
 									FillWaterCoffeeMachine.class),
 					});
 
+			// Laundry events
+
+			connections.put(
+					new EventSource(LaundryUnitTesterModel.URI,
+									SwitchOnLaundry.class),
+					new EventSink[] {
+							new EventSink(LaundryElectricityModel.URI,
+										  SwitchOnLaundry.class)
+					});
+			connections.put(
+					new EventSource(LaundryUnitTesterModel.URI,
+									SwitchOffLaundry.class),
+					new EventSink[] {
+							new EventSink(LaundryElectricityModel.URI,
+										  SwitchOffLaundry.class)
+					});
+			connections.put(
+					new EventSource(LaundryUnitTesterModel.URI,
+									SetDelicateModeLaundry.class),
+					new EventSink[] {
+							new EventSink(LaundryElectricityModel.URI,
+										  SetDelicateModeLaundry.class)
+					});
+			connections.put(
+					new EventSource(LaundryUnitTesterModel.URI,
+									SetColorModeLaundry.class),
+					new EventSink[] {
+							new EventSink(LaundryElectricityModel.URI,
+										  SetColorModeLaundry.class)
+					});
+			connections.put(
+					new EventSource(LaundryUnitTesterModel.URI,
+									SetWhiteModeLaundry.class),
+					new EventSink[] {
+							new EventSink(LaundryElectricityModel.URI,
+										  SetWhiteModeLaundry.class)
+					});
+			connections.put(
+					new EventSource(LaundryUnitTesterModel.URI,
+									SetIntensiveModeLaundry.class),
+					new EventSink[] {
+							new EventSink(LaundryElectricityModel.URI,
+										  SetIntensiveModeLaundry.class)
+					});
+			connections.put(
+					new EventSource(LaundryUnitTesterModel.URI,
+									StartWash.class),
+					new EventSink[] {
+							new EventSink(LaundryElectricityModel.URI,
+										  StartWash.class)
+					});
+			connections.put(
+					new EventSource(LaundryUnitTesterModel.URI,
+									CancelWash.class),
+					new EventSink[] {
+							new EventSink(LaundryElectricityModel.URI,
+										  CancelWash.class)
+					});
+			connections.put(
+					new EventSource(LaundryUnitTesterModel.URI,
+									SetWashTemperature.class),
+					new EventSink[] {
+							new EventSink(LaundryElectricityModel.URI,
+										  SetWashTemperature.class)
+					});
+			connections.put(
+					new EventSource(LaundryUnitTesterModel.URI,
+									SetSpinSpeed.class),
+					new EventSink[] {
+							new EventSink(LaundryElectricityModel.URI,
+										  SetSpinSpeed.class)
+					});
+
+			// Kettle events
+
+			connections.put(
+					new EventSource(KettleUnitTesterModel.URI,
+									SwitchOnKettle.class),
+					new EventSink[] {
+							new EventSink(KettleElectricityModel.URI,
+										  SwitchOnKettle.class)
+					});
+			connections.put(
+					new EventSource(KettleUnitTesterModel.URI,
+									SwitchOffKettle.class),
+					new EventSink[] {
+							new EventSink(KettleElectricityModel.URI,
+										  SwitchOffKettle.class),
+							new EventSink(KettleTemperatureModel.URI,
+										  SwitchOffKettle.class)
+					});
+			connections.put(
+					new EventSource(KettleUnitTesterModel.URI,
+									HeatKettle.class),
+					new EventSink[] {
+							new EventSink(KettleElectricityModel.URI,
+										  HeatKettle.class),
+							new EventSink(KettleTemperatureModel.URI,
+										  HeatKettle.class)
+					});
+			connections.put(
+					new EventSource(KettleUnitTesterModel.URI,
+									DoNotHeatKettle.class),
+					new EventSink[] {
+							new EventSink(KettleElectricityModel.URI,
+										  DoNotHeatKettle.class),
+							new EventSink(KettleTemperatureModel.URI,
+										  DoNotHeatKettle.class)
+					});
+			connections.put(
+					new EventSource(KettleUnitTesterModel.URI,
+									SetPowerKettle.class),
+					new EventSink[] {
+							new EventSink(KettleElectricityModel.URI,
+										  SetPowerKettle.class)
+					});
+			connections.put(
+					new EventSource(KettleUnitTesterModel.URI,
+									SetEcoModeKettle.class),
+					new EventSink[] {
+							new EventSink(KettleElectricityModel.URI,
+										  SetEcoModeKettle.class)
+					});
+			connections.put(
+					new EventSource(KettleUnitTesterModel.URI,
+									SetNormalModeKettle.class),
+					new EventSink[] {
+							new EventSink(KettleElectricityModel.URI,
+										  SetNormalModeKettle.class)
+					});
+			connections.put(
+					new EventSource(KettleUnitTesterModel.URI,
+									SetMaxModeKettle.class),
+					new EventSink[] {
+							new EventSink(KettleElectricityModel.URI,
+										  SetMaxModeKettle.class)
+					});
+			connections.put(
+					new EventSource(KettleUnitTesterModel.URI,
+									SetSuspendedModeKettle.class),
+					new EventSink[] {
+							new EventSink(KettleElectricityModel.URI,
+										  SetSuspendedModeKettle.class)
+					});
+
 			// Batteries events
 
 			connections.put(
@@ -508,6 +725,16 @@ public class			RunGlobalSimulation
 									 CoffeeMachineTemperatureModel.URI)
 				});
 
+			// Bindings among kettle models
+
+			bindings.put(
+				new VariableSource("currentHeatingPower", Double.class,
+								   KettleElectricityModel.URI),
+				new VariableSink[] {
+					new VariableSink("currentHeatingPower", Double.class,
+									 KettleTemperatureModel.URI)
+				});
+
 			// Bindings among solar panel models
 
 			bindings.put(
@@ -586,8 +813,23 @@ public class			RunGlobalSimulation
 									 "currentCoffeeMachineIntensity", Double.class,
 									 ElectricMeterElectricityModel.URI)
 				});
+			bindings.put(
+				new VariableSource("currentIntensity", Double.class,
+								   LaundryElectricityModel.URI),
+				new VariableSink[] {
+					new VariableSink("currentIntensity", Double.class,
+									 "currentLaundryIntensity", Double.class,
+									 ElectricMeterElectricityModel.URI)
+				});
+			bindings.put(
+				new VariableSource("currentIntensity", Double.class,
+								   KettleElectricityModel.URI),
+				new VariableSink[] {
+					new VariableSink("currentIntensity", Double.class,
+									 "currentKettleIntensity", Double.class,
+									 ElectricMeterElectricityModel.URI)
+				});
 
-			
 			coupledModelDescriptors.put(
 					GlobalCoupledModel.URI,
 					new CoupledHIOA_Descriptor(
@@ -756,6 +998,18 @@ public class			RunGlobalSimulation
 			CoffeeMachineUnitTesterModel.VERBOSE = true;
 			CoffeeMachineUnitTesterModel.DEBUG  = false;
 
+			LaundryElectricityModel.VERBOSE = true;
+			LaundryElectricityModel.DEBUG = false;
+			LaundryUnitTesterModel.VERBOSE = true;
+			LaundryUnitTesterModel.DEBUG = false;
+
+			KettleElectricityModel.VERBOSE = true;
+			KettleElectricityModel.DEBUG = false;
+			KettleTemperatureModel.VERBOSE = true;
+			KettleTemperatureModel.DEBUG = false;
+			KettleUnitTesterModel.VERBOSE = true;
+			KettleUnitTesterModel.DEBUG = false;
+
 			BatteriesPowerModel.VERBOSE = true;
 			BatteriesPowerModel.DEBUG = false;
 
@@ -794,9 +1048,13 @@ public class			RunGlobalSimulation
 			// Test scenario
 
 			// run a CLASSICAL test scenario
-			CLASSICAL.setUpSimulator(se, simParams);
-			Time startTime = CLASSICAL.getStartTime();
-			Duration d = CLASSICAL.getEndTime().subtract(startTime);
+			TestScenarioWithSimulation classical = classical();
+			Map<String, Object> classicalRunParameters =
+											new HashMap<String, Object>();
+			classical.addToRunParameters(classicalRunParameters);
+			se.setSimulationRunParameters(classicalRunParameters);
+			Time startTime = classical.getStartTime();
+			Duration d = classical.getEndTime().subtract(startTime);
 			se.doStandAloneSimulation(startTime.getSimulatedTime(),
 									  d.getSimulatedDuration());
 			// Optional: simulation report
@@ -812,12 +1070,14 @@ public class			RunGlobalSimulation
 	// -------------------------------------------------------------------------
 
 	/** standard test scenario, see Gherkin specification.				 	*/
-	protected static TestScenario	CLASSICAL =
-		new TestScenario(
+	protected static TestScenarioWithSimulation	classical()
+			throws VerboseException
+			{
+				return new TestScenarioWithSimulation(
 				"-----------------------------------------------------\n" +
 				"Classical Global Simulation\n\n" +
 				"  Gherkin specification\n\n" +
-				"    Feature: Global Energy Management with Coffee Machine\n\n" +
+				"    Feature: Global Energy Management with Coffee Machine, Laundry, Fan and Kettle\n\n" +
 				"      Scenario: Generator startup\n" +
 				"        Given a generator with fuel\n" +
 				"        When it is started at 12:15\n" +
@@ -826,22 +1086,64 @@ public class			RunGlobalSimulation
 				"        Given a coffee machine that is off\n" +
 				"        When it is switched on at 12:30\n" +
 				"        Then it enters standby mode\n\n" +
+				"      Scenario: Laundry Machine initialization\n" +
+				"        Given a laundry machine that is off\n" +
+				"        When it is switched on at 12:45\n" +
+				"        Then it enters standby mode\n\n" +
 				"      Scenario: Coffee Machine preparation\n" +
 				"        Given the coffee machine is on\n" +
 				"        When water is filled (1.0L) at 13:00\n" +
 				"        And the mode is set to MAX at 13:30\n" +
 				"        Then the machine is configured for high power heating\n\n" +
+				"      Scenario: Laundry Machine configuration\n" +
+				"        Given the laundry machine is on\n" +
+				"        When the color mode is set at 13:15\n" +
+				"        And the temperature is set to 40C at 13:20\n" +
+				"        And the spin speed is set to 1200 RPM at 13:25\n" +
+				"        Then the machine is configured for washing\n\n" +
 				"      Scenario: Brewing process\n" +
 				"        Given the machine has water and is configured\n" +
 				"        When the MakeCoffee command is issued at 14:00\n" +
 				"        Then the machine heats up and consumes electricity\n\n" +
+				"      Scenario: Laundry wash cycle\n" +
+				"        Given the laundry machine is configured\n" +
+				"        When the wash cycle starts at 14:15\n" +
+				"        Then the machine begins washing and consuming power\n\n" +
 				"      Scenario: Serving coffee\n" +
 				"        Given the heating phase is active/done\n" +
 				"        When coffee is served at 14:30\n" +
 				"        Then the water level decreases\n\n" +
+				"      Scenario: Laundry mode change during wash\n" +
+				"        Given the laundry machine is washing\n" +
+				"        When the mode is changed to intensive at 15:00\n" +
+				"        Then the power consumption increases\n\n" +
+				"      Scenario: Laundry wash cycle cancellation\n" +
+				"        Given the laundry machine is washing\n" +
+				"        When the wash is cancelled at 16:00\n" +
+				"        Then the machine returns to ON state\n\n" +
+				"      Scenario: Laundry Machine shutdown\n" +
+				"        Given the laundry machine is on\n" +
+				"        When it is switched off at 16:15\n" +
+				"        Then it stops consuming power\n\n" +
 				"      Scenario: Coffee Machine shutdown\n" +
 				"        Given the coffee machine is active\n" +
 				"        When it is switched off at 16:30\n" +
+				"        Then it stops consuming power\n\n" +
+				"      Scenario: Kettle initialization\n" +
+				"        Given a kettle that is off\n" +
+				"        When it is switched on at 13:00\n" +
+				"        Then it enters standby mode\n\n" +
+				"      Scenario: Kettle heating\n" +
+				"        Given the kettle is on\n" +
+				"        When heating starts at 13:10 in NORMAL mode\n" +
+				"        Then the water temperature rises\n\n" +
+				"      Scenario: Kettle mode change\n" +
+				"        Given the kettle is heating\n" +
+				"        When the mode is changed to MAX at 14:30\n" +
+				"        Then the heating power increases to 3000W\n\n" +
+				"      Scenario: Kettle stop heating and shutdown\n" +
+				"        Given the kettle is heating\n" +
+				"        When heating stops at 15:30 and it is switched off at 15:45\n" +
 				"        Then it stops consuming power\n\n" +
 				"      Scenario: Generator shutdown\n" +
 				"        Given the generator is running\n" +
@@ -851,14 +1153,26 @@ public class			RunGlobalSimulation
 				"\n-----------------------------------------------------\n" +
 				"End Classical\n" +
 				"-----------------------------------------------------",
+				"fake-clock-URI",
 				GlobalSimulationConfigurationI.START_INSTANT,
 				GlobalSimulationConfigurationI.END_INSTANT,
+				GlobalCoupledModel.URI,
 				GlobalSimulationConfigurationI.START_TIME,
-				(simulationEngine, testScenario, simulationParameters) -> {
+				(testScenario, simulationParameters) -> {
 					simulationParameters.put(
 						ModelI.createRunParameterName(
 							CoffeeMachineUnitTesterModel.URI,
 							CoffeeMachineUnitTesterModel.TEST_SCENARIO_RP_NAME),
+						testScenario);
+					simulationParameters.put(
+						ModelI.createRunParameterName(
+							LaundryUnitTesterModel.URI,
+							LaundryUnitTesterModel.TEST_SCENARIO_RP_NAME),
+						testScenario);
+					simulationParameters.put(
+						ModelI.createRunParameterName(
+							KettleUnitTesterModel.URI,
+							KettleUnitTesterModel.TEST_SCENARIO_RP_NAME),
 						testScenario);
 					simulationParameters.put(
 						ModelI.createRunParameterName(
@@ -890,7 +1204,7 @@ public class			RunGlobalSimulation
 						ModelI.createRunParameterName(
 							BatteriesPowerModel.URI,
 							BatteriesPowerModel.INITIAL_LEVEL_RP_NAME),
-						BatteriesSimulationConfiguration.INITIAL_BATTERIES_LEVEL);
+						BatteriesSimulationConfiguration.INITIAL_BATTERIES_LEVEL_RATIO);
 					simulationParameters.put(
 						ModelI.createRunParameterName(
 							GeneratorFuelModel.URI,
@@ -932,10 +1246,58 @@ public class			RunGlobalSimulation
 							GeneratorGlobalTesterModel.URI,
 							GeneratorGlobalTesterModel.TEST_SCENARIO_RP_NAME),
 						testScenario);
-					simulationEngine.setSimulationRunParameters(
-														simulationParameters);
 				},
-				new SimulationTestStep[]{
+				new TestStepI[]{
+					// Kettle: switch on at 13:00
+					new SimulationTestStep(
+						KettleUnitTesterModel.URI,
+						Instant.parse("2025-10-20T13:00:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SwitchOnKettle(t));
+							return ret;
+						},
+						(m, t) -> {}),
+					// Kettle: start heating at 13:10
+					new SimulationTestStep(
+						KettleUnitTesterModel.URI,
+						Instant.parse("2025-10-20T13:10:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new HeatKettle(t));
+							return ret;
+						},
+						(m, t) -> {}),
+					// Kettle: change to MAX mode at 14:30
+					new SimulationTestStep(
+						KettleUnitTesterModel.URI,
+						Instant.parse("2025-10-20T14:30:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SetMaxModeKettle(t));
+							return ret;
+						},
+						(m, t) -> {}),
+					// Kettle: stop heating at 15:30
+					new SimulationTestStep(
+						KettleUnitTesterModel.URI,
+						Instant.parse("2025-10-20T15:30:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new DoNotHeatKettle(t));
+							return ret;
+						},
+						(m, t) -> {}),
+					// Kettle: switch off at 15:45
+					new SimulationTestStep(
+						KettleUnitTesterModel.URI,
+						Instant.parse("2025-10-20T15:45:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SwitchOffKettle(t));
+							return ret;
+						},
+						(m, t) -> {}),
 					new SimulationTestStep(
 						GeneratorGlobalTesterModel.URI,
 						Instant.parse("2025-10-20T12:15:00.00Z"),
@@ -954,12 +1316,52 @@ public class			RunGlobalSimulation
 							return ret;
 						},
 						(m, t) -> {}),
+					// Laundry switch on
+					new SimulationTestStep(
+						LaundryUnitTesterModel.URI,
+						Instant.parse("2025-10-20T12:45:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SwitchOnLaundry(t));
+							return ret;
+						},
+						(m, t) -> {}),
 					new SimulationTestStep(
 						CoffeeMachineUnitTesterModel.URI,
 						Instant.parse("2025-10-20T13:00:00.00Z"),
 						(m, t) -> {
 							ArrayList<EventI> ret = new ArrayList<>();
 							ret.add(new FillWaterCoffeeMachine(t, new WaterValue(1.0)));
+							return ret;
+						},
+						(m, t) -> {}),
+					// Laundry configuration: set color mode
+					new SimulationTestStep(
+						LaundryUnitTesterModel.URI,
+						Instant.parse("2025-10-20T13:15:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SetColorModeLaundry(t));
+							return ret;
+						},
+						(m, t) -> {}),
+					// Laundry configuration: set temperature to 40°C
+					new SimulationTestStep(
+						LaundryUnitTesterModel.URI,
+						Instant.parse("2025-10-20T13:20:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SetWashTemperature(t, 40.0));
+							return ret;
+						},
+						(m, t) -> {}),
+					// Laundry configuration: set spin speed to 1200 RPM
+					new SimulationTestStep(
+						LaundryUnitTesterModel.URI,
+						Instant.parse("2025-10-20T13:25:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SetSpinSpeed(t, SpinSpeed.RPM_1200));
 							return ret;
 						},
 						(m, t) -> {}),
@@ -981,12 +1383,52 @@ public class			RunGlobalSimulation
 							return ret;
 						},
 						(m, t) -> {}),
+					// Laundry: start wash cycle
+					new SimulationTestStep(
+						LaundryUnitTesterModel.URI,
+						Instant.parse("2025-10-20T14:15:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new StartWash(t));
+							return ret;
+						},
+						(m, t) -> {}),
 					new SimulationTestStep(
 						CoffeeMachineUnitTesterModel.URI,
 						Instant.parse("2025-10-20T14:30:00.00Z"),
 						(m, t) -> {
 							ArrayList<EventI> ret = new ArrayList<>();
 							ret.add(new ServeCoffee(t));
+							return ret;
+						},
+						(m, t) -> {}),
+					// Laundry: change to intensive mode during wash
+					new SimulationTestStep(
+						LaundryUnitTesterModel.URI,
+						Instant.parse("2025-10-20T15:00:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SetIntensiveModeLaundry(t));
+							return ret;
+						},
+						(m, t) -> {}),
+					// Laundry: cancel wash cycle
+					new SimulationTestStep(
+						LaundryUnitTesterModel.URI,
+						Instant.parse("2025-10-20T16:00:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new CancelWash(t));
+							return ret;
+						},
+						(m, t) -> {}),
+					// Laundry: switch off
+					new SimulationTestStep(
+						LaundryUnitTesterModel.URI,
+						Instant.parse("2025-10-20T16:15:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SwitchOffLaundry(t));
 							return ret;
 						},
 						(m, t) -> {}),
@@ -1009,5 +1451,6 @@ public class			RunGlobalSimulation
 						},
 						(m, t) -> {})
 					});
+			}
 }
 // -----------------------------------------------------------------------------

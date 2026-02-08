@@ -1,6 +1,6 @@
 package etape1.equipements.fan.interfaces;
 
-import physical_data.MeasurementUnit;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 
 public interface FanImplementationI {
 	// -------------------------------------------------------------------------

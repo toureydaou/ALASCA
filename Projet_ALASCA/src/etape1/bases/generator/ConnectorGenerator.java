@@ -15,8 +15,18 @@ public class ConnectorGenerator {
                                 String className) throws Exception {
 
         ClassPool pool = ClassPool.getDefault();
-        
+
         String fullName = className;
+
+        // Check if the class was already loaded in JVM (e.g., re-registration after turnOff/turnOn)
+        try {
+            Class<?> alreadyLoaded = Class.forName(fullName);
+            System.out.println("Classe deja generee, reutilisation : " + fullName);
+            return alreadyLoaded;
+        } catch (ClassNotFoundException e) {
+            // Class doesn't exist yet, proceed with generation
+        }
+
         CtClass cc = pool.makeClass(fullName);
 
         cc.setSuperclass(pool.get(ABSTRACT_CONNECTOR_PACKAGE));

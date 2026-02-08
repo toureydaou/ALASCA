@@ -130,6 +130,10 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 							type = Double.class),
 	 @ModelImportedVariable(name = "currentFanIntensity",
 	 						type = Double.class),
+	 @ModelImportedVariable(name = "currentLaundryIntensity",
+	 						type = Double.class),
+	 @ModelImportedVariable(name = "currentKettleIntensity",
+	 						type = Double.class),
 	 @ModelImportedVariable(name = "solarPanelOutputPower",
 	 						type = Double.class),
 	 @ModelImportedVariable(name = "batteriesInputPower",
@@ -209,12 +213,18 @@ extends		AtomicHIOA
 	protected Value<Double>			generatorRequiredPower =
 												new Value<Double>(this);
 
-	/** current intensity of the heater in amperes.							*/
+	/** current intensity of the fan in amperes.								*/
 	@ImportedVariable(type = Double.class)
 	protected Value<Double>			currentFanIntensity;
-	/** current intensity of the hair dryer in amperes.						*/
+	/** current intensity of the coffee machine in amperes.					*/
 	@ImportedVariable(type = Double.class)
 	protected Value<Double>			currentCoffeeMachineIntensity;
+	/** current intensity of the laundry machine in amperes.				*/
+	@ImportedVariable(type = Double.class)
+	protected Value<Double>			currentLaundryIntensity;
+	/** current intensity of the kettle (water heater) in amperes.		*/
+	@ImportedVariable(type = Double.class)
+	protected Value<Double>			currentKettleIntensity;
 
 	/** current total power production of the house in the power unit
 	 *  defined by the electric meter.										*/
@@ -292,9 +302,27 @@ extends		AtomicHIOA
 						instance.currentCoffeeMachineIntensity.getValue() >= 0.0,
 				ElectricMeterElectricityModel.class,
 				instance,
-				"currentHairDryerIntensity == null || !i "
-				+ "currentHairDryerIntensity.isInitialised() || "
-				+ "currentHairDryerIntensity.getValue() >= 0.0");
+				"currentCoffeeMachineIntensity == null || "
+				+ "!currentCoffeeMachineIntensity.isInitialised() || "
+				+ "currentCoffeeMachineIntensity.getValue() >= 0.0");
+		ret &= AssertionChecking.checkImplementationInvariant(
+				instance.currentLaundryIntensity == null ||
+					!instance.currentLaundryIntensity.isInitialised() ||
+						instance.currentLaundryIntensity.getValue() >= 0.0,
+				ElectricMeterElectricityModel.class,
+				instance,
+				"currentLaundryIntensity == null || "
+				+ "!currentLaundryIntensity.isInitialised() || "
+				+ "currentLaundryIntensity.getValue() >= 0.0");
+		ret &= AssertionChecking.checkImplementationInvariant(
+				instance.currentKettleIntensity == null ||
+					!instance.currentKettleIntensity.isInitialised() ||
+						instance.currentKettleIntensity.getValue() >= 0.0,
+				ElectricMeterElectricityModel.class,
+				instance,
+				"currentKettleIntensity == null || "
+				+ "!currentKettleIntensity.isInitialised() || "
+				+ "currentKettleIntensity.getValue() >= 0.0");
 		ret &= AssertionChecking.checkImplementationInvariant(
 				instance.currentIntensity != null &&
 					(!instance.currentIntensity.isInitialised() ||
@@ -470,7 +498,9 @@ extends		AtomicHIOA
 		// simple sum of all incoming intensities
 		return this.batteriesInputPower.getValue()
 					+ this.currentCoffeeMachineIntensity.getValue()
-						+ this.currentFanIntensity.getValue();
+					+ this.currentFanIntensity.getValue()
+					+ this.currentLaundryIntensity.getValue()
+					+ this.currentKettleIntensity.getValue();
 	}
 
 	/**
@@ -553,7 +583,9 @@ extends		AtomicHIOA
 		if (!this.currentIntensity.isInitialised()
 				&& this.batteriesInputPower.isInitialised()
 				&& this.currentFanIntensity.isInitialised()
-				&& this.currentCoffeeMachineIntensity.isInitialised()) {
+				&& this.currentCoffeeMachineIntensity.isInitialised()
+				&& this.currentLaundryIntensity.isInitialised()
+				&& this.currentKettleIntensity.isInitialised()) {
 			double i = this.computeTotalIntensity();
 			this.currentIntensity.initialise(i);
 			this.cumulativeConsumption.initialise(0.0);

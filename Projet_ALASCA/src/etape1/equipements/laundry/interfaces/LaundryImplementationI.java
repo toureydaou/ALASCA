@@ -197,5 +197,35 @@ public interface LaundryImplementationI {
 	
 
 	public Measure<Double> getWashTemperature() throws Exception;
+
+	/**
+	 * return true if a delayed start has been set.
+	 *
+	 * <p><strong>Contract</strong></p>
+	 *
+	 * <pre>
+	 * pre	{@code true}	// no precondition.
+	 * post	{@code true}	// no postcondition.
+	 * </pre>
+	 *
+	 * @return				true if a delayed start is programmed.
+	 * @throws Exception 	<i>to do</i>.
+	 */
+	public boolean		isDelayedStartSet() throws Exception;
+
+	/**
+	 * return the delayed start time in seconds from the time it was set.
+	 *
+	 * <p><strong>Contract</strong></p>
+	 *
+	 * <pre>
+	 * pre	{@code isDelayedStartSet()}
+	 * post	{@code ret >= 0}
+	 * </pre>
+	 *
+	 * @return				the delayed start time in seconds.
+	 * @throws Exception 	<i>to do</i>.
+	 */
+	public long			getDelayedStartTime() throws Exception;
 }
 // -----------------------------------------------------------------------------

@@ -318,6 +318,10 @@ public class EquipmentRegistry {
 	 * @return equipment type
 	 */
 	private String extractType(String uid) {
+		// Handle "XxxGeneratedConnector" format from XML adapter registration
+		if (uid.endsWith("GeneratedConnector")) {
+			return uid.substring(0, uid.length() - "GeneratedConnector".length());
+		}
 		int dashIndex = uid.lastIndexOf('-');
 		return dashIndex > 0 ? uid.substring(0, dashIndex) : uid;
 	}

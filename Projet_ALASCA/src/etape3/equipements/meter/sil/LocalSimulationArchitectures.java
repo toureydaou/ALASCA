@@ -55,6 +55,12 @@ import etape2.equipments.fan.mil.events.SetLowModeFan;
 import etape2.equipments.fan.mil.events.SetMediumModeFan;
 import etape2.equipments.fan.mil.events.SwitchOffFan;
 import etape2.equipments.fan.mil.events.SwitchOnFan;
+import etape2.equipments.generator.mil.GeneratorSimulationConfiguration;
+import etape2.equipments.generator.mil.events.GeneratorRequiredPowerChanged;
+import etape2.equipments.generator.mil.events.Start;
+import etape2.equipments.generator.mil.events.Stop;
+import etape2.equipments.generator.mil.events.TankEmpty;
+import etape2.equipments.generator.mil.events.TankNoLongerEmpty;
 import etape2.equipments.kettle.mil.events.DoNotHeatKettle;
 import etape2.equipments.kettle.mil.events.HeatKettle;
 import etape2.equipments.kettle.mil.events.SetEcoModeKettle;
@@ -75,11 +81,27 @@ import etape2.equipments.laundry.mil.events.SetWhiteModeLaundry;
 import etape2.equipments.laundry.mil.events.StartWash;
 import etape2.equipments.laundry.mil.events.SwitchOffLaundry;
 import etape2.equipments.laundry.mil.events.SwitchOnLaundry;
+import etape2.equipments.solar_panel.mil.DeterministicSunIntensityModel;
+import etape2.equipments.solar_panel.mil.SolarPanelSimulationConfigurationI;
+import etape2.equipments.solar_panel.mil.events.SunriseEvent;
+import etape2.equipments.solar_panel.mil.events.SunsetEvent;
 import etape3.equipements.coffee_machine.sil.CoffeeMachineElectricitySILModel;
-import etape3.equipements.coffee_machine.sil.CoffeeMachineTemperatureSILModel;
 import etape3.equipements.fan.sil.FanElectricitySILModel;
 import etape3.equipements.kettle.sil.KettleElectricitySILModel;
 import etape3.equipements.laundry.sil.LaundryElectricitySILModel;
+import etape4.equipments.batteries.sil.BatteriesPowerSILModel;
+import etape4.equipments.batteries.sil.events.CurrentBatteriesLevel;
+import etape4.equipments.batteries.sil.events.SIL_BatteriesRequiredPowerChanged;
+import etape4.equipments.batteries.sil.events.SIL_StartCharging;
+import etape4.equipments.batteries.sil.events.SIL_StopCharging;
+import etape4.equipments.generator.sil.GeneratorFuelSILModel;
+import etape4.equipments.generator.sil.GeneratorPowerSILModel;
+import etape4.equipments.generator.sil.events.CurrentFuelConsumption;
+import etape4.equipments.generator.sil.events.CurrentFuelLevel;
+import etape4.equipments.generator.sil.events.CurrentPowerProduction;
+import etape4.equipments.generator.sil.events.SIL_Refill;
+import etape4.equipments.solar_panel.sil.SolarPanelPowerSILModel;
+import etape4.equipments.solar_panel.sil.events.PowerProductionLevel;
 import fr.sorbonne_u.devs_simulation.architectures.RTArchitecture;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.HIOA_Composer;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.RTAtomicHIOA_Descriptor;
@@ -90,6 +112,8 @@ import fr.sorbonne_u.devs_simulation.models.architectures.AbstractAtomicModelDes
 import fr.sorbonne_u.devs_simulation.models.architectures.CoupledModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;
 import fr.sorbonne_u.devs_simulation.models.events.EventSink;
+import fr.sorbonne_u.devs_simulation.models.events.EventSource;
+import fr.sorbonne_u.devs_simulation.models.events.ReexportedEvent;
 import fr.sorbonne_u.exceptions.PreconditionException;
 
 // -----------------------------------------------------------------------------
@@ -204,6 +228,46 @@ public abstract class	LocalSimulationArchitectures
 						simulatedTimeUnit,
 						null,
 						accelerationFactor));
+		atomicModelDescriptors.put(
+				BatteriesPowerSILModel.URI,
+				RTAtomicHIOA_Descriptor.create(
+						BatteriesPowerSILModel.class,
+						BatteriesPowerSILModel.URI,
+						simulatedTimeUnit,
+						null,
+						accelerationFactor));
+		atomicModelDescriptors.put(
+				DeterministicSunIntensityModel.URI,
+				RTAtomicHIOA_Descriptor.create(
+						DeterministicSunIntensityModel.class,
+						DeterministicSunIntensityModel.URI,
+						SolarPanelSimulationConfigurationI.TIME_UNIT,
+						null,
+						accelerationFactor));
+		atomicModelDescriptors.put(
+				SolarPanelPowerSILModel.URI,
+				RTAtomicHIOA_Descriptor.create(
+						SolarPanelPowerSILModel.class,
+						SolarPanelPowerSILModel.URI,
+						SolarPanelSimulationConfigurationI.TIME_UNIT,
+						null,
+						accelerationFactor));
+		atomicModelDescriptors.put(
+				GeneratorFuelSILModel.URI,
+				RTAtomicHIOA_Descriptor.create(
+						GeneratorFuelSILModel.class,
+						GeneratorFuelSILModel.URI,
+						GeneratorSimulationConfiguration.TIME_UNIT,
+						null,
+						accelerationFactor));
+		atomicModelDescriptors.put(
+				GeneratorPowerSILModel.URI,
+				RTAtomicHIOA_Descriptor.create(
+						GeneratorPowerSILModel.class,
+						GeneratorPowerSILModel.URI,
+						GeneratorSimulationConfiguration.TIME_UNIT,
+						null,
+						accelerationFactor));
 
 		// map that will contain the coupled model descriptors to construct
 		// the simulation architecture
@@ -217,7 +281,11 @@ public abstract class	LocalSimulationArchitectures
 		submodels.add(CoffeeMachineElectricitySILModel.URI);
 		submodels.add(LaundryElectricitySILModel.URI);
 		submodels.add(KettleElectricitySILModel.URI);
-
+		submodels.add(BatteriesPowerSILModel.URI);
+		submodels.add(DeterministicSunIntensityModel.URI);
+		submodels.add(SolarPanelPowerSILModel.URI);
+		submodels.add(GeneratorFuelSILModel.URI);
+		submodels.add(GeneratorPowerSILModel.URI);
 
 		Map<Class<? extends EventI>,EventSink[]> imported = new HashMap<>();
 		imported.put(
@@ -444,6 +512,87 @@ public abstract class	LocalSimulationArchitectures
 						new EventSink(KettleElectricitySILModel.URI,
 									  SetPowerKettle.class)
 				});
+		imported.put(SIL_StartCharging.class,
+				new EventSink[] {
+						new EventSink(BatteriesPowerSILModel.URI,
+									  SIL_StartCharging.class)
+				});
+		imported.put(SIL_StopCharging.class,
+				new EventSink[] {
+						new EventSink(BatteriesPowerSILModel.URI,
+									  SIL_StopCharging.class)
+				});
+
+		imported.put(
+				SunriseEvent.class,
+				new EventSink[] {
+						new EventSink(DeterministicSunIntensityModel.URI,
+									  SunriseEvent.class),
+						new EventSink(SolarPanelPowerSILModel.URI,
+									  SunriseEvent.class)
+				});
+		imported.put(
+				SunsetEvent.class,
+				new EventSink[] {
+						new EventSink(DeterministicSunIntensityModel.URI,
+									  SunsetEvent.class),
+						new EventSink(SolarPanelPowerSILModel.URI,
+									  SunsetEvent.class)
+				});
+		imported.put(
+				Start.class,
+				new EventSink[] {
+						new EventSink(GeneratorFuelSILModel.URI,
+									  Start.class),
+						new EventSink(GeneratorPowerSILModel.URI,
+									  Start.class)
+				});
+		imported.put(
+				Stop.class,
+				new EventSink[] {
+						new EventSink(GeneratorFuelSILModel.URI,
+									  Stop.class),
+						new EventSink(GeneratorPowerSILModel.URI,
+									  Stop.class)
+				});
+		imported.put(
+				SIL_Refill.class,
+				new EventSink[] {
+						new EventSink(GeneratorFuelSILModel.URI,
+								SIL_Refill.class)
+				});
+		
+		Map<Class<? extends EventI>, ReexportedEvent> reexported =
+				new HashMap<>();
+
+		reexported.put(
+		CurrentBatteriesLevel.class,
+		new ReexportedEvent(BatteriesPowerSILModel.URI,
+		CurrentBatteriesLevel.class));
+		reexported.put(
+		PowerProductionLevel.class,
+		new ReexportedEvent(SolarPanelPowerSILModel.URI,
+		PowerProductionLevel.class));
+		reexported.put(
+		TankEmpty.class,
+		new ReexportedEvent(GeneratorFuelSILModel.URI,
+		TankEmpty.class));
+		reexported.put(
+		TankNoLongerEmpty.class,
+		new ReexportedEvent(GeneratorFuelSILModel.URI,
+		TankNoLongerEmpty.class));
+		reexported.put(
+		CurrentFuelLevel.class,
+		new ReexportedEvent(GeneratorFuelSILModel.URI,
+		CurrentFuelLevel.class));
+		reexported.put(
+		CurrentFuelConsumption.class,
+		new ReexportedEvent(GeneratorFuelSILModel.URI,
+		CurrentFuelConsumption.class));
+		reexported.put(
+		CurrentPowerProduction.class,
+		new ReexportedEvent(GeneratorPowerSILModel.URI,
+		CurrentPowerProduction.class));
 
 		// variable bindings between exporting and importing models
 		Map<VariableSource,VariableSink[]> bindings =
@@ -484,8 +633,97 @@ public abstract class	LocalSimulationArchitectures
 									 Double.class,
 									 ElectricMeterElectricitySILModel.URI)
 				});
+		
+		bindings.put(
+				new VariableSource("batteriesInputPower",
+								   Double.class,
+								   BatteriesPowerSILModel.URI),
+				new VariableSink[] {
+					new VariableSink("batteriesInputPower",
+									 Double.class,
+									 ElectricMeterElectricitySILModel.URI)
+				});
+		bindings.put(
+				new VariableSource("batteriesOutputPower",
+								   Double.class,
+								   BatteriesPowerSILModel.URI),
+				new VariableSink[] {
+					new VariableSink("batteriesOutputPower",
+									 Double.class,
+									 ElectricMeterElectricitySILModel.URI)
+				});
+		bindings.put(
+				new VariableSource("batteriesRequiredPower",
+								   Double.class,
+								   ElectricMeterElectricitySILModel.URI),
+				new VariableSink[] {
+					new VariableSink("batteriesRequiredPower",
+									 Double.class,
+									 BatteriesPowerSILModel.URI)
+				});
 
-		coupledModelDescriptors.put(
+		bindings.put(
+				new VariableSource("sunIntensityCoef",
+						   Double.class,
+						   DeterministicSunIntensityModel.URI),
+				new VariableSink[] {
+						new VariableSink("sunIntensityCoef",
+										 Double.class,
+										 SolarPanelPowerSILModel.URI)
+				});
+		bindings.put(
+				new VariableSource("solarPanelOutputPower",
+						   Double.class,
+						   SolarPanelPowerSILModel.URI),
+				new VariableSink[] {
+						new VariableSink("solarPanelOutputPower",
+										 Double.class,
+										 ElectricMeterElectricitySILModel.URI)
+				});
+
+		bindings.put(
+				new VariableSource("generatorOutputPower",
+								   Double.class,
+								   GeneratorPowerSILModel.URI),
+				new VariableSink[] {
+					new VariableSink("generatorOutputPower",
+									 Double.class,
+									 ElectricMeterElectricitySILModel.URI),
+					new VariableSink("generatorOutputPower",
+							 		 Double.class,
+							 		 GeneratorFuelSILModel.URI)
+				});
+		bindings.put(
+				new VariableSource("generatorRequiredPower",
+								   Double.class,
+								   ElectricMeterElectricitySILModel.URI),
+				new VariableSink[] {
+					new VariableSink("generatorRequiredPower",
+									 Double.class,
+									 GeneratorPowerSILModel.URI)
+				});
+		
+		Map<EventSource,EventSink[]> connections =
+				new HashMap<EventSource,EventSink[]>();
+
+		connections.put(
+			new EventSource(
+				ElectricMeterElectricitySILModel.URI,
+				SIL_BatteriesRequiredPowerChanged.class),
+			new EventSink[] {
+				new EventSink(BatteriesPowerSILModel.URI,
+							  SIL_BatteriesRequiredPowerChanged.class)
+			});
+		connections.put(
+			new EventSource(
+				ElectricMeterElectricitySILModel.URI,
+				GeneratorRequiredPowerChanged.class),
+			new EventSink[] {
+				new EventSink(GeneratorPowerSILModel.URI,
+							  GeneratorRequiredPowerChanged.class)
+			});
+		
+				coupledModelDescriptors.put(
 				rootModelURI,
 				new RTCoupledHIOA_Descriptor(
 						ElectricMeterCoupledModel.class,

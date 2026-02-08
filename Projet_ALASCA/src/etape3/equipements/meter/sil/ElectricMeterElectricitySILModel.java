@@ -1,5 +1,7 @@
 package etape3.equipements.meter.sil;
 
+
+
 import java.text.NumberFormat;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
@@ -42,19 +44,23 @@ import java.util.concurrent.TimeUnit;
 import etape1.equipments.meter.ElectricMeterImplementationI;
 import etape2.GlobalReportI;
 import etape2.GlobalSimulationConfigurationI;
-import etape2.equipments.batteries.mil.events.BatteriesRequiredPowerChanged;
 import etape2.equipments.generator.mil.events.GeneratorRequiredPowerChanged;
 import etape2.utils.Electricity;
 import etape3.equipements.meter.ElectricMeterCyPhy;
+import etape4.equipments.batteries.sil.events.SIL_BatteriesRequiredPowerChanged;
 import fr.sorbonne_u.components.cyphy.plugins.devs.AtomicSimulatorPlugin;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
+import fr.sorbonne_u.devs_simulation.hioa.annotations.ExportedVariable;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.ImportedVariable;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.InternalVariable;
+import fr.sorbonne_u.devs_simulation.hioa.annotations.ModelExportedVariable;
+import fr.sorbonne_u.devs_simulation.hioa.annotations.ModelExportedVariables;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.ModelImportedVariable;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.ModelImportedVariables;
 import fr.sorbonne_u.devs_simulation.hioa.models.AtomicHIOA;
 import fr.sorbonne_u.devs_simulation.hioa.models.vars.Value;
+import fr.sorbonne_u.devs_simulation.models.annotations.ModelExternalEvents;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;
 import fr.sorbonne_u.devs_simulation.models.time.Duration;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
@@ -82,8 +88,8 @@ import fr.sorbonne_u.exceptions.PreconditionException;
  * <li>Exported events: none</li>
  * <li>Imported variables:
  *   <ul>
- *   <i>name = {@code currentCoffeeMachineIntensity}, type = {@code Double}</li>
- *   <i>name = {@code currentFanIntensity}, type = {@code Double}</li>
+ *   <i>name = {@code currentHeaterIntensity}, type = {@code Double}</li>
+ *   <i>name = {@code currentHairDryerIntensity}, type = {@code Double}</li>
  *   <i>name = {@code solarPanelOutputPower}, type = {@code Double}</li>
  *   <i>name = {@code batteriesInputPower}, type = {@code Double}</li>
  *   <i>name = {@code batteriesOutputPower}, type = {@code Double}</li>
@@ -104,8 +110,8 @@ import fr.sorbonne_u.exceptions.PreconditionException;
  * invariant	{@code STEP > 0.0}
  * invariant	{@code evaluationStep.getSimulatedDuration() > 0.0}
  * invariant	{@code solarPanelOutputPower == null || !solarPanelOutputPower.isInitialised() || solarPanelOutputPower.getValue() >= 0.0}
- * invariant	{@code currentCoffeeMachineIntensity == null || !currentCoffeeMachineIntensity.isInitialised() || currentCoffeeMachineIntensity.getValue() >= 0.0}
- * invariant	{@code currentFanIntensity == null || !currentFanIntensity.isInitialised() || currentFanIntensity.getValue() >= 0.0}
+ * invariant	{@code currentHeaterIntensity == null || !currentHeaterIntensity.isInitialised() || currentHeaterIntensity.getValue() >= 0.0}
+ * invariant	{@code currentHairDryerIntensity == null || !currentHairDryerIntensity.isInitialised() || currentHairDryerIntensity.getValue() >= 0.0}
  * invariant	{@code currentIntensity != null && (!currentIntensity.isInitialised() || currentIntensity.getValue() >= 0.0)}
  * invariant	{@code cumulativeConsumption != null && (!cumulativeConsumption.isInitialised() || cumulativeConsumption.getValue() >= 0.0)}
  * invariant	{@code powerProduction != null && (!powerProduction.isInitialised() || powerProduction.getValue() >= 0.0)}
@@ -122,34 +128,35 @@ import fr.sorbonne_u.exceptions.PreconditionException;
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
 // -----------------------------------------------------------------------------
-//@ModelExternalEvents(
-//	exported = {BatteriesRequiredPowerChanged.class,
-//				GeneratorRequiredPowerChanged.class}
-//	)
+@ModelExternalEvents(
+	exported = {SIL_BatteriesRequiredPowerChanged.class,
+				GeneratorRequiredPowerChanged.class
+			   }
+	)
 @ModelImportedVariables(
 	{@ModelImportedVariable(name = "currentCoffeeMachineIntensity",
-							type = Double.class),
-	 @ModelImportedVariable(name = "currentFanIntensity",
+			type = Double.class),
+	@ModelImportedVariable(name = "currentFanIntensity",
+					type = Double.class),
+	@ModelImportedVariable(name = "currentLaundryIntensity",
+					type = Double.class),
+	@ModelImportedVariable(name = "currentKettleIntensity",
+					type = Double.class),
+	 @ModelImportedVariable(name = "solarPanelOutputPower",
 	 						type = Double.class),
-	 @ModelImportedVariable(name = "currentLaundryIntensity",
+	 @ModelImportedVariable(name = "batteriesInputPower",
 	 						type = Double.class),
-	 @ModelImportedVariable(name = "currentKettleIntensity",
+	 @ModelImportedVariable(name = "batteriesOutputPower",
+	 						type = Double.class),
+	 @ModelImportedVariable(name = "generatorOutputPower",
 	 						type = Double.class)
-//	 @ModelImportedVariable(name = "solarPanelOutputPower",
-//	 						type = Double.class),
-//	 @ModelImportedVariable(name = "batteriesInputPower",
-//	 						type = Double.class),
-//	 @ModelImportedVariable(name = "batteriesOutputPower",
-//	 						type = Double.class),
-//	 @ModelImportedVariable(name = "generatorOutputPower",
-//	 						type = Double.class)
 	})
-//@ModelExportedVariables(
-//	{@ModelExportedVariable(name = "batteriesRequiredPower",
-//							type = Double.class),
-//	 @ModelExportedVariable(name = "generatorRequiredPower",
-//	 						type = Double.class)
-//	})
+@ModelExportedVariables(
+	{@ModelExportedVariable(name = "batteriesRequiredPower",
+							type = Double.class),
+	 @ModelExportedVariable(name = "generatorRequiredPower",
+	 						type = Double.class)
+	})
 // -----------------------------------------------------------------------------
 public class			ElectricMeterElectricitySILModel
 extends		AtomicHIOA
@@ -191,30 +198,30 @@ extends		AtomicHIOA
 	// HIOA model variables
 	// -------------------------------------------------------------------------
 
-//	/** power consumed from the electric circuit to charge the batteries
-//	 *  in {@code MeasurementUnit.AMPERES}.									*/
-//	@ImportedVariable(type = Double.class)
-//	protected Value<Double>			batteriesInputPower;
-//	/** power required by the electric circuit from the batteries in
-//	 *  {@code MeasurementUnit.AMPERES}.									*/
-//	@ExportedVariable(type = Double.class)
-//	protected Value<Double>			batteriesRequiredPower = new Value<>(this);
-//	/** power delivered to the electric circuit by the batteries in
-//	 *  {@code MeasurementUnit.AMPERES}.									*/
-//	@ImportedVariable(type = Double.class)
-//	protected Value<Double>			batteriesOutputPower;
+	/** power consumed from the electric circuit to charge the batteries
+	 *  in {@code MeasurementUnit.AMPERES}.									*/
+	@ImportedVariable(type = Double.class)
+	protected Value<Double>			batteriesInputPower;
+	/** power required by the electric circuit from the batteries in
+	 *  {@code MeasurementUnit.AMPERES}.									*/
+	@ExportedVariable(type = Double.class)
+	protected Value<Double>			batteriesRequiredPower = new Value<>(this);
+	/** power delivered to the electric circuit by the batteries in
+	 *  {@code MeasurementUnit.AMPERES}.									*/
+	@ImportedVariable(type = Double.class)
+	protected Value<Double>			batteriesOutputPower;
 
-//	/** current power production of the solar panel in amperes.				*/
-//	@ImportedVariable(type = Double.class)
-//	protected Value<Double>			solarPanelOutputPower;
+	/** current power production of the solar panel in amperes.				*/
+	@ImportedVariable(type = Double.class)
+	protected Value<Double>			solarPanelOutputPower;
 
-//	/** current power production of the generator in amperes.				*/
-//	@ImportedVariable(type = Double.class)
-//	protected Value<Double>			generatorOutputPower;
-//	/** current power required from the generator.							*/
-//	@ExportedVariable(type = Double.class)
-//	protected Value<Double>			generatorRequiredPower =
-//												new Value<Double>(this);
+	/** current power production of the generator in amperes.				*/
+	@ImportedVariable(type = Double.class)
+	protected Value<Double>			generatorOutputPower;
+	/** current power required from the generator.							*/
+	@ExportedVariable(type = Double.class)
+	protected Value<Double>			generatorRequiredPower =
+												new Value<Double>(this);
 
 	/** current intensity of the CoffeeMachine in amperes.							*/
 	@ImportedVariable(type = Double.class)
@@ -229,11 +236,11 @@ extends		AtomicHIOA
 	@ImportedVariable(type = Double.class)
 	protected Value<Double>			currentKettleIntensity;
 
-//	/** current total power production of the house in the power unit
-//	 *  defined by the electric meter.										*/
-//	@InternalVariable(type = Double.class)
-//	protected final Value<Double>	powerProduction =
-//												new Value<Double>(this);
+	/** current total power production of the house in the power unit
+	 *  defined by the electric meter.										*/
+	@InternalVariable(type = Double.class)
+	protected final Value<Double>	powerProduction =
+												new Value<Double>(this);
 	/** current total consumed intensity of the house in the power unit
 	 *  defined by the electric meter.										*/
 	@InternalVariable(type = Double.class)
@@ -287,15 +294,15 @@ extends		AtomicHIOA
 				ElectricMeterElectricitySILModel.class,
 				instance,
 				"evaluationStep.getSimulatedDuration() > 0.0");
-//		ret &= AssertionChecking.checkImplementationInvariant(
-//				instance.solarPanelOutputPower == null ||
-//					!instance.solarPanelOutputPower.isInitialised() ||
-//						instance.solarPanelOutputPower.getValue() >= 0.0,
-//				ElectricMeterElectricitySILModel.class,
-//				instance,
-//				"solarPanelOutputPower == null || "
-//				+ "!solarPanelOutputPower.isInitialised() || "
-//				+ "solarPanelOutputPower.getValue() >= 0.0");
+		ret &= AssertionChecking.checkImplementationInvariant(
+				instance.solarPanelOutputPower == null ||
+					!instance.solarPanelOutputPower.isInitialised() ||
+						instance.solarPanelOutputPower.getValue() >= 0.0,
+				ElectricMeterElectricitySILModel.class,
+				instance,
+				"solarPanelOutputPower == null || "
+				+ "!solarPanelOutputPower.isInitialised() || "
+				+ "solarPanelOutputPower.getValue() >= 0.0");
 		ret &= AssertionChecking.checkImplementationInvariant(
 				instance.currentCoffeeMachineIntensity == null ||
 					!instance.currentCoffeeMachineIntensity.isInitialised() ||
@@ -332,15 +339,33 @@ extends		AtomicHIOA
 				"cumulativeConsumption != null && "
 				+ "(!cumulativeConsumption.isInitialised() || "
 				+ "cumulativeConsumption.getValue() >= 0.0)");
-//		ret &= AssertionChecking.checkImplementationInvariant(
-//				instance.powerProduction != null &&
-//					(!instance.powerProduction.isInitialised() ||
-//								instance.powerProduction.getValue() >= 0.0),
-//				ElectricMeterElectricitySILModel.class,
-//				instance,
-//				"powerProduction != null && "
-//				+ "(!powerProduction.isInitialised() || "
-//				+ "powerProduction.getValue() >= 0.0)");
+		ret &= AssertionChecking.checkImplementationInvariant(
+				instance.currentIntensity != null &&
+					(!instance.currentIntensity.isInitialised() ||
+								instance.currentIntensity.getValue() >= 0.0),
+				ElectricMeterElectricitySILModel.class,
+				instance,
+				"currentIntensity != null && "
+				+ "(!currentIntensity.isInitialised() || "
+				+ "currentIntensity.getValue() >= 0.0)");
+		ret &= AssertionChecking.checkImplementationInvariant(
+				instance.cumulativeConsumption != null &&
+					(!instance.cumulativeConsumption.isInitialised() ||
+								instance.cumulativeConsumption.getValue() >= 0.0),
+				ElectricMeterElectricitySILModel.class,
+				instance,
+				"cumulativeConsumption != null && "
+				+ "(!cumulativeConsumption.isInitialised() || "
+				+ "cumulativeConsumption.getValue() >= 0.0)");
+		ret &= AssertionChecking.checkImplementationInvariant(
+				instance.powerProduction != null &&
+					(!instance.powerProduction.isInitialised() ||
+								instance.powerProduction.getValue() >= 0.0),
+				ElectricMeterElectricitySILModel.class,
+				instance,
+				"powerProduction != null && "
+				+ "(!powerProduction.isInitialised() || "
+				+ "powerProduction.getValue() >= 0.0)");
 		return ret;
 	}
 
@@ -428,7 +453,6 @@ extends		AtomicHIOA
 		this.evaluationStep = new Duration(STEP, this.getSimulatedTimeUnit());
 		this.getSimulationEngine().setLogger(new StandardLogger());
 
-		/*
 		assert	ElectricMeterElectricitySILModel.implementationInvariants(this) :
 				new NeoSim4JavaException(
 						"ElectricMeterElectricityModel."
@@ -436,7 +460,6 @@ extends		AtomicHIOA
 		assert	ElectricMeterElectricitySILModel.invariants(this) :
 				new NeoSim4JavaException(
 						"ElectricMeterElectricityModel.invariants(this)");
-					*/
 	}
 
 	// -------------------------------------------------------------------------
@@ -466,7 +489,6 @@ extends		AtomicHIOA
 		Time t = this.cumulativeConsumption.getTime().add(d);
 		this.cumulativeConsumption.setNewValue(c, t);
 
-		/*
 		assert	ElectricMeterElectricitySILModel.implementationInvariants(this) :
 				new NeoSim4JavaException(
 						"ElectricMeterElectricityModel."
@@ -474,7 +496,6 @@ extends		AtomicHIOA
 		assert	ElectricMeterElectricitySILModel.invariants(this) :
 				new NeoSim4JavaException(
 						"ElectricMeterElectricityModel.invariants(this)");
-						*/
 	}
 
 	/**
@@ -493,11 +514,10 @@ extends		AtomicHIOA
 	{
 		// simple sum of all incoming intensities
 		return this.currentFanIntensity.getValue()
-					+ this.currentCoffeeMachineIntensity.getValue()
-					+ this.currentLaundryIntensity.getValue()
-					+ this.currentKettleIntensity.getValue()
-//					+ this.batteriesInputPower.getValue()
-					;
+				+ this.currentCoffeeMachineIntensity.getValue()
+				+ this.currentLaundryIntensity.getValue()
+				+ this.currentKettleIntensity.getValue()
+				+ this.batteriesInputPower.getValue();
 	}
 
 	/**
@@ -512,12 +532,12 @@ extends		AtomicHIOA
 	 *
 	 * @return	the current total power production.
 	 */
-//	protected double	computeTotalPowerProduction()
-//	{
-//		return this.solarPanelOutputPower.getValue() +
-//			   this.generatorOutputPower.getValue() +
-//			   this.batteriesOutputPower.getValue();
-//	}
+	protected double	computeTotalPowerProduction()
+	{
+		return this.solarPanelOutputPower.getValue() +
+			   this.generatorOutputPower.getValue() +
+			   this.batteriesOutputPower.getValue();
+	}
 
 	// -------------------------------------------------------------------------
 	// DEVS simulation protocol
@@ -555,34 +575,32 @@ extends		AtomicHIOA
 
 		// the variable batteriesRequiredPower is exported and does not depend
 		// upon any other variable, hence it can be immediately initialised
-//		if (!this.batteriesRequiredPower.isInitialised()) {
-//			this.batteriesRequiredPower.initialise(0.0);
-//			justInitialised++;
-//			if (DEBUG) {
-//				this.logMessage(
-//						"fixpointInitialiseVariables batteriesRequiredPower = "
-//						+ this.batteriesRequiredPower.getValue());
-//			}
-//		}
+		if (!this.batteriesRequiredPower.isInitialised()) {
+			this.batteriesRequiredPower.initialise(0.0);
+			justInitialised++;
+			if (DEBUG) {
+				this.logMessage(
+						"fixpointInitialiseVariables batteriesRequiredPower = "
+						+ this.batteriesRequiredPower.getValue());
+			}
+		}
 
 		// the variable generatorRequiredPower is exported and does not depend
 		// upon any other variable, hence it can be immediately initialised
-//		if (!this.generatorRequiredPower.isInitialised()) {
-//			this.generatorRequiredPower.initialise(0.0);
-//			justInitialised++;
-//			if (DEBUG) {
-//				this.logMessage(
-//						"fixpointInitialiseVariables generatorRequiredPower = "
-//						+ this.generatorRequiredPower.getValue());
-//			}
-//		}
+		if (!this.generatorRequiredPower.isInitialised()) {
+			this.generatorRequiredPower.initialise(0.0);
+			justInitialised++;
+			if (DEBUG) {
+				this.logMessage(
+						"fixpointInitialiseVariables generatorRequiredPower = "
+						+ this.generatorRequiredPower.getValue());
+			}
+		}
 
 		if (!this.currentIntensity.isInitialised()
-//				&& this.batteriesInputPower.isInitialised()
-				&& this.currentFanIntensity.isInitialised()
+				&& this.batteriesInputPower.isInitialised()
 				&& this.currentCoffeeMachineIntensity.isInitialised()
-				&& this.currentLaundryIntensity.isInitialised()
-				&& this.currentKettleIntensity.isInitialised()) {
+				&& this.currentFanIntensity.isInitialised()) {
 			double i = this.computeTotalIntensity();
 			this.currentIntensity.initialise(i);
 			this.cumulativeConsumption.initialise(0.0);
@@ -593,16 +611,16 @@ extends		AtomicHIOA
 			notInitialisedYet += 4;
 		}
 
-//		if (!this.powerProduction.isInitialised()
-//				&& this.solarPanelOutputPower.isInitialised()
-//				&& this.generatorOutputPower.isInitialised()
-//				&& this.batteriesOutputPower.isInitialised()) {
-//			double p = this.computeTotalPowerProduction();
-//			this.powerProduction.initialise(p);
-//			justInitialised++;
-//		} else if (!this.powerProduction.isInitialised()) {
-//			notInitialisedYet++;
-//		}
+		if (!this.powerProduction.isInitialised()
+				&& this.solarPanelOutputPower.isInitialised()
+				&& this.generatorOutputPower.isInitialised()
+				&& this.batteriesOutputPower.isInitialised()) {
+			double p = this.computeTotalPowerProduction();
+			this.powerProduction.initialise(p);
+			justInitialised++;
+		} else if (!this.powerProduction.isInitialised()) {
+			notInitialisedYet++;
+		}
 
 		assert	ElectricMeterElectricitySILModel.implementationInvariants(this) :
 				new NeoSim4JavaException(
@@ -631,7 +649,7 @@ extends		AtomicHIOA
 			if (ret == null) {
 				ret = new ArrayList<>();
 			}
-			ret.add(new BatteriesRequiredPowerChanged(
+			ret.add(new SIL_BatteriesRequiredPowerChanged(
 												this.getCurrentStateTime()));
 		}
 		return ret;
@@ -665,13 +683,13 @@ extends		AtomicHIOA
 
 		boolean somethingHasChanged = false;
 		// recompute the current power production
-//		double totalProduction = this.computeTotalPowerProduction();
-//		if (Math.abs(totalProduction - this.powerProduction.getValue())
-//																>= TOLERANCE) {
-//			somethingHasChanged = true;
-//		}
-//		this.powerProduction.setNewValue(totalProduction,
-//										 this.getCurrentStateTime());
+		double totalProduction = this.computeTotalPowerProduction();
+		if (Math.abs(totalProduction - this.powerProduction.getValue())
+																>= TOLERANCE) {
+			somethingHasChanged = true;
+		}
+		this.powerProduction.setNewValue(totalProduction,
+										 this.getCurrentStateTime());
 		// recompute the current total intensity
 		double totalConsumption = this.computeTotalIntensity();
 		if (Math.abs(totalConsumption - this.currentIntensity.getValue())
@@ -686,58 +704,59 @@ extends		AtomicHIOA
 
 		if (somethingHasChanged) {
 			// set the power to be taken from the generator
-//			double oldGeneratorRequiredPower =
-//										this.generatorRequiredPower.getValue();
-//			double newGeneratorRequiredPower =
-//					totalConsumption - this.solarPanelOutputPower.getValue();
-//			if (newGeneratorRequiredPower < 0.0) {
-//				newGeneratorRequiredPower = 0.0;
-//			}
-//			if (Math.abs(newGeneratorRequiredPower - oldGeneratorRequiredPower)
-//																> TOLERANCE) {
-//				// the production is under the consumption in a sensible way
-//				// try to activate the generator i.e., if it is running
-//				this.generatorRequiredPower.setNewValue(
-//													newGeneratorRequiredPower,
-//													this.getCurrentStateTime());
-//			}
-//			if (!this.generatorToBeNotified) {
-//				if (Math.abs(newGeneratorRequiredPower
-//									- oldGeneratorRequiredPower) > TOLERANCE) {
-//					this.generatorToBeNotified = true;
-//				} else {
-//					this.generatorToBeNotified = false;
-//				}
-//			} else {
-//				this.generatorToBeNotified = false;
-//			}
+			double oldGeneratorRequiredPower =
+										this.generatorRequiredPower.getValue();
+			double newGeneratorRequiredPower =
+					totalConsumption - this.solarPanelOutputPower.getValue();
+			if (newGeneratorRequiredPower < 0.0) {
+				newGeneratorRequiredPower = 0.0;
+			}
+			if (Math.abs(newGeneratorRequiredPower - oldGeneratorRequiredPower)
+																> TOLERANCE) {
+				// the production is under the consumption in a sensible way
+				// try to activate the generator i.e., if it is running
+				this.generatorRequiredPower.setNewValue(
+													newGeneratorRequiredPower,
+													this.getCurrentStateTime());
+			}
+			if (!this.generatorToBeNotified) {
+				if (Math.abs(newGeneratorRequiredPower
+									- oldGeneratorRequiredPower) > TOLERANCE) {
+					this.generatorToBeNotified = true;
+				} else {
+					this.generatorToBeNotified = false;
+				}
+			} else {
+				this.generatorToBeNotified = false;
+			}
 
 			// set the power to be taken from the batteries
-//			double oldBatteriesRequiredPower =
-//										this.batteriesRequiredPower.getValue();
-//			double newBatteriesRequiredPower =
-//					totalConsumption -
-//						(this.solarPanelOutputPower.getValue()
-//								+ this.generatorOutputPower.getValue());
-//			if (newBatteriesRequiredPower < 0.0) {
-//				newBatteriesRequiredPower = 0.0;
-//			}
-//			if (Math.abs(newBatteriesRequiredPower - oldBatteriesRequiredPower)
-//																>= TOLERANCE) {
-//				this.batteriesRequiredPower.setNewValue(
-//													newBatteriesRequiredPower,
-//													this.getCurrentStateTime());
-//			}
-//			if (!this.batteriesToBeNotified) {
-//				if (Math.abs(newBatteriesRequiredPower
-//								- oldBatteriesRequiredPower) > TOLERANCE) {
-//					this.batteriesToBeNotified = true;
-//				} else {
-//					this.batteriesToBeNotified = false;
-//				}
-//			} else {
-//				this.batteriesToBeNotified = false;
-//			}
+			double oldBatteriesRequiredPower =
+										this.batteriesRequiredPower.getValue();
+			double newBatteriesRequiredPower =
+					totalConsumption -
+						(this.solarPanelOutputPower.getValue()
+								+ this.generatorOutputPower.getValue()
+								);
+			if (newBatteriesRequiredPower < 0.0) {
+				newBatteriesRequiredPower = 0.0;
+			}
+			if (Math.abs(newBatteriesRequiredPower - oldBatteriesRequiredPower)
+																>= TOLERANCE) {
+				this.batteriesRequiredPower.setNewValue(
+													newBatteriesRequiredPower,
+													this.getCurrentStateTime());
+			}
+			if (!this.batteriesToBeNotified) {
+				if (Math.abs(newBatteriesRequiredPower
+								- oldBatteriesRequiredPower) > TOLERANCE) {
+					this.batteriesToBeNotified = true;
+				} else {
+					this.batteriesToBeNotified = false;
+				}
+			} else {
+				this.batteriesToBeNotified = false;
+			}
 		} else {
 			this.generatorToBeNotified = false;
 			this.batteriesToBeNotified = false;
@@ -745,7 +764,7 @@ extends		AtomicHIOA
 
 		// Report statistics
 		double powerBalance =
-//				this.powerProduction.getValue() -
+				this.powerProduction.getValue() -
 									this.currentIntensity.getValue();
 		if (powerBalance < 0 && powerBalance < this.largestPowerDebt.getValue()) {
 			this.largestPowerDebt.setNewValue(powerBalance,
@@ -753,37 +772,39 @@ extends		AtomicHIOA
 		} else if (powerBalance > 0 && powerBalance > this.largestPowerMargin.getValue()) {
 			this.largestPowerMargin.setNewValue(powerBalance,
 					this.getCurrentStateTime());
-}
+		}
 
-		// Tracing
-		NumberFormat nf = NumberFormat.getInstance(Locale.US);
-		nf.setGroupingUsed(false);
-		nf.setMaximumFractionDigits(2);
-		if (// this.powerProduction.isInitialised() &&
+		if (VERBOSE || DEBUG) {
+			// Tracing
+			NumberFormat nf = NumberFormat.getInstance(Locale.US);
+			nf.setGroupingUsed(false);
+			nf.setMaximumFractionDigits(2);
+			if (this.powerProduction.isInitialised() &&
 								this.currentIntensity.isInitialised()) {
-			StringBuffer message =
-					new StringBuffer("current power balance: ");
-			message.append(nf.format(powerBalance));
-			if (DEBUG) {
-//				message.append(", solar panel production: ");
-//				message.append(nf.format(this.solarPanelOutputPower.getValue()));
-//				message.append(", generator required power: ");
-//				message.append(nf.format(this.generatorRequiredPower.getValue()));
-//				message.append(", generator production: ");
-//				message.append(nf.format(this.generatorOutputPower.getValue()));
-//				message.append(", batteries required power: ");
-//				message.append(nf.format(this.batteriesRequiredPower.getValue()));
-//				message.append(", batteries production: ");
-//				message.append(nf.format(this.batteriesOutputPower.getValue()));
-				message.append(", current total consumption: ");
-				message.append(nf.format(this.currentIntensity.getValue()));
-			} else if (VERBOSE) {
-				message.append(" ");
-				message.append(ElectricMeterImplementationI.POWER_UNIT);
+				StringBuffer message =
+						new StringBuffer("current power balance: ");
+				message.append(nf.format(powerBalance));
+				if (DEBUG) {
+					message.append(", solar panel production: ");
+					message.append(nf.format(this.solarPanelOutputPower.getValue()));
+					message.append(", generator required power: ");
+					message.append(nf.format(this.generatorRequiredPower.getValue()));
+					message.append(", generator production: ");
+					message.append(nf.format(this.generatorOutputPower.getValue()));
+					message.append(", batteries required power: ");
+					message.append(nf.format(this.batteriesRequiredPower.getValue()));
+					message.append(", batteries production: ");
+					message.append(nf.format(this.batteriesOutputPower.getValue()));
+					message.append(", current total consumption: ");
+					message.append(nf.format(this.currentIntensity.getValue()));
+				} else if (VERBOSE) {
+					message.append(" ");
+					message.append(ElectricMeterImplementationI.POWER_UNIT);
+				}
+				message.append(" at ");
+				message.append(this.getCurrentStateTime());
+				this.logMessage(message.toString());
 			}
-			message.append(" at ");
-			message.append(this.getCurrentStateTime());
-			this.logMessage(message.toString());
 		}
 
 		assert	ElectricMeterElectricitySILModel.implementationInvariants(this) :

@@ -1,5 +1,8 @@
 package etape2;
 
+
+import java.util.ArrayList;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -34,6 +37,10 @@ package etape2;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import etape2.equipments.solar_panel.mil.SolarPanelPowerModel;
+import etape2.equipments.solar_panel.mil.SunIntensityModelI;
+import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 import fr.sorbonne_u.devs_simulation.hioa.models.vars.StaticVariableDescriptor;
 import fr.sorbonne_u.devs_simulation.hioa.models.vars.VariableSink;
 import fr.sorbonne_u.devs_simulation.hioa.models.vars.VariableSource;
@@ -45,7 +52,7 @@ import fr.sorbonne_u.devs_simulation.models.events.ReexportedEvent;
 import fr.sorbonne_u.devs_simulation.models.interfaces.ModelI;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.CoordinatorI;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulationReportI;
-import java.util.ArrayList;
+import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 
 // -----------------------------------------------------------------------------
 /**
@@ -78,6 +85,9 @@ extends		CoupledModel
 	// -------------------------------------------------------------------------
 
 	private static final long serialVersionUID = 1L;
+	/** when true, leaves a debugging trace of the execution of the model.	*/
+	public static boolean		DEBUG = true;
+
 	/** URI for an instance model; works as long as only one instance is
 	 *  created.															*/
 	public static final String	URI = GlobalCoupledModel.class.getSimpleName();
@@ -139,8 +149,90 @@ extends		CoupledModel
 		super(uri, simulatedTimeUnit, simulationEngine, submodels,
 			  imported, reexported, connections,
 			  importedVars, reexportedVars, bindings);
+
+		this.getSimulationEngine().setLogger(new StandardLogger());
 	}
 
+	// -------------------------------------------------------------------------
+	// Methods
+	// -------------------------------------------------------------------------
+
+	/**
+	 * when more than one model has an internal transition to perform at some
+	 * simulated time, select the one that will execute.
+	 * 
+	 * <p><strong>Description</strong></p>
+	 * 
+	 * <p>
+	 * In the solar panel simulator, the power output by the solar panel is
+	 * computed from the sun intensity, hence to get the most precise value,
+	 * the sun intensity model must execute first and then the solar panel
+	 * power model.
+	 * </p>
+	 * 
+	 * <p><strong>Contract</strong></p>
+	 * 
+	 * <pre>
+	 * pre	{@code true}	// no more preconditions.
+	 * post	{@code true}	// no more postconditions.
+	 * </pre>
+	 * 
+	 * @see fr.sorbonne_u.devs_simulation.models.CoupledModel#select(java.lang.String[])
+	 */
+	@Override
+	public String		select(String[] candidates)
+	{
+		// retrieve the URI of the sun intensity and solar panel power models
+		String sunIntensityModelURI = null;
+		String solarPanelPowerModelURI = null;
+		for (int i = 0 ; (sunIntensityModelURI == null ||
+								solarPanelPowerModelURI == null) &&
+						 					i <= this.submodels.length ; i++) {
+			if (this.submodels[i] instanceof SunIntensityModelI) {
+				sunIntensityModelURI = this.submodels[i].getURI();
+			} else if (this.submodels[i] instanceof SolarPanelPowerModel) {
+				solarPanelPowerModelURI = this.submodels[i].getURI();
+			}
+		}
+		assert	sunIntensityModelURI != null && solarPanelPowerModelURI != null :
+				new NeoSim4JavaException(
+						"sunIntensityModelURI != null &&"
+						+ "solarPanelPowerModelURI != null");
+
+		// check if the two types of models are present in the candidates
+		boolean intensityModelPresent = false;
+		boolean powerModelPresent = false;
+		for (int i = 0 ; (!intensityModelPresent || !powerModelPresent)
+							 && i < candidates.length ; i++) {
+			if (sunIntensityModelURI.equals(candidates[i])) {
+				intensityModelPresent = true;
+			} else {
+				if (solarPanelPowerModelURI.equals(candidates[i])) {
+					powerModelPresent = true;
+				}
+			}
+		}
+
+		String elected = null;
+		if (intensityModelPresent && powerModelPresent) {
+			// if they are both present, the sun intensity model must go first
+			elected = sunIntensityModelURI;
+		} else {
+			// otherwise, the default selection is applied
+			elected = super.select(candidates);
+		}
+
+		// tracing
+		if (GlobalCoupledModel.DEBUG) {
+			this.logMessage(
+					"select "
+					+ (!intensityModelPresent && !powerModelPresent)
+					+ " returns " + elected);
+		}
+
+		return elected;
+	}
+	
 	// -------------------------------------------------------------------------
 	// Optional DEVS simulation protocol: simulation report
 	// -------------------------------------------------------------------------

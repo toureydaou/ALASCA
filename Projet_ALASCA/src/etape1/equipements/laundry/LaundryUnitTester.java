@@ -650,6 +650,189 @@ public class LaundryUnitTester extends AbstractComponent {
 		this.statistics.updateStatistics();
 	}
 
+	/**
+	 * test the delayed start feature.
+	 *
+	 * <pre>
+	 * Feature: delayed start (départ différé)
+	 *   Scenario: setting a delayed start
+	 *     Given the laundry is on
+	 *     When I set a delayed start of 3600 seconds
+	 *     Then the delayed start is set
+	 *     And the delayed start time is 3600 seconds
+	 *   Scenario: cancelling a delayed start
+	 *     Given a delayed start is set
+	 *     When I cancel the delayed start
+	 *     Then the delayed start is not set
+	 * </pre>
+	 */
+	protected void testDelayedStart() {
+		this.logMessage("Feature: delayed start (départ différé)");
+
+		this.logMessage("  Scenario: setting a delayed start");
+		try {
+			this.luop.turnOn();
+			this.logMessage("    Given the laundry is on");
+			this.logMessage("    When I set a delayed start of 3600 seconds");
+			this.luop.setDelayedStart(3600);
+
+			if (this.luop.isDelayedStartSet()) {
+				this.logMessage("    Then the delayed start is set");
+			} else {
+				this.logMessage("     but delayed start was not set");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			long delayTime = this.luop.getDelayedStartTime();
+			if (delayTime == 3600) {
+				this.logMessage("    And the delayed start time is 3600 seconds");
+			} else {
+				this.logMessage("     but was: " + delayTime);
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			this.logMessage("  Scenario: cancelling a delayed start");
+			this.logMessage("    Given a delayed start is set");
+			this.logMessage("    When I cancel the delayed start");
+			this.luop.cancelDelayedStart();
+
+			if (!this.luop.isDelayedStartSet()) {
+				this.logMessage("    Then the delayed start is not set");
+			} else {
+				this.logMessage("     but delayed start was still set");
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			this.luop.turnOff();
+		} catch (Exception e) {
+			this.statistics.incorrectResult();
+			this.statistics.updateStatistics();
+			this.logMessage("     but the exception " + e + " has been raised");
+		}
+	}
+
+	/**
+	 * test all wash modes in a single test.
+	 *
+	 * <pre>
+	 * Feature: testing all wash modes
+	 *   Scenario: cycling through all wash modes
+	 *     Given the laundry is on
+	 *     When I set each mode (DELICATE, COLOR, WHITE, INTENSIVE)
+	 *     Then the mode changes accordingly each time
+	 * </pre>
+	 */
+	protected void testAllWashModes() {
+		this.logMessage("Feature: testing all wash modes");
+		this.logMessage("  Scenario: cycling through all wash modes");
+		try {
+			this.luop.turnOn();
+
+			// DELICATE
+			this.luop.setDelicateMode();
+			if (this.luop.getWashMode() == LaundryWashMode.DELICATE) {
+				this.logMessage("    DELICATE mode set correctly");
+			} else {
+				this.logMessage("     DELICATE mode failed, was: " + this.luop.getWashMode());
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// COLOR
+			this.luop.setColorMode();
+			if (this.luop.getWashMode() == LaundryWashMode.COLOR) {
+				this.logMessage("    COLOR mode set correctly");
+			} else {
+				this.logMessage("     COLOR mode failed, was: " + this.luop.getWashMode());
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// WHITE
+			this.luop.setWhiteMode();
+			if (this.luop.getWashMode() == LaundryWashMode.WHITE) {
+				this.logMessage("    WHITE mode set correctly");
+			} else {
+				this.logMessage("     WHITE mode failed, was: " + this.luop.getWashMode());
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// INTENSIVE
+			this.luop.setIntensiveMode();
+			if (this.luop.getWashMode() == LaundryWashMode.INTENSIVE) {
+				this.logMessage("    INTENSIVE mode set correctly");
+			} else {
+				this.logMessage("     INTENSIVE mode failed, was: " + this.luop.getWashMode());
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			this.luop.turnOff();
+		} catch (Exception e) {
+			this.statistics.incorrectResult();
+			this.statistics.updateStatistics();
+			this.logMessage("     but the exception " + e + " has been raised");
+		}
+	}
+
+	/**
+	 * test temperature and spin speed combinations.
+	 *
+	 * <pre>
+	 * Feature: temperature and spin speed combinations
+	 *   Scenario: setting different combinations
+	 *     Given the laundry is on
+	 *     When I set temperature to 30 and spin to 800 RPM
+	 *     Then both are set correctly
+	 *     When I set temperature to 90 and spin to 1400 RPM
+	 *     Then both are set correctly
+	 * </pre>
+	 */
+	protected void testTemperatureAndSpeedCombinations() {
+		this.logMessage("Feature: temperature and spin speed combinations");
+		try {
+			this.luop.turnOn();
+
+			// Combination 1: 30°C, 800 RPM
+			Measure<Double> temp30 = new Measure<Double>(30.0, MeasurementUnit.CELSIUS);
+			this.luop.setWashTemperature(temp30);
+			this.luop.setSpinSpeed(SpinSpeed.RPM_800);
+			Measure<Double> currentTemp = this.luop.getWashTemperature();
+			SpinSpeed currentSpeed = this.luop.getSpinSpeed();
+			if (currentTemp.getData() == 30.0 && currentSpeed == SpinSpeed.RPM_800) {
+				this.logMessage("    Combination 30°C/800RPM set correctly");
+			} else {
+				this.logMessage("     Combination failed: temp=" + currentTemp.getData() + " speed=" + currentSpeed);
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			// Combination 2: 90°C, 1400 RPM
+			Measure<Double> temp90 = new Measure<Double>(90.0, MeasurementUnit.CELSIUS);
+			this.luop.setWashTemperature(temp90);
+			this.luop.setSpinSpeed(SpinSpeed.RPM_1400);
+			currentTemp = this.luop.getWashTemperature();
+			currentSpeed = this.luop.getSpinSpeed();
+			if (currentTemp.getData() == 90.0 && currentSpeed == SpinSpeed.RPM_1400) {
+				this.logMessage("    Combination 90°C/1400RPM set correctly");
+			} else {
+				this.logMessage("     Combination failed: temp=" + currentTemp.getData() + " speed=" + currentSpeed);
+				this.statistics.incorrectResult();
+			}
+			this.statistics.updateStatistics();
+
+			this.luop.turnOff();
+		} catch (Exception e) {
+			this.statistics.incorrectResult();
+			this.statistics.updateStatistics();
+			this.logMessage("     but the exception " + e + " has been raised");
+		}
+	}
+
 	protected void runAllUnitTests() {
 		this.testOff();
 		this.testOn();
@@ -657,6 +840,9 @@ public class LaundryUnitTester extends AbstractComponent {
 		this.testStartWashInWhiteMode();
 		this.testStartWashInIntensiveMode();
 		this.testSetTemperatureAndSpinSpeed();
+		this.testDelayedStart();
+		this.testAllWashModes();
+		this.testTemperatureAndSpeedCombinations();
 
 		this.statistics.statisticsReport(this);
 

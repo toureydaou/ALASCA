@@ -1,5 +1,15 @@
 package etape2.equipments.batteries.mil;
 
+import java.util.concurrent.TimeUnit;
+
+import etape1.equipments.batteries.Batteries;
+import etape1.equipments.batteries.BatteriesImplementationI;
+import etape1.equipments.meter.ElectricMeter;
+import etape1.equipments.meter.ElectricMeterImplementationI;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
+import fr.sorbonne_u.exceptions.AssertionChecking;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -32,16 +42,6 @@ package etape2.equipments.batteries.mil;
 //
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
-
-import java.util.concurrent.TimeUnit;
-
-import etape1.equipments.batteries.Batteries;
-import etape1.equipments.batteries.BatteriesImplementationI;
-import etape1.equipments.meter.ElectricMeter;
-import etape1.equipments.meter.ElectricMeterImplementationI;
-import fr.sorbonne_u.devs_simulation.utils.AssertionChecking;
-import physical_data.Measure;
-import physical_data.MeasurementUnit;
 
 // -----------------------------------------------------------------------------
 /**

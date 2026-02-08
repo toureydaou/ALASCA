@@ -156,6 +156,7 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 			AbstractComponent.createComponent(
 					CoffeeMachineCyPhy.class.getCanonicalName(),
 					new Object[]{
+							false,
 						COFFEE_MACHINE_EXECUTION_MODE,
 						testScenario.getClockURI()
 						});
@@ -200,6 +201,7 @@ public class CVMUnitTestWithSILSimulation extends AbstractCVM {
 			AbstractComponent.createComponent(
 					CoffeeMachineCyPhy.class.getCanonicalName(),
 					new Object[]{
+							false,
 						CoffeeMachineCyPhy.REFLECTION_INBOUND_PORT_URI,
 						CoffeeMachineCyPhy.USER_INBOUND_PORT_URI,
 						CoffeeMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,

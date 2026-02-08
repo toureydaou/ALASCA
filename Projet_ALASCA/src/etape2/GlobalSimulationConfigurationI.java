@@ -40,10 +40,10 @@ import java.util.concurrent.TimeUnit;
 import etape1.equipments.meter.ElectricMeter;
 import etape1.equipments.meter.ElectricMeterImplementationI;
 import etape2.equipments.coffeemachine.mil.CoffeeMachineSimulationConfigurationI;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.exceptions.AssertionChecking;
-import physical_data.Measure;
-import physical_data.MeasurementUnit;
 
 // -----------------------------------------------------------------------------
 /**
@@ -86,7 +86,7 @@ public interface		GlobalSimulationConfigurationI
 									Instant.parse("2025-10-20T12:00:00.00Z");
 	/** the end instant used in the test scenarios.							*/
 	public static Instant	END_INSTANT =
-									Instant.parse("2025-10-20T18:00:00.00Z");
+									Instant.parse("2025-10-20T22:00:00.00Z");
 	/** the start time in simulated time, corresponding to
 	 *  {@code START_INSTANT}.												*/
 	public static Time		START_TIME = new Time(0.0, TimeUnit.HOURS);

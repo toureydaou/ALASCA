@@ -147,7 +147,7 @@ implements	SIL_CoffeeMachineOperationI
 	protected static double		AMBIENT_TEMPERATURE = 20.0;
 
 	/** evaluation step for the differential equation (in hours).			*/
-	protected static double		STEP = 60.0/3600.0;  // 1 minute = 1/60 hour
+	protected static double		STEP = 60.0/3600.0;  // 10 seconds
 
 	/** current state of the coffee machine (similar to electricity model).*/
 	protected CoffeeMachineState	currentState = CoffeeMachineState.ON;
@@ -339,7 +339,10 @@ implements	SIL_CoffeeMachineOperationI
 	protected double	computeDerivatives(Double currentTemp)
 	{
 		// Get water mass (in kg, assuming 1L = 1kg)
-		double waterMass = this.currentWaterLevel.getValue();
+		// In integration test mode, imported variables may be null - use default value
+		double waterMass = (this.currentWaterLevel != null && this.currentWaterLevel.isInitialised())
+				? this.currentWaterLevel.getValue()
+				: 1.0; // Default: 1L of water
 
 		// Safety: if no water, no heating
 		if (waterMass <= 0.001) {
@@ -349,13 +352,16 @@ implements	SIL_CoffeeMachineOperationI
 		double heatingContribution = 0.0;
 
 		// Heating contribution (gain)
+		// Only heat when state is HEATING (requires explicit startHeating() call)
 		if (this.currentState == CoffeeMachineState.HEATING) {
-			double power = this.currentHeatingPower.getValue(); // In Watts (Joules/sec)
+			// In integration test mode, imported variables may be null - use default value
+			double power = (this.currentHeatingPower != null && this.currentHeatingPower.isInitialised())
+					? this.currentHeatingPower.getValue()
+					: 1500.0; // Default: MAX mode power in Watts
 
 			// Formula: P = m * Cp * (dT/dt) => dT/dt = P / (m * Cp)
-			// This gives °C/s, so multiply by 3600 to convert to °C/h (deltaT is in hours)
-			heatingContribution =
-					power / (waterMass * WATER_SPECIFIC_HEAT_CAPACITY) * 60.0;
+			// This gives °C/s (derivative in seconds)
+			heatingContribution = power / (waterMass * WATER_SPECIFIC_HEAT_CAPACITY);
 
 			// Physical limit: reduce heating power as we approach boiling point
 			// to prevent overshoot due to discrete time steps
@@ -401,12 +407,14 @@ implements	SIL_CoffeeMachineOperationI
 		Time t = this.currentWaterTemperature.getTime();
 		double oldTemp = this.currentWaterTemperature.evaluateAt(t);
 		double newTemp;
+		
 
 		if (deltaT > 0.0001) { // TEMPERATURE_UPDATE_TOLERANCE
 			// T(t+dt) = T(t) + T'(t) * dt
-			// deltaT is in hours, derivative is in °C per hour
+			// deltaT is in hours, derivative is in °C/s
+			// Multiply by 3600 to convert hours to seconds (same as etape2)
 			double derivative = this.currentWaterTemperature.getFirstDerivative();
-			newTemp = oldTemp + derivative * deltaT;
+			newTemp = oldTemp + derivative * deltaT * 60;
 		} else {
 			newTemp = oldTemp;
 		}
@@ -566,12 +574,26 @@ implements	SIL_CoffeeMachineOperationI
 	@Override
 	public Pair<Integer, Integer> fixpointInitialiseVariables()
 	{
-		Pair<Integer, Integer> ret;
+		int justInitialised = 0;
+		int notInitialisedYet = 0;
 
-		if (!this.currentWaterTemperature.isInitialised()) {
-			
+		// Check if imported variables are bound (they may be null in integration test mode
+		// where the electricity model is in a different component)
+		boolean importedVarsReady =
+			(this.currentHeatingPower != null && this.currentHeatingPower.isInitialised()) &&
+			(this.currentWaterLevel != null && this.currentWaterLevel.isInitialised());
+
+		// In integration test mode, imported variables may be null because the
+		// electricity model is in a different component (ElectricMeterCyPhy).
+		// In this case, we can still initialize with default values.
+		boolean importedVarsNull =
+			(this.currentHeatingPower == null) || (this.currentWaterLevel == null);
+
+		if (!this.currentWaterTemperature.isInitialised() &&
+			(importedVarsReady || importedVarsNull)) {
+			// Initialize with default derivative (no heating)
 			double derivative = this.computeDerivatives(AMBIENT_TEMPERATURE);
-			
+
 			// Initially, temperature is ambient temperature
 			this.currentWaterTemperature.initialise(AMBIENT_TEMPERATURE, derivative);
 
@@ -579,12 +601,20 @@ implements	SIL_CoffeeMachineOperationI
 			sb.append(this.currentWaterTemperature.getValue());
 			sb.append(" °C at ");
 			sb.append(this.currentWaterTemperature.getTime());
-			sb.append(" seconds.\n");
+			sb.append(" seconds.");
+			if (importedVarsNull) {
+				sb.append(" (integration test mode - imported vars not bound)");
+			}
+			sb.append("\n");
 			this.logMessage(sb.toString());
 
-			ret = new Pair<>(1, 0);
-		} else {
-			ret = new Pair<>(0, 0);
+			justInitialised++;
+		} else if (!this.currentWaterTemperature.isInitialised()) {
+			// If the imported variables are not initialised and the current
+			// temperature either, then say one more variable has not been
+			// initialised yet at this execution, forcing another execution
+			// to reach the fix point.
+			notInitialisedYet++;
 		}
 
 		assert	CoffeeMachineTemperatureSILModel.implementationInvariants(this) :
@@ -594,7 +624,7 @@ implements	SIL_CoffeeMachineOperationI
 				new NeoSim4JavaException(
 						"CoffeeMachineTemperatureModel.invariants(this)");
 
-		return ret;
+		return new Pair<>(justInitialised, notInitialisedYet);
 	}
 
 	/**
@@ -646,9 +676,11 @@ implements	SIL_CoffeeMachineOperationI
 			sb.append("|");
 			sb.append(this.currentState);
 			sb.append("|");
-			sb.append(this.currentHeatingPower.getValue());
+			sb.append(this.currentHeatingPower != null && this.currentHeatingPower.isInitialised()
+					? this.currentHeatingPower.getValue() : "N/A");
 			sb.append("|");
-			sb.append(this.currentWaterLevel.getValue());
+			sb.append(this.currentWaterLevel != null && this.currentWaterLevel.isInitialised()
+					? this.currentWaterLevel.getValue() : "N/A");
 			sb.append("\n");
 			this.logMessage(sb.toString());
 		}

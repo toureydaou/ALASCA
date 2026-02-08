@@ -182,5 +182,40 @@ public interface LaundryUserI extends LaundryImplementationI {
 	 * @throws Exception	<i>to do</i>.
 	 */
 	public void			setSpinSpeed(SpinSpeed speed) throws Exception;
+
+	// -------------------------------------------------------------------------
+	// Delayed start (départ différé)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * set a delayed start for the wash cycle.
+	 *
+	 * <p><strong>Contract</strong></p>
+	 *
+	 * <pre>
+	 * pre	{@code getState() == LaundryState.ON}
+	 * pre	{@code !isRunning()}
+	 * pre	{@code delayInSeconds > 0}
+	 * post	{@code isDelayedStartSet()}
+	 * </pre>
+	 *
+	 * @param delayInSeconds	the delay in seconds before starting the wash.
+	 * @throws Exception		<i>to do</i>.
+	 */
+	public void			setDelayedStart(long delayInSeconds) throws Exception;
+
+	/**
+	 * cancel a previously set delayed start.
+	 *
+	 * <p><strong>Contract</strong></p>
+	 *
+	 * <pre>
+	 * pre	{@code isDelayedStartSet()}
+	 * post	{@code !isDelayedStartSet()}
+	 * </pre>
+	 *
+	 * @throws Exception	<i>to do</i>.
+	 */
+	public void			cancelDelayedStart() throws Exception;
 }
 // -----------------------------------------------------------------------------

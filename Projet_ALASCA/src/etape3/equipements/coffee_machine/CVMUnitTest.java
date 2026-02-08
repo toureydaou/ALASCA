@@ -131,7 +131,7 @@ public class CVMUnitTest extends AbstractCVM {
 
 			AbstractComponent.createComponent(
 					CoffeeMachineCyPhy.class.getCanonicalName(),
-					new Object[]{});
+					new Object[]{false});
 
 			AbstractComponent.createComponent(
 					CoffeeMachineTesterCyPhy.class.getCanonicalName(),
@@ -160,6 +160,7 @@ public class CVMUnitTest extends AbstractCVM {
 			AbstractComponent.createComponent(
 					CoffeeMachineCyPhy.class.getCanonicalName(),
 					new Object[]{
+							false,
 						COFFEE_MACHINE_EXECUTION_MODE,
 						testScenario.getClockURI()
 						});
@@ -204,6 +205,7 @@ public class CVMUnitTest extends AbstractCVM {
 			AbstractComponent.createComponent(
 					CoffeeMachineCyPhy.class.getCanonicalName(),
 					new Object[]{
+							false,
 						CoffeeMachineCyPhy.REFLECTION_INBOUND_PORT_URI,
 						CoffeeMachineCyPhy.USER_INBOUND_PORT_URI,
 						CoffeeMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,

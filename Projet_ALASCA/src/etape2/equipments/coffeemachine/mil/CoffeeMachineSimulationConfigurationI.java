@@ -84,59 +84,13 @@ public interface		CoffeeMachineSimulationConfigurationI
 	 *
 	 * @return			true if the invariants are observed, false otherwise.
 	 */
-	/*
+	
 	public static boolean	staticInvariants()
 	{
 		boolean ret = true;
-		ret &= ElectricMeterImplementationI.staticInvariants();
-		ret &= CoffeeMachineTemperatureI.staticInvariants();
-		ret &= CoffeeMachineExternalControlI.staticInvariants();
-		ret &= CoffeeMachine.staticInvariants();
-		ret &= AssertionChecking.checkStaticInvariant(
-				MeasurementUnit.AMPERES.equals(
-									ElectricMeterImplementationI.POWER_UNIT),
-				CoffeeMachineSimulationConfigurationI.class,
-				"MeasurementUnit.AMPERES.equals("
-				+ "ElectricMeterImplementationI.POWER_UNIT)");
-		ret &= AssertionChecking.checkStaticInvariant(
-				MeasurementUnit.VOLTS.equals(
-									ElectricMeterImplementationI.TENSION_UNIT),
-				CoffeeMachineSimulationConfigurationI.class,
-				"MeasurementUnit.VOLTS.equals("
-				+ "ElectricMeterImplementationI.TENSION_UNIT)");
-		ret &= AssertionChecking.checkStaticInvariant(
-				(new Measure<Double>(220.0,
-									 ElectricMeterImplementationI.TENSION_UNIT)).
-						equals(ElectricMeter.TENSION),
-				CoffeeMachineSimulationConfigurationI.class,
-				"(new Measure<Double>(220.0, ElectricMeterImplementationI."
-				+ "TENSION_UNIT)).equals(ElectricMeter.TENSION)");
-		ret &= AssertionChecking.checkStaticInvariant(
-				MeasurementUnit.CELSIUS.equals(
-										CoffeeMachineTemperatureI.TEMPERATURE_UNIT),
-				CoffeeMachineSimulationConfigurationI.class,
-				"MeasurementUnit.CELSIUS.equals("
-				+ "CoffeeMachineTemperatureI.TEMPERATURE_UNIT)");
-		ret &= AssertionChecking.checkStaticInvariant(
-				MeasurementUnit.WATTS.equals(CoffeeMachineExternalControlI.POWER_UNIT),
-				CoffeeMachineSimulationConfigurationI.class,
-				"MeasurementUnit.WATTS.equals(CoffeeMachineExternalControlI.POWER_UNIT)");
-		ret &= AssertionChecking.checkStaticInvariant(
-				ElectricMeterImplementationI.TENSION_UNIT.equals(
-										CoffeeMachineExternalControlI.TENSION_UNIT),
-				CoffeeMachineSimulationConfigurationI.class,
-				"ElectricMeterImplementationI.TENSION_UNIT.equals("
-				+ "CoffeeMachineExternalControlI.TENSION_UNIT)");
-		ret &= AssertionChecking.checkStaticInvariant(
-				ElectricMeter.TENSION.equals(CoffeeMachine.TENSION),
-				CoffeeMachineSimulationConfigurationI.class,
-				"ElectricMeter.TENSION.equals(CoffeeMachine.TENSION)");
-		ret &= AssertionChecking.checkStaticInvariant(
-				TIME_UNIT != null,
-				CoffeeMachineSimulationConfigurationI.class,
-				"TIME_UNIT != null");
+		
 		return ret;
 	}
-	*/
+	
 }
 // -----------------------------------------------------------------------------

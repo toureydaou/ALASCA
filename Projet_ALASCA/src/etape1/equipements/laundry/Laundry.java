@@ -117,6 +117,8 @@ public class Laundry extends AbstractComponent
 	protected Measure<Double> currentPowerLevel;
 	protected Measure<Double> currentWashTemperature;
 	protected boolean isSuspended;
+	protected boolean delayedStartSet;
+	protected long delayedStartTime;
 
 	// BCM4Java ports
 	protected LaundryUserInboundPort luip;
@@ -282,6 +284,8 @@ public class Laundry extends AbstractComponent
 		this.currentPowerLevel = MIN_POWER_IN_WATTS;
 		this.currentWashTemperature = new Measure<Double>(Constants.TEMP_40, TEMPERATURE_UNIT);
 		this.isSuspended = false;
+		this.delayedStartSet = false;
+		this.delayedStartTime = 0;
 		this.uid = LAUNDRY_CONNECTOR_NAME;
 
 		// Setup tracing
@@ -563,6 +567,55 @@ public class Laundry extends AbstractComponent
 		this.currentSpinSpeed = speed;
 
 		assert this.currentSpinSpeed == speed : new PostconditionException("currentSpinSpeed == speed");
+	}
+
+	// -------------------------------------------------------------------------
+	// Methods from LaundryImplementationI (delayed start)
+	// -------------------------------------------------------------------------
+
+	@Override
+	public boolean isDelayedStartSet() throws Exception {
+		return this.delayedStartSet;
+	}
+
+	@Override
+	public long getDelayedStartTime() throws Exception {
+		assert this.delayedStartSet : new PreconditionException("isDelayedStartSet()");
+		return this.delayedStartTime;
+	}
+
+	// -------------------------------------------------------------------------
+	// Methods from LaundryUserI (delayed start)
+	// -------------------------------------------------------------------------
+
+	@Override
+	public void setDelayedStart(long delayInSeconds) throws Exception {
+		if (VERBOSE) {
+			this.traceMessage("Laundry: setting delayed start to " + delayInSeconds + " seconds\n");
+		}
+
+		assert this.currentState == LaundryState.ON : new PreconditionException("currentState == LaundryState.ON");
+		assert !this.isRunning() : new PreconditionException("!isRunning()");
+		assert delayInSeconds > 0 : new PreconditionException("delayInSeconds > 0");
+
+		this.delayedStartSet = true;
+		this.delayedStartTime = delayInSeconds;
+
+		assert this.delayedStartSet : new PostconditionException("isDelayedStartSet()");
+	}
+
+	@Override
+	public void cancelDelayedStart() throws Exception {
+		if (VERBOSE) {
+			this.traceMessage("Laundry: cancelling delayed start\n");
+		}
+
+		assert this.delayedStartSet : new PreconditionException("isDelayedStartSet()");
+
+		this.delayedStartSet = false;
+		this.delayedStartTime = 0;
+
+		assert !this.delayedStartSet : new PostconditionException("!isDelayedStartSet()");
 	}
 
 	// -------------------------------------------------------------------------

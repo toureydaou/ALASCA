@@ -1,5 +1,13 @@
 package etape1.equipments.meter.connections;
 
+import etape1.equipments.meter.ElectricMeterCI;
+import etape1.equipments.meter.ElectricMeterImplementationI;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
+import fr.sorbonne_u.components.ComponentI;
+import fr.sorbonne_u.components.ports.AbstractInboundPort;
+import fr.sorbonne_u.exceptions.PreconditionException;
+
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
@@ -31,14 +39,6 @@ package etape1.equipments.meter.connections;
 //
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
-
-import fr.sorbonne_u.components.ComponentI;
-import fr.sorbonne_u.components.ports.AbstractInboundPort;
-import fr.sorbonne_u.exceptions.PreconditionException;
-import physical_data.Measure;
-import physical_data.SignalData;
-import etape1.equipments.meter.ElectricMeterCI;
-import etape1.equipments.meter.ElectricMeterImplementationI;
 
 
 // -----------------------------------------------------------------------------

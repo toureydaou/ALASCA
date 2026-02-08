@@ -259,5 +259,37 @@ implements	LaundryUserCI
 		return this.getOwner().handleRequest(
 				o -> ((LaundryUserI)o).getWashTemperature());
 	}
+
+	@Override
+	public boolean		isDelayedStartSet() throws Exception
+	{
+		return this.getOwner().handleRequest(
+				o -> ((LaundryUserI)o).isDelayedStartSet());
+	}
+
+	@Override
+	public long			getDelayedStartTime() throws Exception
+	{
+		return this.getOwner().handleRequest(
+				o -> ((LaundryUserI)o).getDelayedStartTime());
+	}
+
+	@Override
+	public void			setDelayedStart(long delayInSeconds) throws Exception
+	{
+		this.getOwner().handleRequest(
+				o -> {	((LaundryUserI)o).setDelayedStart(delayInSeconds);
+						return null;
+					 });
+	}
+
+	@Override
+	public void			cancelDelayedStart() throws Exception
+	{
+		this.getOwner().handleRequest(
+				o -> {	((LaundryUserI)o).cancelDelayedStart();
+						return null;
+					 });
+	}
 }
 // -----------------------------------------------------------------------------

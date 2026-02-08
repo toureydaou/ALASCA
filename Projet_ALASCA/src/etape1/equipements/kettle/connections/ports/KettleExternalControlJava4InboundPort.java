@@ -1,99 +1,80 @@
 package etape1.equipements.kettle.connections.ports;
 
+import etape1.equipements.kettle.Kettle;
 import etape1.equipements.kettle.interfaces.KettleExternalControlJava4CI;
 import fr.sorbonne_u.components.ComponentI;
 
+// -----------------------------------------------------------------------------
+/**
+ * The class <code>KettleExternalControlJava4InboundPort</code> extends the
+ * external control inbound port with Java 4 compatible methods for
+ * Javassist connector generation.
+ *
+ * <p>Created on : 2023-09-19</p>
+ *
+ * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ */
 public class KettleExternalControlJava4InboundPort extends KettleExternalControlInboundPort
 		implements KettleExternalControlJava4CI {
 
-	// -------------------------------------------------------------------------
-	// Constants and variables
-	// -------------------------------------------------------------------------
-
-	
-
 	private static final long serialVersionUID = 1L;
 
-	// -------------------------------------------------------------------------
-	// Constructors
-	// -------------------------------------------------------------------------
-
-	/**
-	 * create an inbound port.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * owner != null
-	 * }
-	 * pre	{@code
-	 * owner instanceof KettleUserI
-	 * }
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 *
-	 * @param owner component that owns this port.
-	 * @throws Exception <i>to do</i>.
-	 */
 	public KettleExternalControlJava4InboundPort(ComponentI owner) throws Exception {
 		super(KettleExternalControlJava4CI.class, owner);
 	}
 
-	/**
-	 * create an inbound port.
-	 * 
-	 * <p>
-	 * <strong>Contract</strong>
-	 * </p>
-	 * 
-	 * <pre>
-	 * pre	{@code
-	 * uri != null && !uri.isEmpty()
-	 * }
-	 * pre	{@code
-	 * owner != null
-	 * }
-	 * pre	{@code
-	 * owner instanceof KettleUserI
-	 * }
-	 * post	{@code
-	 * true
-	 * }	// no postcondition.
-	 * </pre>
-	 *
-	 * @param uri   unique identifier of the port.
-	 * @param owner component that owns this port.
-	 * @throws Exception <i>to do</i>.
-	 */
 	public KettleExternalControlJava4InboundPort(String uri, ComponentI owner) throws Exception {
 		super(uri, KettleExternalControlJava4CI.class, owner);
 	}
 
+	// -------------------------------------------------------------------------
+	// Java4 methods (primitive types for Javassist)
+	// -------------------------------------------------------------------------
+
 	@Override
-	public void turnOnJava4() throws Exception {
-		this.turnOn();
-		
+	public int getStateJava4() throws Exception {
+		return this.getOwner().handleRequest(o -> ((Kettle) o).getStateJava4());
 	}
 
 	@Override
-	public void turnOffJava4() throws Exception {
-		this.turnOff();
-		
+	public int getKettleModeJava4() throws Exception {
+		return this.getOwner().handleRequest(o -> ((Kettle) o).getKettleModeJava4());
 	}
 
 	@Override
-	public KettleState getStateJava4() throws Exception {
-		return this.getState();
+	public double getTargetTemperatureJava4() throws Exception {
+		return this.getOwner().handleRequest(o -> ((Kettle) o).getTargetTemperatureJava4());
 	}
 
 	@Override
-	public KettleMode getKettleModeJava4() throws Exception {
-		return this.getKettleMode();
+	public double getCurrentTemperatureJava4() throws Exception {
+		return this.getOwner().handleRequest(o -> ((Kettle) o).getCurrentTemperatureJava4());
 	}
 
+	@Override
+	public double getMaxPowerLevelJava4() throws Exception {
+		return this.getOwner().handleRequest(o -> ((Kettle) o).getMaxPowerLevelJava4());
+	}
+
+	@Override
+	public double getCurrentPowerLevelJava4() throws Exception {
+		return this.getOwner().handleRequest(o -> ((Kettle) o).getCurrentPowerLevelJava4());
+	}
+
+	@Override
+	public void setCurrentPowerLevelJava4(double powerLevel) throws Exception {
+		this.getOwner().handleRequest(o -> {
+			((Kettle) o).setCurrentPowerLevelJava4(powerLevel);
+			return null;
+		});
+	}
+
+	@Override
+	public void setModeJava4(int mode) throws Exception {
+		this.getOwner().handleRequest(o -> {
+			((Kettle) o).setModeJava4(mode);
+			return null;
+		});
+	}
 }
+// -----------------------------------------------------------------------------

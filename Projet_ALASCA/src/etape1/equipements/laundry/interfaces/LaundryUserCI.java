@@ -51,5 +51,11 @@ public interface LaundryUserCI extends LaundryUserI, OfferedCI, RequiredCI {
 
 	@Override
 	public void			setSpinSpeed(SpinSpeed speed) throws Exception;
+
+	@Override
+	public void			setDelayedStart(long delayInSeconds) throws Exception;
+
+	@Override
+	public void			cancelDelayedStart() throws Exception;
 }
 // -----------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 package etape1.equipements.fan.interfaces;
 
+import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.components.interfaces.RequiredCI;
-import physical_data.Measure;
 
 public interface FanExternalControlCI extends FanExternalControlI, OfferedCI, RequiredCI {
 

@@ -39,7 +39,6 @@ import java.util.concurrent.TimeUnit;
 
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineMode;
 import etape1.equipements.coffee_machine.interfaces.CoffeeMachineImplementationI.CoffeeMachineState;
-import etape2.equipments.coffeemachine.mil.events.CoffeeMachineEventI;
 import etape2.equipments.coffeemachine.mil.events.DoNotHeat;
 import etape2.equipments.coffeemachine.mil.events.FillWaterCoffeeMachine;
 import etape2.equipments.coffeemachine.mil.events.Heat;
@@ -56,7 +55,6 @@ import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
 import fr.sorbonne_u.devs_simulation.models.AtomicModel;
 import fr.sorbonne_u.devs_simulation.models.annotations.ModelExternalEvents;
-import fr.sorbonne_u.devs_simulation.models.events.Event;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;
 import fr.sorbonne_u.devs_simulation.models.time.Duration;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
@@ -141,8 +139,8 @@ implements	SIL_CoffeeMachineOperationI
 	protected CoffeeMachineState	currentState = CoffeeMachineState.OFF;
 	/** current mode of the coffee machine.									*/
 	protected CoffeeMachineMode		currentMode = CoffeeMachineMode.SUSPEND;
-	/** external event that has been received and that must be reemitted.	*/
-	protected EventI				toBeReemitted;
+	/** last received external event that must be reemitted.				*/
+	protected EventI				lastReceived;
 
 	// -------------------------------------------------------------------------
 	// Invariants
@@ -366,6 +364,7 @@ implements	SIL_CoffeeMachineOperationI
 	{
 		super.initialiseState(initialTime);
 
+		this.lastReceived = null;
 		this.currentState = CoffeeMachineState.OFF;
 		this.currentMode = CoffeeMachineMode.SUSPEND;
 
@@ -386,10 +385,10 @@ implements	SIL_CoffeeMachineOperationI
 	@Override
 	public Duration		timeAdvance()
 	{
-		if (this.toBeReemitted == null) {
-			return Duration.INFINITY;
+		if (this.lastReceived != null) {
+			return Duration.zero(this.getSimulatedTimeUnit());
 		} else {
-			return Duration.zero(getSimulatedTimeUnit());
+			return Duration.INFINITY;
 		}
 	}
 
@@ -399,19 +398,13 @@ implements	SIL_CoffeeMachineOperationI
 	@Override
 	public ArrayList<EventI>	output()
 	{
-		if (this.toBeReemitted != null) {
-			ArrayList<EventI> ret = new ArrayList<EventI>();
-			ret.add(this.toBeReemitted);
-			this.toBeReemitted = null;
+		assert	this.lastReceived != null :
+				new NeoSim4JavaException("lastReceived != null");
 
-			if (VERBOSE) {
-				this.logMessage("output sends " + ret);
-			}
-
-			return ret;
-		} else {
-			return null;
-		}
+		ArrayList<EventI> ret = new ArrayList<EventI>();
+		ret.add(this.lastReceived);
+		this.lastReceived = null;
+		return ret;
 	}
 
 	/**
@@ -422,34 +415,19 @@ implements	SIL_CoffeeMachineOperationI
 	{
 		super.userDefinedExternalTransition(elapsedTime);
 
-		// get the vector of current external events
 		ArrayList<EventI> currentEvents = this.getStoredEventAndReset();
-		// when this method is called, there is at least one external event,
-		// and for the coffee machine model, there will be exactly one by
-		// construction.
-		assert	currentEvents != null && currentEvents.size() == 1;
+		assert	currentEvents != null && currentEvents.size() == 1 :
+				new NeoSim4JavaException(
+						"currentEvents != null && currentEvents.size() == 1");
 
-		Event ce = (Event) currentEvents.get(0);
-		assert	ce instanceof CoffeeMachineEventI;
-
-		// the next call will update the current state of the coffee machine
-		// and if this state has changed, it put the boolean consumptionHasChanged
-		// at true, which in turn will trigger an immediate internal transition
-		// to update the current intensity of the coffee machine electricity
-		// consumption.
-		ce.executeOn(this);
-		this.toBeReemitted = ce;
+		this.lastReceived = currentEvents.get(0);
 
 		if (VERBOSE) {
-			this.logMessage("performing an external transition on " + ce);
+			StringBuffer message = new StringBuffer(this.uri);
+			message.append(" executes the external event ");
+			message.append(this.lastReceived);
+			this.logMessage(message.toString());
 		}
-
-		assert	implementationInvariants(this) :
-				new NeoSim4JavaException(
-						"CoffeeMachineStateModel.glassBoxInvariants(this)");
-		assert	invariants(this) :
-				new NeoSim4JavaException(
-						"CoffeeMachineStateModel.blackBoxInvariants(this)");
 	}
 
 	/**
@@ -461,12 +439,13 @@ implements	SIL_CoffeeMachineOperationI
 		if (VERBOSE) {
 			this.logMessage("simulation ends.");
 		}
+		super.endSimulation(endTime);
 	}
 
 	@Override
-	public void setStateMode(CoffeeMachineState on, CoffeeMachineMode normal) {
-		// TODO Auto-generated method stub
-		
+	public void setStateMode(CoffeeMachineState s, CoffeeMachineMode m) {
+		this.currentState = s;
+		this.currentMode = m;
 	}
 }
 // -----------------------------------------------------------------------------
